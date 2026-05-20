@@ -35,7 +35,7 @@
 
 1. قم بتحميل المستودع:
 ```bash
-   git clone https://github.com/your-username/warehouse-system.git
+   git clone https://github.com/RNotmyname/cit.git
 ```
 
 2. قم بتثبيت المكتبات المطلوبة:

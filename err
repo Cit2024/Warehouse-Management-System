@@ -1,0 +1,240 @@
+Searching dependency tree
+Building modules: better-sqlite3
+
+make: Entering directory '/home/q2df/Desktop/uni-proj/node_modules/better-sqlite3/build'
+  TOUCH 4292fa9a667d77b27488aa109b010a85bce8e4e7a1c7aa0370cea902395c3866.intermediate
+  ACTION deps_sqlite3_gyp_locate_sqlite3_target_copy_builtin_sqlite3 4292fa9a667d77b27488aa109b010a85bce8e4e7a1c7aa0370cea902395c3866.intermediate
+  TOUCH Release/obj.target/deps/locate_sqlite3.stamp
+  CC(target) Release/obj.target/sqlite3/gen/sqlite3/sqlite3.o
+rm -f Release/obj.target/deps/sqlite3.a Release/obj.target/deps/sqlite3.a.ar-file-list; mkdir -p `dirname Release/obj.target/deps/sqlite3.a`
+ar crs Release/obj.target/deps/sqlite3.a @Release/obj.target/deps/sqlite3.a.ar-file-list
+  COPY Release/sqlite3.a
+  CXX(target) Release/obj.target/better_sqlite3/src/better_sqlite3.o
+In file included from /home/q2df/.electron-gyp/42.2.0/include/node/v8-handle-base.h:8,
+                 from /home/q2df/.electron-gyp/42.2.0/include/node/v8-local-handle.h:13,
+                 from /home/q2df/.electron-gyp/42.2.0/include/node/v8-array-buffer.h:12,
+                 from /home/q2df/.electron-gyp/42.2.0/include/node/v8.h:24,
+                 from /home/q2df/.electron-gyp/42.2.0/include/node/node.h:80,
+                 from ../src/better_sqlite3.cpp:11:
+/home/q2df/.electron-gyp/42.2.0/include/node/v8-internal.h:440:1: warning: multi-line comment [-Wcomment]
+  440 | //         / \
+      | ^
+/home/q2df/.electron-gyp/42.2.0/include/node/v8-internal.h:442:1: warning: multi-line comment [-Wcomment]
+  442 | //       / \
+      | ^
+In file included from /home/q2df/.electron-gyp/42.2.0/include/node/v8-function.h:15,
+                 from /home/q2df/.electron-gyp/42.2.0/include/node/v8.h:33:
+/home/q2df/.electron-gyp/42.2.0/include/node/v8-template.h: In static member function 'static v8::Intercepted (* v8::NamedPropertyHandlerConfiguration::ConvertSetter(v8::NamedPropertySetterCallback))(v8::Local<v8::Name>, v8::Local<v8::Value>, const v8::PropertyCallbackInfo<v8::Boolean>&)':
+/home/q2df/.electron-gyp/42.2.0/include/node/v8-template.h:760:12: warning: cast between incompatible function types from 'v8::NamedPropertySetterCallback' {aka 'v8::Intercepted (*)(v8::Local<v8::Name>, v8::Local<v8::Value>, const v8::PropertyCallbackInfo<void>&)'} to 'v8::NamedPropertySetterCallbackV2' {aka 'v8::Intercepted (*)(v8::Local<v8::Name>, v8::Local<v8::Value>, const v8::PropertyCallbackInfo<v8::Boolean>&)'} [-Wcast-function-type]
+  760 |     return NamedPropertySetterCallbackV2(value);
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/q2df/.electron-gyp/42.2.0/include/node/v8-template.h: In static member function 'static v8::Intercepted (* v8::NamedPropertyHandlerConfiguration::ConvertDefiner(v8::NamedPropertyDefinerCallback))(v8::Local<v8::Name>, const v8::PropertyDescriptor&, const v8::PropertyCallbackInfo<v8::Boolean>&)':
+/home/q2df/.electron-gyp/42.2.0/include/node/v8-template.h:772:12: warning: cast between incompatible function types from 'v8::NamedPropertyDefinerCallback' {aka 'v8::Intercepted (*)(v8::Local<v8::Name>, const v8::PropertyDescriptor&, const v8::PropertyCallbackInfo<void>&)'} to 'v8::NamedPropertyDefinerCallbackV2' {aka 'v8::Intercepted (*)(v8::Local<v8::Name>, const v8::PropertyDescriptor&, const v8::PropertyCallbackInfo<v8::Boolean>&)'} [-Wcast-function-type]
+  772 |     return NamedPropertyDefinerCallbackV2(value);
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/q2df/.electron-gyp/42.2.0/include/node/v8-template.h: In static member function 'static v8::Intercepted (* v8::IndexedPropertyHandlerConfiguration::ConvertSetter(v8::IndexedPropertySetterCallbackV2))(uint32_t, v8::Local<v8::Value>, const v8::PropertyCallbackInfo<v8::Boolean>&)':
+/home/q2df/.electron-gyp/42.2.0/include/node/v8-template.h:887:12: warning: cast between incompatible function types from 'v8::IndexedPropertySetterCallbackV2' {aka 'v8::Intercepted (*)(unsigned int, v8::Local<v8::Value>, const v8::PropertyCallbackInfo<void>&)'} to 'v8::IndexedPropertySetterCallback' {aka 'v8::Intercepted (*)(unsigned int, v8::Local<v8::Value>, const v8::PropertyCallbackInfo<v8::Boolean>&)'} [-Wcast-function-type]
+  887 |     return IndexedPropertySetterCallback(value);
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/q2df/.electron-gyp/42.2.0/include/node/v8-template.h: In static member function 'static v8::Intercepted (* v8::IndexedPropertyHandlerConfiguration::ConvertDefiner(v8::IndexedPropertyDefinerCallbackV2))(uint32_t, const v8::PropertyDescriptor&, const v8::PropertyCallbackInfo<v8::Boolean>&)':
+/home/q2df/.electron-gyp/42.2.0/include/node/v8-template.h:899:12: warning: cast between incompatible function types from 'v8::IndexedPropertyDefinerCallbackV2' {aka 'v8::Intercepted (*)(unsigned int, const v8::PropertyDescriptor&, const v8::PropertyCallbackInfo<void>&)'} to 'v8::IndexedPropertyDefinerCallback' {aka 'v8::Intercepted (*)(unsigned int, const v8::PropertyDescriptor&, const v8::PropertyCallbackInfo<v8::Boolean>&)'} [-Wcast-function-type]
+  899 |     return IndexedPropertyDefinerCallback(value);
+      |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In file included from ../src/better_sqlite3.cpp:22:
+../src/util/helpers.cpp: In function 'void SetPrototypeGetter(v8::Isolate*, v8::Local<v8::External>, v8::Local<v8::FunctionTemplate>, const char*, v8::AccessorNameGetterCallback)':
+../src/util/helpers.cpp:89:56: error: call of overloaded 'SetNativeDataProperty(v8::Local<v8::String>, void (*&)(v8::Local<v8::Name>, const v8::PropertyCallbackInfo<v8::Value>&), int, v8::Local<v8::External>&)' is ambiguous
+   89 |         recv->InstanceTemplate()->SetNativeDataProperty(
+      |         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+   90 |                 InternalizedFromLatin1(isolate, name),
+      |                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  
+   91 |                 func,
+      |                 ~~~~~                                   
+   92 |                 0,
+      |                 ~~                                      
+   93 |                 data
+      |                 ~~~~                                    
+   94 |         );
+      |         ~                                               
+/home/q2df/.electron-gyp/42.2.0/include/node/v8-template.h:104:8: note: candidate: 'void v8::Template::SetNativeDataProperty(v8::Local<v8::Name>, v8::AccessorNameGetterCallback, v8::AccessorNameSetterCallbackV2, v8::Local<v8::Value>, v8::PropertyAttribute, v8::SideEffectType, v8::SideEffectType)'
+  104 |   void SetNativeDataProperty(
+      |        ^~~~~~~~~~~~~~~~~~~~~
+/home/q2df/.electron-gyp/42.2.0/include/node/v8-template.h:110:8: note: candidate: 'void v8::Template::SetNativeDataProperty(v8::Local<v8::Name>, v8::AccessorNameGetterCallback, v8::AccessorNameSetterCallback, v8::Local<v8::Value>, v8::PropertyAttribute, v8::SideEffectType, v8::SideEffectType)'
+  110 |   void SetNativeDataProperty(
+      |        ^~~~~~~~~~~~~~~~~~~~~
+/home/q2df/.electron-gyp/42.2.0/include/node/v8-template.h:118:8: note: candidate: 'void v8::Template::SetNativeDataProperty(v8::Local<v8::Name>, v8::AccessorNameGetterCallback, nullptr_t, v8::Local<v8::Value>, v8::PropertyAttribute, v8::SideEffectType, v8::SideEffectType)'
+  118 |   void SetNativeDataProperty(
+      |        ^~~~~~~~~~~~~~~~~~~~~
+In file included from ../src/better_sqlite3.cpp:21:
+../src/addon.cpp: In static member function 'static void Addon::JS_setErrorConstructor(const v8::FunctionCallbackInfo<v8::Value>&)':
+../src/util/macros.cpp:30:76: error: no matching function for call to 'v8::External::Value()'
+   30 | #define OnlyAddon static_cast<Addon*>(info.Data().As<v8::External>()->Value())
+      |                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~
+../src/addon.cpp:36:17: note: in expansion of macro 'OnlyAddon'
+   36 |                 OnlyAddon->SqliteError.Reset(OnlyIsolate, SqliteError);
+      |                 ^~~~~~~~~
+In file included from /home/q2df/.electron-gyp/42.2.0/include/node/v8.h:32:
+/home/q2df/.electron-gyp/42.2.0/include/node/v8-external.h:58:9: note: candidate: 'void* v8::External::Value(v8::ExternalPointerTypeTag) const'
+   58 |   void* Value(ExternalPointerTypeTag tag) const;
+      |         ^~~~~
+/home/q2df/.electron-gyp/42.2.0/include/node/v8-external.h:58:9: note:   candidate expects 1 argument, 0 provided
+../src/objects/backup.cpp: In static member function 'static void Backup::JS_new(const v8::FunctionCallbackInfo<v8::Value>&)':
+../src/util/macros.cpp:30:76: error: no matching function for call to 'v8::External::Value()'
+   30 | #define OnlyAddon static_cast<Addon*>(info.Data().As<v8::External>()->Value())
+      |                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~
+../src/util/macros.cpp:33:33: note: in expansion of macro 'OnlyAddon'
+   33 | #define UseAddon Addon* addon = OnlyAddon
+      |                                 ^~~~~~~~~
+../src/objects/backup.cpp:46:9: note: in expansion of macro 'UseAddon'
+   46 |         UseAddon;
+      |         ^~~~~~~~
+/home/q2df/.electron-gyp/42.2.0/include/node/v8-external.h:58:9: note: candidate: 'void* v8::External::Value(v8::ExternalPointerTypeTag) const'
+   58 |   void* Value(ExternalPointerTypeTag tag) const;
+      |         ^~~~~
+/home/q2df/.electron-gyp/42.2.0/include/node/v8-external.h:58:9: note:   candidate expects 1 argument, 0 provided
+../src/objects/statement.cpp: In static member function 'static void Statement::JS_new(const v8::FunctionCallbackInfo<v8::Value>&)':
+../src/util/macros.cpp:30:76: error: no matching function for call to 'v8::External::Value()'
+   30 | #define OnlyAddon static_cast<Addon*>(info.Data().As<v8::External>()->Value())
+      |                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~
+../src/util/macros.cpp:33:33: note: in expansion of macro 'OnlyAddon'
+   33 | #define UseAddon Addon* addon = OnlyAddon
+      |                                 ^~~~~~~~~
+../src/objects/statement.cpp:72:9: note: in expansion of macro 'UseAddon'
+   72 |         UseAddon;
+      |         ^~~~~~~~
+/home/q2df/.electron-gyp/42.2.0/include/node/v8-external.h:58:9: note: candidate: 'void* v8::External::Value(v8::ExternalPointerTypeTag) const'
+   58 |   void* Value(ExternalPointerTypeTag tag) const;
+      |         ^~~~~
+/home/q2df/.electron-gyp/42.2.0/include/node/v8-external.h:58:9: note:   candidate expects 1 argument, 0 provided
+../src/objects/statement.cpp: In static member function 'static void Statement::JS_iterate(const v8::FunctionCallbackInfo<v8::Value>&)':
+../src/util/macros.cpp:30:76: error: no matching function for call to 'v8::External::Value()'
+   30 | #define OnlyAddon static_cast<Addon*>(info.Data().As<v8::External>()->Value())
+      |                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~
+../src/util/macros.cpp:33:33: note: in expansion of macro 'OnlyAddon'
+   33 | #define UseAddon Addon* addon = OnlyAddon
+      |                                 ^~~~~~~~~
+../src/objects/statement.cpp:229:9: note: in expansion of macro 'UseAddon'
+  229 |         UseAddon;
+      |         ^~~~~~~~
+/home/q2df/.electron-gyp/42.2.0/include/node/v8-external.h:58:9: note: candidate: 'void* v8::External::Value(v8::ExternalPointerTypeTag) const'
+   58 |   void* Value(ExternalPointerTypeTag tag) const;
+      |         ^~~~~
+/home/q2df/.electron-gyp/42.2.0/include/node/v8-external.h:58:9: note:   candidate expects 1 argument, 0 provided
+../src/objects/database.cpp: In static member function 'static void Database::JS_new(const v8::FunctionCallbackInfo<v8::Value>&)':
+../src/util/macros.cpp:30:76: error: no matching function for call to 'v8::External::Value()'
+   30 | #define OnlyAddon static_cast<Addon*>(info.Data().As<v8::External>()->Value())
+      |                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~
+../src/util/macros.cpp:33:33: note: in expansion of macro 'OnlyAddon'
+   33 | #define UseAddon Addon* addon = OnlyAddon
+      |                                 ^~~~~~~~~
+../src/objects/database.cpp:155:9: note: in expansion of macro 'UseAddon'
+  155 |         UseAddon;
+      |         ^~~~~~~~
+/home/q2df/.electron-gyp/42.2.0/include/node/v8-external.h:58:9: note: candidate: 'void* v8::External::Value(v8::ExternalPointerTypeTag) const'
+   58 |   void* Value(ExternalPointerTypeTag tag) const;
+      |         ^~~~~
+/home/q2df/.electron-gyp/42.2.0/include/node/v8-external.h:58:9: note:   candidate expects 1 argument, 0 provided
+../src/objects/database.cpp: In static member function 'static void Database::JS_prepare(const v8::FunctionCallbackInfo<v8::Value>&)':
+../src/util/macros.cpp:30:76: error: no matching function for call to 'v8::External::Value()'
+   30 | #define OnlyAddon static_cast<Addon*>(info.Data().As<v8::External>()->Value())
+      |                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~
+../src/util/macros.cpp:33:33: note: in expansion of macro 'OnlyAddon'
+   33 | #define UseAddon Addon* addon = OnlyAddon
+      |                                 ^~~~~~~~~
+../src/objects/database.cpp:203:9: note: in expansion of macro 'UseAddon'
+  203 |         UseAddon;
+      |         ^~~~~~~~
+/home/q2df/.electron-gyp/42.2.0/include/node/v8-external.h:58:9: note: candidate: 'void* v8::External::Value(v8::ExternalPointerTypeTag) const'
+   58 |   void* Value(ExternalPointerTypeTag tag) const;
+      |         ^~~~~
+/home/q2df/.electron-gyp/42.2.0/include/node/v8-external.h:58:9: note:   candidate expects 1 argument, 0 provided
+../src/objects/database.cpp: In static member function 'static void Database::JS_backup(const v8::FunctionCallbackInfo<v8::Value>&)':
+../src/util/macros.cpp:30:76: error: no matching function for call to 'v8::External::Value()'
+   30 | #define OnlyAddon static_cast<Addon*>(info.Data().As<v8::External>()->Value())
+      |                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~
+../src/util/macros.cpp:33:33: note: in expansion of macro 'OnlyAddon'
+   33 | #define UseAddon Addon* addon = OnlyAddon
+      |                                 ^~~~~~~~~
+../src/objects/database.cpp:261:9: note: in expansion of macro 'UseAddon'
+  261 |         UseAddon;
+      |         ^~~~~~~~
+/home/q2df/.electron-gyp/42.2.0/include/node/v8-external.h:58:9: note: candidate: 'void* v8::External::Value(v8::ExternalPointerTypeTag) const'
+   58 |   void* Value(ExternalPointerTypeTag tag) const;
+      |         ^~~~~
+/home/q2df/.electron-gyp/42.2.0/include/node/v8-external.h:58:9: note:   candidate expects 1 argument, 0 provided
+../src/objects/statement-iterator.cpp: In static member function 'static void StatementIterator::JS_new(const v8::FunctionCallbackInfo<v8::Value>&)':
+../src/util/macros.cpp:30:76: error: no matching function for call to 'v8::External::Value()'
+   30 | #define OnlyAddon static_cast<Addon*>(info.Data().As<v8::External>()->Value())
+      |                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~
+../src/util/macros.cpp:33:33: note: in expansion of macro 'OnlyAddon'
+   33 | #define UseAddon Addon* addon = OnlyAddon
+      |                                 ^~~~~~~~~
+../src/objects/statement-iterator.cpp:79:9: note: in expansion of macro 'UseAddon'
+   79 |         UseAddon;
+      |         ^~~~~~~~
+/home/q2df/.electron-gyp/42.2.0/include/node/v8-external.h:58:9: note: candidate: 'void* v8::External::Value(v8::ExternalPointerTypeTag) const'
+   58 |   void* Value(ExternalPointerTypeTag tag) const;
+      |         ^~~~~
+/home/q2df/.electron-gyp/42.2.0/include/node/v8-external.h:58:9: note:   candidate expects 1 argument, 0 provided
+../src/better_sqlite3.cpp: At global scope:
+/home/q2df/.electron-gyp/42.2.0/include/node/node.h:1386:7: warning: cast between incompatible function types from 'void (*)(v8::Local<v8::Object>, v8::Local<v8::Value>, v8::Local<v8::Context>)' to 'node::addon_context_register_func' {aka 'void (*)(v8::Local<v8::Object>, v8::Local<v8::Value>, v8::Local<v8::Context>, void*)'} [-Wcast-function-type]
+ 1386 |       (node::addon_context_register_func) (regfunc),                  \
+      |       ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/q2df/.electron-gyp/42.2.0/include/node/node.h:1404:3: note: in expansion of macro 'NODE_MODULE_CONTEXT_AWARE_X'
+ 1404 |   NODE_MODULE_CONTEXT_AWARE_X(modname, regfunc, NULL, 0)
+      |   ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/q2df/.electron-gyp/42.2.0/include/node/node.h:1435:3: note: in expansion of macro 'NODE_MODULE_CONTEXT_AWARE'
+ 1435 |   NODE_MODULE_CONTEXT_AWARE(NODE_GYP_MODULE_NAME,                     \
+      |   ^~~~~~~~~~~~~~~~~~~~~~~~~
+../src/better_sqlite3.cpp:48:1: note: in expansion of macro 'NODE_MODULE_INIT'
+   48 | NODE_MODULE_INIT(/* exports, context */) {
+      | ^~~~~~~~~~~~~~~~
+../src/better_sqlite3.cpp: In function 'void node_register_module_v146(v8::Local<v8::Object>, v8::Local<v8::Value>, v8::Local<v8::Context>)':
+../src/better_sqlite3.cpp:60:57: error: no matching function for call to 'v8::External::New(v8::Isolate*&, Addon*&)'
+   60 |         v8::Local<v8::External> data = v8::External::New(isolate, addon);
+      |                                        ~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~
+/home/q2df/.electron-gyp/42.2.0/include/node/v8-external.h:41:26: note: candidate: 'static v8::Local<v8::External> v8::External::New(v8::Isolate*, void*, v8::ExternalPointerTypeTag)'
+   41 |   static Local<External> New(Isolate* isolate, void* value,
+      |                          ^~~
+/home/q2df/.electron-gyp/42.2.0/include/node/v8-external.h:41:26: note:   candidate expects 3 arguments, 2 provided
+In file included from ../src/better_sqlite3.cpp:26:
+../src/util/data.cpp: In function 'v8::Local<v8::Value> Data::GetValueJS(v8::Isolate*, sqlite3_stmt*, int, bool)':
+../src/util/data.cpp:36:17: warning: this statement may fall through [-Wimplicit-fallthrough=]
+   36 |                 if (safe_ints) {                                                       \
+      |                 ^~
+../src/util/data.cpp:73:17: note: in expansion of macro 'SQLITE_VALUE_TO_JS'
+   73 |                 SQLITE_VALUE_TO_JS(column, isolate, safe_ints, handle, column);
+      |                 ^~~~~~~~~~~~~~~~~~
+../src/util/data.cpp:42:9: note: here
+   42 |         case SQLITE_FLOAT:                                                         \
+      |         ^~~~
+../src/util/data.cpp:73:17: note: in expansion of macro 'SQLITE_VALUE_TO_JS'
+   73 |                 SQLITE_VALUE_TO_JS(column, isolate, safe_ints, handle, column);
+      |                 ^~~~~~~~~~~~~~~~~~
+../src/util/data.cpp: In function 'v8::Local<v8::Value> Data::GetValueJS(v8::Isolate*, sqlite3_value*, bool)':
+../src/util/data.cpp:36:17: warning: this statement may fall through [-Wimplicit-fallthrough=]
+   36 |                 if (safe_ints) {                                                       \
+      |                 ^~
+../src/util/data.cpp:77:17: note: in expansion of macro 'SQLITE_VALUE_TO_JS'
+   77 |                 SQLITE_VALUE_TO_JS(value, isolate, safe_ints, value);
+      |                 ^~~~~~~~~~~~~~~~~~
+../src/util/data.cpp:42:9: note: here
+   42 |         case SQLITE_FLOAT:                                                         \
+      |         ^~~~
+../src/util/data.cpp:77:17: note: in expansion of macro 'SQLITE_VALUE_TO_JS'
+   77 |                 SQLITE_VALUE_TO_JS(value, isolate, safe_ints, value);
+      |                 ^~~~~~~~~~~~~~~~~~
+make: *** [better_sqlite3.target.mk:138: Release/obj.target/better_sqlite3/src/better_sqlite3.o] Error 1
+rm 4292fa9a667d77b27488aa109b010a85bce8e4e7a1c7aa0370cea902395c3866.intermediate
+make: Leaving directory '/home/q2df/Desktop/uni-proj/node_modules/better-sqlite3/build'
+Error: `make` failed with exit code: 2
+    at ChildProcess.<anonymous> (/home/q2df/Desktop/uni-proj/node_modules/node-gyp/lib/build.js:219:23)
+
+[31m✖ Rebuild Failed[39m
+[31m
+An unhandled error occurred inside electron-rebuild[39m
+[31mnode-gyp failed to rebuild '/home/q2df/Desktop/uni-proj/node_modules/better-sqlite3'
+
+Error: node-gyp failed to rebuild '/home/q2df/Desktop/uni-proj/node_modules/better-sqlite3'
+    at ChildProcess.<anonymous> (file:///home/q2df/Desktop/uni-proj/node_modules/@electron/rebuild/lib/module-type/node-gyp/node-gyp.js:114:24)
+    at ChildProcess.emit (node:events:508:28)
+    at ChildProcess._handle.onexit (node:internal/child_process:294:12)[39m

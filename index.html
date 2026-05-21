@@ -410,17 +410,15 @@
     </div>
 
     <script>
-        // محاكاة قاعدة بيانات المستخدمين المحلية (لأغراض العرض فقط)
-        const authorizedUsers = [
-            { username: 'admin', password: 'cit2024', role: 'مدير النظام' },
-            { username: 'store.manager', password: 'store123', role: 'مدير المخازن' },
-            { username: 'staff1', password: 'staff123', role: 'موظف مخازن' }
-        ];
-
-        function handleLogin(event) {
+        <!-- const authorizedUsers = [ -->
+            <!-- { username: 'admin', password: 'cit2024', role: 'مدير النظام' }, -->
+            <!-- { username: 'store.manager', password: 'store123', role: 'مدير المخازن' }, -->
+            <!-- { username: 'staff1', password: 'staff123', role: 'موظف مخازن' } -->
+        <!-- ]; -->
+        async function handleLogin(event) {
             event.preventDefault();
             
-            const username = document.getElementById('username').value;
+            const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value;
             const errorMessage = document.getElementById('errorMessage');
             const loginButton = document.getElementById('loginButton');
@@ -428,7 +426,6 @@
             // إخفاء رسالة الخطأ
             errorMessage.style.display = 'none';
             
-            // التحقق من صحة الإدخال
             if (!username || !password) {
                 showError('يرجى إدخال اسم المستخدم وكلمة المرور');
                 return false;
@@ -436,51 +433,43 @@
             
             // عرض تأثير التحميل
             const originalText = loginButton.innerHTML;
-            loginButton.innerHTML = '<span class="loading-spinner"></span> جاري تسجيل الدخول...';
+            loginButton.innerHTML = '<span class="loading-spinner"></span> جاري التحقق...';
             loginButton.disabled = true;
             
-            // محاكاة تأخير الشبكة
-            setTimeout(() => {
-                // البحث عن المستخدم
-                const user = authorizedUsers.find(u => 
-                    u.username === username && u.password === password
-                );
+            try {
+                // الاتصال بقاعدة البيانات الحقيقية عبر الجسر
+                const result = await window.api.login({ username, password });
                 
-                if (user) {
-                    // تسجيل الدخول ناجح
+                if (result.success) {
                     const rememberMe = document.getElementById('remember').checked;
                     
-                    // تخزين بيانات الجلسة (لأغراض Electron)
+                    // حفظ بيانات الجلسة للاستفادة منها في باقي الصفحات (مثل إظهار اسم المستخدم)
                     const sessionData = {
-                        username: user.username,
-                        role: user.role,
-                        loginTime: new Date().toISOString(),
+                        userId: result.user.user_id,
+                        username: result.user.full_name,
+                        role: result.user.role,
                         rememberMe: rememberMe
                     };
                     
-                    // في تطبيق Electron حقيقي، ستستخدم IPC للتواصل مع العملية الرئيسية
-                    if (window.electronAPI) {
-                        window.electronAPI.login(sessionData);
-                    } else {
-                        // للمتصفح العادي (للاختبار)
-                        localStorage.setItem('userSession', JSON.stringify(sessionData));
-                        console.log('تم تسجيل الدخول بنجاح:', sessionData);
-                    }
+                    localStorage.setItem('userSession', JSON.stringify(sessionData));
                     
-                    // توجيه إلى الصفحة الرئيسية للنظام
+                    // توجيه المستخدم إلى لوحة التحكم
                     window.location.href = 'dashboard.html';
-                    
                 } else {
-                    // فشل تسجيل الدخول
-                    showError('اسم المستخدم أو كلمة المرور غير صحيحة');
+                    // فشل تسجيل الدخول (البيانات غير مطابقة)
+                    showError(result.message);
                     loginButton.innerHTML = originalText;
                     loginButton.disabled = false;
                     
-                    // مسح حقل كلمة المرور
+                    // مسح حقل كلمة المرور للسهولة
                     document.getElementById('password').value = '';
                     document.getElementById('password').focus();
                 }
-            }, 1500);
+            } catch (error) {
+                showError('حدث خطأ غير متوقع في النظام');
+                loginButton.innerHTML = originalText;
+                loginButton.disabled = false;
+            }
             
             return false;
         }

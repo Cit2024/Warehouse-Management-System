@@ -1,26 +1,23 @@
-// database/db.js
 const Database = require('better-sqlite3');
 const path = require('path');
 const fs = require('fs');
 const { app } = require('electron');
 
-// 1. تحديد مسار حفظ ملف قاعدة البيانات
-// نضعها في مجلد بيانات المستخدم في النظام (AppData) لتجنب مسحها عند تحديث التطبيق
+// تحديد مسار حفظ ملف قاعدة البيانات (في مجلد AppData)
 const dataPath = app.getPath('userData'); 
 const dbPath = path.join(dataPath, 'warehouse_system.sqlite');
 
-// 2. الاتصال بقاعدة البيانات (سيقوم بإنشاء الملف تلقائياً إذا لم يكن موجوداً)
+// الاتصال بقاعدة البيانات
 const db = new Database(dbPath);
 
-// 3. تفعيل المفاتيح الأجنبية (ضروري جداً في SQLite لحماية العلاقات بين الجداول)
+// تفعيل المفاتيح الأجنبية (ضروري جداً لحماية العلاقات)
 db.pragma('foreign_keys = ON');
 
-// 4. دالة بناء الجداول (Schema)
+// دالة بناء الجداول (Schema) بالكامل
 function initializeDatabase() {
-    // نستخدم transaction لضمان تنفيذ كل الأوامر دفعة واحدة
     const init = db.transaction(() => {
         
-        // جدول المستخدمين
+        // 1. جدول المستخدمين
         db.exec(`
             CREATE TABLE IF NOT EXISTS users (
                 user_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -32,7 +29,7 @@ function initializeDatabase() {
             );
         `);
 
-        // جدول المخازن
+        // 2. جدول المخازن
         db.exec(`
             CREATE TABLE IF NOT EXISTS stores (
                 store_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -43,7 +40,7 @@ function initializeDatabase() {
             );
         `);
 
-        // جدول الأصناف
+        // 3. جدول الأصناف
         db.exec(`
             CREATE TABLE IF NOT EXISTS items (
                 item_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -55,18 +52,93 @@ function initializeDatabase() {
             );
         `);
 
-        // إدخال مستخدم افتراضي وصنف افتراضي (للتجربة فقط في أول تشغيل)
+        // 4. جدول الجهات (entities) - الموردين والموظفين والأقسام
+        db.exec(`
+            CREATE TABLE IF NOT EXISTS entities (
+                entity_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                entity_name TEXT NOT NULL,
+                entity_type TEXT CHECK(entity_type IN ('Supplier', 'Department', 'Employee')) NOT NULL,
+                phone TEXT,
+                is_deleted INTEGER DEFAULT 0
+            );
+        `);
+
+        // 5. جدول الحركات - رأس المستند (transactions)
+        db.exec(`
+            CREATE TABLE IF NOT EXISTS transactions (
+                transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                transaction_type TEXT CHECK(transaction_type IN ('In', 'Out', 'Opening_Balance')) NOT NULL,
+                transaction_date DATETIME NOT NULL,
+                receipt_number TEXT,
+                store_id INTEGER NOT NULL,
+                entity_id INTEGER, 
+                created_by INTEGER,
+                notes TEXT,
+                is_deleted INTEGER DEFAULT 0,
+                FOREIGN KEY (store_id) REFERENCES stores(store_id) ON DELETE RESTRICT,
+                FOREIGN KEY (entity_id) REFERENCES entities(entity_id) ON DELETE RESTRICT,
+                FOREIGN KEY (created_by) REFERENCES users(user_id) ON DELETE RESTRICT
+            );
+        `);
+
+        // 6. جدول تفاصيل الحركات - سطور المستند (transaction_details)
+        db.exec(`
+            CREATE TABLE IF NOT EXISTS transaction_details (
+                detail_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                transaction_id INTEGER NOT NULL,
+                item_id INTEGER NOT NULL,
+                quantity REAL NOT NULL,
+                unit_price REAL DEFAULT 0.00,
+                FOREIGN KEY (transaction_id) REFERENCES transactions(transaction_id) ON DELETE CASCADE,
+                FOREIGN KEY (item_id) REFERENCES items(item_id) ON DELETE RESTRICT
+            );
+        `);
+
+        // 7. العرض المتقدم (View) لحساب الرصيد اللحظي - بناءً على تصميمك
+        db.exec(`
+            CREATE VIEW IF NOT EXISTS view_current_stock AS
+            SELECT 
+                i.item_id,
+                i.item_name,
+                i.unit,
+                i.min_order_qty,
+                COALESCE(
+                    SUM(CASE WHEN t.transaction_type IN ('In', 'Opening_Balance') THEN td.quantity ELSE 0 END) 
+                    - 
+                    SUM(CASE WHEN t.transaction_type = 'Out' THEN td.quantity ELSE 0 END), 
+                0) AS current_quantity
+            FROM items i
+            LEFT JOIN transaction_details td ON i.item_id = td.item_id
+            LEFT JOIN transactions t ON td.transaction_id = t.transaction_id AND t.is_deleted = 0
+            WHERE i.is_deleted = 0
+            GROUP BY i.item_id, i.item_name, i.unit, i.min_order_qty;
+        `);
+
+        // ==========================================
+        // البيانات التجريبية (Seed Data) لتجربة النظام
+        // ==========================================
+        
+        // التحقق من وجود مستخدمين، إذا لم يوجد، نضيف البيانات التجريبية
         const checkUsers = db.prepare('SELECT COUNT(*) as count FROM users').get();
         if (checkUsers.count === 0) {
-            db.prepare(`INSERT INTO users (full_name, password_hash, role) VALUES (?, ?, ?)`).run('مدير النظام', 'admin123', 'Admin');
+            
+            
+            const checkUsers = db.prepare('SELECT COUNT(*) as count FROM users').get();
+            // إضافة مخزن
+            db.prepare(`INSERT INTO stores (store_id, store_name, location, manager_id) VALUES (1, 'المخزن الرئيسي', 'المبنى الإداري', 1)`).run();
+            
+            // إضافة مورد (ليظهر في شاشة التوريد)
+            db.prepare(`INSERT INTO entities (entity_id, entity_name, entity_type, phone) VALUES (1, 'شركة الأفق للحاسبات', 'Supplier', '0920000000')`).run();
+            
+            // إضافة صنف افتراضي
+            db.prepare(`INSERT INTO items (item_id, item_name, unit, category, min_order_qty) VALUES (1, 'لابتوب ديل', 'قطعة', 'أجهزة إلكترونية', 5)`).run();
         }
     });
 
-    init(); // تشغيل عملية البناء
+    init(); 
 }
 
-// تنفيذ البناء عند استدعاء الملف
+// تشغيل الدالة
 initializeDatabase();
 
-// تصدير كائن قاعدة البيانات لاستخدامه في main.js
 module.exports = db;

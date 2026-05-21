@@ -133,3 +133,87 @@ ipcMain.handle('generate-report', async (event) => {
     return { success: false, message: 'حدث خطأ أثناء إنشاء التقرير' };
   }
 });
+// ==========================================
+// دوال أذونات التوريد (Supply Receipts)
+// ==========================================
+
+// جلب قائمة الموردين
+ipcMain.handle('get-suppliers', async () => {
+  try {
+    return db.prepare("SELECT * FROM entities WHERE entity_type = 'Supplier' AND is_deleted = 0").all();
+  } catch (error) {
+    console.error('خطأ في جلب الموردين:', error);
+    return [];
+  }
+});
+
+// جلب قائمة المخازن
+ipcMain.handle('get-stores', async () => {
+  try {
+    return db.prepare("SELECT * FROM stores").all();
+  } catch (error) {
+    console.error('خطأ في جلب المخازن:', error);
+    return [];
+  }
+});
+// ==========================================
+// التحقق من تسجيل الدخول
+// ==========================================
+ipcMain.handle('login', async (event, credentials) => {
+  try {
+    // نبحث عن المستخدم المطابق لاسم المستخدم وكلمة المرور، ويجب أن يكون حسابه نشطاً (is_active = 1)
+    const stmt = db.prepare('SELECT user_id, full_name, role FROM users WHERE full_name = ? AND password_hash = ? AND is_active = 1');
+    const user = stmt.get(credentials.username, credentials.password);
+
+    if (user) {
+      return { success: true, user: user };
+    } else {
+      return { success: false, message: 'اسم المستخدم أو كلمة المرور غير صحيحة' };
+    }
+  } catch (error) {
+    console.error('خطأ في تسجيل الدخول:', error);
+    return { success: false, message: 'حدث خطأ في قاعدة البيانات' };
+  }
+});
+// حفظ إذن التوريد بالكامل (رأس المستند وسهوره)
+ipcMain.handle('save-supply-receipt', async (event, receiptData) => {
+  // نستخدم transaction() الخاصة بـ better-sqlite3 لضمان حفظ كل البيانات أو التراجع عنها في حال حدوث خطأ
+  const insertReceipt = db.transaction((data) => {
+    // 1. حفظ رأس الإذن (Transaction Master)
+    const stmtMaster = db.prepare(`
+      INSERT INTO transactions (transaction_type, transaction_date, receipt_number, store_id, entity_id, created_by, notes) 
+      VALUES ('In', ?, ?, ?, ?, ?, ?)
+    `);
+    
+    // ملاحظة: وضعنا 1 كرقم افتراضي للمستخدم (created_by) حتى يتم برمجة نظام تسجيل الدخول لاحقاً
+    const info = stmtMaster.run(
+      data.date, 
+      data.receiptNumber, 
+      data.storeId, 
+      data.supplierId, 
+      1, 
+      data.notes
+    );
+    const newTransactionId = info.lastInsertRowid;
+
+    // 2. حفظ سطور الإذن (Transaction Details)
+    const stmtDetails = db.prepare(`
+      INSERT INTO transaction_details (transaction_id, item_id, quantity, unit_price) 
+      VALUES (?, ?, ?, ?)
+    `);
+
+    for (const item of data.items) {
+      stmtDetails.run(newTransactionId, item.itemId, item.quantity, item.price);
+    }
+
+    return newTransactionId;
+  });
+
+  try {
+    const newId = insertReceipt(receiptData);
+    return { success: true, message: 'تم حفظ إذن التوريد بنجاح', transaction_id: newId };
+  } catch (error) {
+    console.error('خطأ في حفظ الإذن:', error);
+    return { success: false, message: 'حدث خطأ أثناء الحفظ: ' + error.message };
+  }
+});

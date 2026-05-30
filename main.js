@@ -217,3 +217,132 @@ ipcMain.handle('save-supply-receipt', async (event, receiptData) => {
     return { success: false, message: 'حدث خطأ أثناء الحفظ: ' + error.message };
   }
 });
+// ==========================================
+// دوال أذونات الصرف (Dispense Receipts)
+// ==========================================
+
+// جلب الجهات الطالبة (الأقسام والموظفين فقط)
+ipcMain.handle('get-requesters', async () => {
+  try {
+    return db.prepare("SELECT * FROM entities WHERE entity_type IN ('Department', 'Employee') AND is_deleted = 0").all();
+  } catch (error) {
+    console.error('خطأ في جلب الجهات الطالبة:', error);
+    return [];
+  }
+});
+
+// جلب الأصناف مع رصيدها اللحظي من العرض (View)
+ipcMain.handle('get-stock', async () => {
+  try {
+    // نجلب فقط الأصناف التي رصيدها أكبر من 0
+    return db.prepare("SELECT * FROM view_current_stock WHERE current_quantity > 0").all();
+  } catch (error) {
+    console.error('خطأ في جلب الأرصدة:', error);
+    return [];
+  }
+});
+
+// حفظ إذن الصرف
+ipcMain.handle('save-dispense-receipt', async (event, receiptData) => {
+  const insertReceipt = db.transaction((data) => {
+    // 1. حفظ رأس الإذن (نوع الحركة: Out)
+    const stmtMaster = db.prepare(`
+      INSERT INTO transactions (transaction_type, transaction_date, receipt_number, store_id, entity_id, created_by, notes) 
+      VALUES ('Out', ?, ?, ?, ?, ?, ?)
+    `);
+    
+    // نستخدم ID المستخدم 1 مؤقتاً (يمكنك لاحقاً جلبه من الجلسة session)
+    const info = stmtMaster.run(
+      data.date, 
+      data.receiptNumber, 
+      data.storeId, 
+      data.requesterId, 
+      1, 
+      data.notes
+    );
+    const newTransactionId = info.lastInsertRowid;
+
+    // 2. حفظ سطور الإذن
+    const stmtDetails = db.prepare(`
+      INSERT INTO transaction_details (transaction_id, item_id, quantity, unit_price) 
+      VALUES (?, ?, ?, 0) -- السعر 0 لأن هذا إذن صرف وليس فاتورة شراء
+    `);
+
+    for (const item of data.items) {
+      stmtDetails.run(newTransactionId, item.itemId, item.quantity);
+    }
+
+    return newTransactionId;
+  });
+
+  try {
+    const newId = insertReceipt(receiptData);
+    return { success: true, message: 'تم حفظ إذن الصرف بنجاح' };
+  } catch (error) {
+    console.error('خطأ في حفظ الإذن:', error);
+    return { success: false, message: 'حدث خطأ أثناء الحفظ: ' + error.message };
+  }
+});
+// ==========================================
+// دوال إدارة الجهات والموردين (Entities)
+// ==========================================
+
+// 1. جلب كل الجهات (التي لم تحذف)
+ipcMain.handle('get-all-entities', async () => {
+  try {
+    return db.prepare('SELECT * FROM entities WHERE is_deleted = 0 ORDER BY entity_id DESC').all();
+  } catch (error) {
+    console.error('خطأ في جلب الجهات:', error);
+    return [];
+  }
+});
+
+// 2. إضافة جهة جديدة
+ipcMain.handle('add-entity', async (event, newEntity) => {
+  try {
+    const stmt = db.prepare(`
+      INSERT INTO entities (entity_name, entity_type, phone) 
+      VALUES (?, ?, ?)
+    `);
+    
+    const info = stmt.run(newEntity.name, newEntity.type, newEntity.phone);
+    return { success: true, message: 'تمت إضافة الجهة بنجاح', id: info.lastInsertRowid };
+  } catch (error) {
+    console.error('خطأ في إضافة الجهة:', error);
+    return { success: false, message: 'حدث خطأ في قاعدة البيانات' };
+  }
+});
+
+// 3. حذف جهة (حذف منطقي)
+ipcMain.handle('delete-entity', async (event, entityId) => {
+  try {
+    const stmt = db.prepare('UPDATE entities SET is_deleted = 1 WHERE entity_id = ?');
+    stmt.run(entityId);
+    return { success: true, message: 'تم حذف الجهة بنجاح' };
+  } catch (error) {
+    console.error('خطأ في الحذف:', error);
+    return { success: false, message: 'لا يمكن حذف هذه الجهة' };
+  }
+});
+// ==========================================
+// دوال التقارير والإحصائيات (Reports)
+// ==========================================
+
+// جلب سجل الحركات (أذونات التوريد والصرف)
+ipcMain.handle('get-transactions-history', async () => {
+  try {
+    const query = `
+      SELECT t.transaction_id, t.transaction_type, t.transaction_date, t.receipt_number, 
+             e.entity_name, s.store_name
+      FROM transactions t
+      LEFT JOIN entities e ON t.entity_id = e.entity_id
+      LEFT JOIN stores s ON t.store_id = s.store_id
+      WHERE t.is_deleted = 0
+      ORDER BY t.transaction_date DESC
+    `;
+    return db.prepare(query).all();
+  } catch (error) {
+    console.error('خطأ في جلب سجل الأذونات:', error);
+    return [];
+  }
+});

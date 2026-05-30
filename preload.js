@@ -12,5 +12,15 @@ contextBridge.exposeInMainWorld('api', {
     // دوال أذونات التوريدltr
     getSuppliers: () => ipcRenderer.invoke('get-suppliers'),
     getStores: () => ipcRenderer.invoke('get-stores'),
-    saveSupplyReceipt: (receiptData) => ipcRenderer.invoke('save-supply-receipt', receiptData)
+    saveSupplyReceipt: (receiptData) => ipcRenderer.invoke('save-supply-receipt', receiptData),
+    // دوال أذونات الصرف 
+    getRequesters: () => ipcRenderer.invoke('get-requesters'),
+    getStock: () => ipcRenderer.invoke('get-stock'),
+    saveDispenseReceipt: (receiptData) => ipcRenderer.invoke('save-dispense-receipt', receiptData),
+    // دوال إدارة الجهات والموردين
+    getAllEntities: () => ipcRenderer.invoke('get-all-entities'),
+    addEntity: (entityData) => ipcRenderer.invoke('add-entity', entityData),
+    deleteEntity: (entityId) => ipcRenderer.invoke('delete-entity', entityId),
+    //
+    getTransactionsHistory: () => ipcRenderer.invoke('get-transactions-history')
 });

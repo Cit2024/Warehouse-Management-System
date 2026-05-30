@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة الجهات - منظومة إدارة المخازن</title>
+    <style>
+        /* التنسيقات الأساسية الموحدة */
+        :root { --primary: #FF6B00; --primary-hover: #E55A00; --bg-dark: #1a1a2e; --bg-card: rgba(255, 255, 255, 0.95); --text-dark: #333; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, sans-serif; }
+        body { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); min-height: 100vh; display: flex; color: var(--text-dark); }
+        @media print {
+            .sidebar, .toolbar, .btn, td:last-child, th:last-child { display: none !important; }
+            body { background: white; color: black; }
+            .content { padding: 0; }
+            .table-container { box-shadow: none; }
+        }
+        .sidebar { width: 250px; background: rgba(26, 26, 46, 0.9); padding: 20px; color: white; border-left: 1px solid rgba(255, 107, 0, 0.2); }
+        .logo { text-align: center; padding-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; color: var(--primary); font-weight: bold; font-size: 20px; }
+        .menu-item { display: block; text-decoration: none; color: white; padding: 12px 15px; margin-bottom: 10px; background: rgba(255, 255, 255, 0.05); border-radius: 8px; cursor: pointer; transition: 0.3s; }
+        .menu-item:hover, .menu-item.active { background: var(--primary); color: white; }
+        
+        .content { flex: 1; padding: 30px; overflow-y: auto; }
+        .header { margin-bottom: 30px; color: white; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center;}
+        
+        .toolbar { background: var(--bg-card); padding: 15px 20px; border-radius: 12px; display: flex; gap: 15px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .btn { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; display: flex; align-items: center; gap: 8px; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-hover); }
+        .btn-danger { background: #dc3545; color: white; padding: 6px 12px; font-size: 12px; }
+        
+        .table-container { background: var(--bg-card); border-radius: 12px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 15px; text-align: right; border-bottom: 1px solid #eee; }
+        th { background: #f8f9fa; color: #555; font-weight: 600; }
+        tr:hover { background: #fff5f0; }
+
+        /* الشارات الملونة للأنواع */
+        .badge { padding: 5px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; color: white;}
+        .badge-supplier { background: #17a2b8; }
+        .badge-dept { background: #6f42c1; }
+        .badge-emp { background: #28a745; }
+
+        /* Modal */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; z-index: 1000; }
+        .modal-content { background: white; padding: 30px; border-radius: 15px; width: 400px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; }
+        .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+    </style>
+</head>
+<body>
+
+    <!-- القائمة الجانبية الموحدة -->
+    <div class="sidebar">
+        <div class="logo">📦 منظومة المخازن</div>
+        <a href="dashboard.html" class="menu-item">📋 إدارة الأصناف</a>
+        <a href="supply.html" class="menu-item">📥 أذونات التوريد</a>
+        <a href="dispense.html" class="menu-item">📤 أذونات الصرف</a>
+        <a href="entities.html" class="menu-item active">👥 الجهات والموردين</a>
+        <a href="./report.html" class="menu-item">📊 التقارير والإحصائيات</a>
+        <a href="index.html" class="menu-item" style="margin-top: 50px; background: rgba(220, 53, 69, 0.2); color: #ff6b6b;">🚪 تسجيل الخروج</a>
+    </div>
+
+    <!-- المحتوى الرئيسي -->
+    <div class="content">
+        <div class="header">
+            <h2>إدارة الجهات والموردين</h2>
+        </div>
+
+        <div class="toolbar">
+            <button class="btn btn-primary" onclick="openModal()">
+                ➕ إضافة جهة جديدة
+            </button>
+            <div style="display: flex; gap: 10px; margin-right: auto;">
+                <button class="btn" style="background: #28a745; color: white;" onclick="handleDirectPrint()">
+                    🖨️ طباعة القائمة
+                </button>
+                <button class="btn btn-danger" onclick="handlePdfExport()">
+                    📄 حفظ كـ PDF
+                </button>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>رقم الجهة</th>
+                        <th>اسم الجهة</th>
+                        <th>التصنيف</th>
+                        <th>رقم الهاتف</th>
+                        <th>إجراءات</th>
+                    </tr>
+                </thead>
+                <tbody id="entitiesTableBody">
+                    <!-- البيانات هنا -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- نافذة إضافة جهة (Modal) -->
+    <div class="modal" id="addModal">
+        <div class="modal-content">
+            <h3 style="margin-bottom: 20px; color: var(--primary);">إضافة جهة جديدة</h3>
+            <form id="addEntityForm">
+                <div class="form-group">
+                    <label>اسم الجهة (الشركة / القسم / الموظف)</label>
+                    <input type="text" id="entityName" required>
+                </div>
+                <div class="form-group">
+                    <label>نوع الجهة</label>
+                    <select id="entityType" required>
+                        <option value="Supplier">مورد (شركة/تاجر)</option>
+                        <option value="Department">قسم (داخل الكلية)</option>
+                        <option value="Employee">موظف / عضو هيئة تدريس</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>رقم الهاتف (اختياري)</label>
+                    <input type="text" id="entityPhone" placeholder="09X-XXXXXXX">
+                </div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn btn-primary" style="flex: 1;">حفظ</button>
+                    <button type="button" class="btn" style="flex: 1; background: #ccc;" onclick="closeModal()">إلغاء</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // تحميل الجهات للجدول
+        async function loadEntities() {
+            const tbody = document.getElementById('entitiesTableBody');
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">جاري التحميل...</td></tr>';
+
+            try {
+                const entities = await window.api.getAllEntities();
+                tbody.innerHTML = '';
+                
+                if(entities.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">لا توجد جهات مسجلة بعد</td></tr>';
+                    return;
+                }
+
+                entities.forEach(ent => {
+                    // ترجمة نوع الجهة وإعطاؤها لون مخصص
+                    let typeAr = '';
+                    let badgeClass = '';
+                    if(ent.entity_type === 'Supplier') { typeAr = 'مورد'; badgeClass = 'badge-supplier'; }
+                    else if(ent.entity_type === 'Department') { typeAr = 'قسم'; badgeClass = 'badge-dept'; }
+                    else { typeAr = 'موظف'; badgeClass = 'badge-emp'; }
+
+                    const phone = ent.phone ? ent.phone : '<span style="color:#aaa;">لا يوجد</span>';
+
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${ent.entity_id}</td>
+                            <td><strong>${ent.entity_name}</strong></td>
+                            <td><span class="badge ${badgeClass}">${typeAr}</span></td>
+                            <td dir="ltr" style="text-align:right;">${phone}</td>
+                            <td>
+                                <button class="btn btn-danger" onclick="deleteEntity(${ent.entity_id})">🗑️ حذف</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            } catch (error) {
+                console.error(error);
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:red;">حدث خطأ في الجلب</td></tr>';
+            }
+        }
+
+        // إضافة جهة جديدة
+        document.getElementById('addEntityForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const newEntity = {
+                name: document.getElementById('entityName').value.trim(),
+                type: document.getElementById('entityType').value,
+                phone: document.getElementById('entityPhone').value.trim()
+            };
+
+            const result = await window.api.addEntity(newEntity);
+            if(result.success) {
+                closeModal();
+                loadEntities(); // إعادة تحديث الجدول
+            } else {
+                alert('❌ ' + result.message);
+            }
+        });
+
+        // حذف جهة
+        async function deleteEntity(id) {
+            if(confirm('هل أنت متأكد من حذف هذه الجهة؟\n(لن تظهر الجهة المحذوفة في فواتير الصرف والتوريد الجديدة)')) {
+                const result = await window.api.deleteEntity(id);
+                if(result.success) {
+                    loadEntities();
+                } else {
+                    alert('❌ ' + result.message);
+                }
+            }
+        }
+
+        function openModal() {
+            document.getElementById('addModal').style.display = 'flex';
+            document.getElementById('addEntityForm').reset();
+        }
+
+        function closeModal() {
+            document.getElementById('addModal').style.display = 'none';
+        }
+        async function handleDirectPrint() {
+            const result = await window.api.printDirect();
+            if (!result.success) {
+                showToast(result.message, 'error');
+            } else {
+                showToast('تم إرسال أمر الطباعة بنجاح', 'success');
+            }
+        }
+        async function handlePdfExport() {
+            const result = await window.api.generateReport();
+            if (result.success) alert('✅ ' + result.message);
+        }
+        // استدعاء الدالة عند تحميل الصفحة
+        window.addEventListener('DOMContentLoaded', loadEntities);
+    </script>
+</body>
+</html>

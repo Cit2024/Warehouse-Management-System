@@ -120,10 +120,13 @@ function initializeDatabase() {
         
         // التحقق من وجود مستخدمين، إذا لم يوجد، نضيف البيانات التجريبية
         const checkUsers = db.prepare('SELECT COUNT(*) as count FROM users').get();
+        // إضافة قسم كجهة طالبة لتجربة شاشة الصرف
+        db.prepare(`INSERT OR IGNORE INTO entities (entity_id, entity_name, entity_type) VALUES (2, 'قسم تقنية المعلومات', 'Department')`).run();
         if (checkUsers.count === 0) {
-            
-            
             const checkUsers = db.prepare('SELECT COUNT(*) as count FROM users').get();
+            db.prepare(`INSERT INTO users (user_id, full_name, password_hash, role) VALUES (0, 'admin', 'admin', 'Admin')`).run();
+            // إضافة قسم كجهة طالبة لتجربة شاشة الصرف
+            db.prepare(`INSERT OR IGNORE INTO entities (entity_id, entity_name, entity_type) VALUES (2, 'قسم تقنية المعلومات', 'Department')`).run();
             // إضافة مخزن
             db.prepare(`INSERT INTO stores (store_id, store_name, location, manager_id) VALUES (1, 'المخزن الرئيسي', 'المبنى الإداري', 1)`).run();
             

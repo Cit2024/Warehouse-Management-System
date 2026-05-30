@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>التقارير - منظومة إدارة المخازن</title>
+    <style>
+        :root { --primary: #FF6B00; --primary-hover: #E55A00; --bg-dark: #1a1a2e; --bg-card: rgba(255, 255, 255, 0.95); --text-dark: #333; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, sans-serif; }
+        
+        body { 
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); 
+            min-height: 100vh; 
+            display: flex; 
+            color: var(--text-dark);
+            direction: rtl; /* ضمان الاتجاه العربي والقائمة على اليمين */
+        }
+        
+        .sidebar { width: 250px; background: rgba(26, 26, 46, 0.9); padding: 20px; color: white; border-left: 1px solid rgba(255, 107, 0, 0.2); }
+        .logo { text-align: center; padding-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; color: var(--primary); font-weight: bold; font-size: 20px; }
+        .menu-item { display: block; text-decoration: none; color: white; padding: 12px 15px; margin-bottom: 10px; background: rgba(255, 255, 255, 0.05); border-radius: 8px; cursor: pointer; transition: 0.3s; }
+        .menu-item:hover, .menu-item.active { background: var(--primary); color: white; }
+        
+        .content { flex: 1; padding: 30px; overflow-y: auto; }
+        .header { margin-bottom: 20px; color: white; display: flex; justify-content: space-between; align-items: center; }
+        
+        /* تصميم التبويبات (Tabs) */
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
+        .tab-btn { padding: 12px 25px; border: none; background: rgba(255,255,255,0.1); color: white; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.3s; }
+        .tab-btn.active { background: var(--bg-card); color: var(--primary); }
+        
+        /* لوحة التحكم العلوية (الأزرار) */
+        .toolbar { background: var(--bg-card); padding: 15px 20px; border-radius: 12px; display: flex; gap: 15px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); justify-content: flex-end; }
+        .btn { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 8px; }
+        
+        /* الجداول */
+        .table-container { background: var(--bg-card); border-radius: 12px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: none; }
+        .table-container.active { display: block; } /* يظهر التبويب النشط فقط */
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 15px; text-align: right; border-bottom: 1px solid #eee; }
+        th { background: #f8f9fa; color: #555; font-weight: 600; }
+        
+        /* شارات حالة المستند */
+        .badge { padding: 5px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; color: white;}
+        .badge-in { background: #28a745; } /* توريد */
+        .badge-out { background: #dc3545; } /* صرف */
+        .badge-warning { background: #ffc107; color: #000; } /* تحذير للرصيد */
+
+        /* تنسيقات الطباعة */
+        @media print {
+            .sidebar, .toolbar, .tabs { display: none !important; }
+            body { background: white; color: black; }
+            .content { padding: 0; }
+            .table-container { box-shadow: none; display: none; }
+            .table-container.active { display: block !important; } /* طباعة الجدول النشط فقط */
+            
+            .print-header { display: block !important; text-align: center; margin-bottom: 30px; border-bottom: 2px solid #000; padding-bottom: 10px; }
+        }
+        .print-header { display: none; }
+    </style>
+</head>
+<body>
+
+    <!-- القائمة الجانبية -->
+    <div class="sidebar">
+        <div class="logo">📦 منظومة المخازن</div>
+        <a href="dashboard.html" class="menu-item">📋 إدارة الأصناف</a>
+        <a href="supply.html" class="menu-item">📥 أذونات التوريد</a>
+        <a href="dispense.html" class="menu-item">📤 أذونات الصرف</a>
+        <a href="entities.html" class="menu-item">👥 الجهات والموردين</a>
+        <a href="reports.html" class="menu-item active">📊 التقارير والإحصائيات</a>
+        <a href="index.html" class="menu-item" style="margin-top: 50px; background: rgba(220, 53, 69, 0.2); color: #ff6b6b;">🚪 تسجيل الخروج</a>
+    </div>
+
+    <!-- المحتوى الرئيسي -->
+    <div class="content">
+        <div class="header">
+            <h2>التقارير والإحصائيات</h2>
+        </div>
+
+        <!-- أزرار التبويبات -->
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('inventoryTab', this)">📦 تقرير جرد المخزون</button>
+            <button class="tab-btn" onclick="switchTab('historyTab', this)">📝 سجل حركة الأذونات</button>
+        </div>
+
+        <!-- أزرار الطباعة للتبويب النشط -->
+        <div class="toolbar">
+            <button class="btn" style="background: #FF6B00; color: white;" onclick="handleDirectPrint()">🖨️ طباعة التقرير الحالي</button>
+            <button class="btn" style="background: #dc3545; color: white;" onclick="handlePdfExport()">📄 حفظ التقرير كـ PDF</button>
+        </div>
+
+        <!-- ترويسة الطباعة -->
+        <div class="print-header">
+            <h1>كلية التقنية الصناعية - مصراتة</h1>
+            <h2 id="printTitle">تقرير جرد المخزون</h2>
+        </div>
+
+        <!-- التبويب الأول: جرد المخزون -->
+        <div id="inventoryTab" class="table-container active">
+            <table>
+                <thead>
+                    <tr>
+                        <th>رقم الصنف</th>
+                        <th>اسم الصنف</th>
+                        <th>الوحدة</th>
+                        <th>الرصيد الفعلي</th>
+                        <th>حالة الرصيد</th>
+                    </tr>
+                </thead>
+                <tbody id="inventoryTableBody">
+                    <tr><td colspan="5" style="text-align:center;">جاري التحميل...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- التبويب الثاني: سجل الأذونات -->
+        <div id="historyTab" class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>رقم الحركة</th>
+                        <th>نوع الإذن</th>
+                        <th>التاريخ</th>
+                        <th>رقم الإذن الورقي</th>
+                        <th>الجهة / المورد</th>
+                        <th>المخزن</th>
+                    </tr>
+                </thead>
+                <tbody id="historyTableBody">
+                    <tr><td colspan="6" style="text-align:center;">جاري التحميل...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // دالة التبديل بين التبويبات
+        function switchTab(tabId, btnElement) {
+            // إخفاء كل التبويبات وإزالة اللون من الأزرار
+            document.querySelectorAll('.table-container').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            
+            // إظهار التبويب المطلوب وتلوين زره
+            document.getElementById(tabId).classList.add('active');
+            btnElement.classList.add('active');
+
+            // تغيير عنوان الطباعة بناءً على التبويب
+            const title = tabId === 'inventoryTab' ? 'تقرير جرد المخزون' : 'سجل حركة الأذونات';
+            document.getElementById('printTitle').innerText = title;
+        }
+
+        // 1. تحميل جرد المخزون
+        async function loadInventory() {
+            const tbody = document.getElementById('inventoryTableBody');
+            try {
+                // نستخدم دالة getStock التي تجلب الأصناف ورصيدها
+                const items = await window.api.getStock();
+                tbody.innerHTML = '';
+                
+                if(items.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">المخزن فارغ حالياً</td></tr>';
+                    return;
+                }
+
+                items.forEach(item => {
+                    // التحقق من حالة الرصيد مقارنة بنقطة إعادة الطلب
+                    let statusHtml = '<span style="color:#28a745; font-weight:bold;">متوفر</span>';
+                    if (item.current_quantity <= item.min_order_qty) {
+                        statusHtml = '<span class="badge badge-warning">تحذير: قارب على النفاد</span>';
+                    }
+
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${item.item_id}</td>
+                            <td><strong>${item.item_name}</strong></td>
+                            <td>${item.unit}</td>
+                            <td style="font-size: 16px; font-weight: bold;">${item.current_quantity}</td>
+                            <td>${statusHtml}</td>
+                        </tr>
+                    `;
+                });
+            } catch (error) {
+                console.error(error);
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:red;">خطأ في الجلب</td></tr>';
+            }
+        }
+
+        // 2. تحميل سجل الحركات
+        async function loadHistory() {
+            const tbody = document.getElementById('historyTableBody');
+            try {
+                const transactions = await window.api.getTransactionsHistory();
+                tbody.innerHTML = '';
+                
+                if(transactions.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">لا توجد حركات سابقة مسجلة</td></tr>';
+                    return;
+                }
+
+                transactions.forEach(t => {
+                    // تنسيق نوع الإذن
+                    const isSupply = t.transaction_type === 'In';
+                    const typeHtml = isSupply 
+                        ? '<span class="badge badge-in">📥 توريد (دخول)</span>' 
+                        : '<span class="badge badge-out">📤 صرف (خروج)</span>';
+                    
+                    // تنسيق التاريخ (اقتطاع الوقت الزائد إن وجد)
+                    const dateObj = new Date(t.transaction_date);
+                    const dateFormatted = dateObj.toLocaleDateString('ar-LY');
+
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${t.transaction_id}</td>
+                            <td>${typeHtml}</td>
+                            <td dir="ltr" style="text-align:right;">${dateFormatted}</td>
+                            <td>${t.receipt_number || '-'}</td>
+                            <td><strong>${t.entity_name || 'غير محدد'}</strong></td>
+                            <td>${t.store_name}</td>
+                        </tr>
+                    `;
+                });
+            } catch (error) {
+                console.error(error);
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:red;">خطأ في الجلب</td></tr>';
+            }
+        }
+
+        // دوال الطباعة
+        async function handleDirectPrint() { await window.api.printDirect(); }
+        async function handlePdfExport() {
+            const result = await window.api.exportPdf();
+            if (result.success) alert('✅ ' + result.message);
+        }
+
+        // تحميل البيانات عند فتح الصفحة
+        window.addEventListener('DOMContentLoaded', () => {
+            loadInventory();
+            loadHistory();
+        });
+    </script>
+</body>
+</html>

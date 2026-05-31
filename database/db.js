@@ -4,7 +4,7 @@ const fs = require('fs');
 const { app } = require('electron');
 
 // تحديد مسار حفظ ملف قاعدة البيانات (في مجلد AppData)
-const dataPath = app.getPath('userData'); 
+const dataPath = app.getPath('userData');
 const dbPath = path.join(dataPath, 'warehouse_system.sqlite');
 
 // الاتصال بقاعدة البيانات
@@ -16,7 +16,7 @@ db.pragma('foreign_keys = ON');
 // دالة بناء الجداول (Schema) بالكامل
 function initializeDatabase() {
     const init = db.transaction(() => {
-        
+
         // 1. جدول المستخدمين
         db.exec(`
             CREATE TABLE IF NOT EXISTS users (
@@ -117,7 +117,7 @@ function initializeDatabase() {
         // ==========================================
         // البيانات التجريبية (Seed Data) لتجربة النظام
         // ==========================================
-        
+
         // التحقق من وجود مستخدمين، إذا لم يوجد، نضيف البيانات التجريبية
         const checkUsers = db.prepare('SELECT COUNT(*) as count FROM users').get();
         if (checkUsers.count === 0) {
@@ -126,7 +126,7 @@ function initializeDatabase() {
                 INSERT INTO users (full_name, password_hash, role) 
                 VALUES ('admin', 'admin', 'Admin')
             `).run();
-            
+
             // الحصول على الـ user_id الفعلي الذي أُنشئ تلقائياً
             const adminUser = db.prepare('SELECT user_id FROM users WHERE full_name = ?').get('admin');
 
@@ -135,7 +135,7 @@ function initializeDatabase() {
                 INSERT INTO entities (entity_name, entity_type, phone) 
                 VALUES ('شركة الأفق للحاسبات', 'Supplier', '0920000000')
             `).run();
-            
+
             db.prepare(`
                 INSERT INTO entities (entity_name, entity_type) 
                 VALUES ('قسم تقنية المعلومات', 'Department')
@@ -146,7 +146,7 @@ function initializeDatabase() {
                 INSERT INTO stores (store_name, location, manager_id) 
                 VALUES ('المخزن الرئيسي', 'المبنى الإداري', ?)
             `).run(adminUser.user_id);
-            
+
             // 4. الأصناف (مستقلة)
             db.prepare(`
                 INSERT INTO items (item_name, unit, category, min_order_qty) 
@@ -155,7 +155,7 @@ function initializeDatabase() {
         }
     });
 
-    init(); 
+    init();
 }
 
 // تشغيل الدالة

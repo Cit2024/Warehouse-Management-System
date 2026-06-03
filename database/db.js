@@ -4,7 +4,7 @@ const fs = require('fs');
 const { app } = require('electron');
 
 // تحديد مسار حفظ ملف قاعدة البيانات (في مجلد AppData)
-const dataPath = app.getPath('userData'); 
+const dataPath = app.getPath('userData');
 const dbPath = path.join(dataPath, 'warehouse_system.sqlite');
 
 // الاتصال بقاعدة البيانات
@@ -16,7 +16,7 @@ db.pragma('foreign_keys = ON');
 // دالة بناء الجداول (Schema) بالكامل
 function initializeDatabase() {
     const init = db.transaction(() => {
-        
+
         // 1. جدول المستخدمين
         db.exec(`
             CREATE TABLE IF NOT EXISTS users (
@@ -117,28 +117,45 @@ function initializeDatabase() {
         // ==========================================
         // البيانات التجريبية (Seed Data) لتجربة النظام
         // ==========================================
-        
+
         // التحقق من وجود مستخدمين، إذا لم يوجد، نضيف البيانات التجريبية
         const checkUsers = db.prepare('SELECT COUNT(*) as count FROM users').get();
-        // إضافة قسم كجهة طالبة لتجربة شاشة الصرف
-        db.prepare(`INSERT OR IGNORE INTO entities (entity_id, entity_name, entity_type) VALUES (2, 'قسم تقنية المعلومات', 'Department')`).run();
         if (checkUsers.count === 0) {
-            const checkUsers = db.prepare('SELECT COUNT(*) as count FROM users').get();
-            db.prepare(`INSERT INTO users (user_id, full_name, password_hash, role) VALUES (0, 'admin', 'admin', 'Admin')`).run();
-            // إضافة قسم كجهة طالبة لتجربة شاشة الصرف
-            db.prepare(`INSERT OR IGNORE INTO entities (entity_id, entity_name, entity_type) VALUES (2, 'قسم تقنية المعلومات', 'Department')`).run();
-            // إضافة مخزن
-            db.prepare(`INSERT INTO stores (store_id, store_name, location, manager_id) VALUES (1, 'المخزن الرئيسي', 'المبنى الإداري', 1)`).run();
-            
-            // إضافة مورد (ليظهر في شاشة التوريد)
-            db.prepare(`INSERT INTO entities (entity_id, entity_name, entity_type, phone) VALUES (1, 'شركة الأفق للحاسبات', 'Supplier', '0920000000')`).run();
-            
-            // إضافة صنف افتراضي
-            db.prepare(`INSERT INTO items (item_id, item_name, unit, category, min_order_qty) VALUES (1, 'لابتوب ديل', 'قطعة', 'أجهزة إلكترونية', 5)`).run();
+            // 1. المستخدمين أولاً (لا يعتمدون على أي جدول آخر)
+            db.prepare(`
+                INSERT INTO users (full_name, password_hash, role) 
+                VALUES ('admin', 'admin', 'Admin')
+            `).run();
+
+            // الحصول على الـ user_id الفعلي الذي أُنشئ تلقائياً
+            const adminUser = db.prepare('SELECT user_id FROM users WHERE full_name = ?').get('admin');
+
+            // 2. الجهات (لا تعتمد على جداول أخرى)
+            db.prepare(`
+                INSERT INTO entities (entity_name, entity_type, phone) 
+                VALUES ('شركة الأفق للحاسبات', 'Supplier', '0920000000')
+            `).run();
+
+            db.prepare(`
+                INSERT INTO entities (entity_name, entity_type) 
+                VALUES ('قسم تقنية المعلومات', 'Department')
+            `).run();
+
+            // 3. المخازن (تعتمد على users — لذا تأتي بعد إنشاء المستخدم)
+            db.prepare(`
+                INSERT INTO stores (store_name, location, manager_id) 
+                VALUES ('المخزن الرئيسي', 'المبنى الإداري', ?)
+            `).run(adminUser.user_id);
+
+            // 4. الأصناف (مستقلة)
+            db.prepare(`
+                INSERT INTO items (item_name, unit, category, min_order_qty) 
+                VALUES ('لابتوب ديل', 'قطعة', 'أجهزة إلكترونية', 5)
+            `).run();
         }
     });
 
-    init(); 
+    init();
 }
 
 // تشغيل الدالة

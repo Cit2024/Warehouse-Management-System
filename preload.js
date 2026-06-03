@@ -22,5 +22,7 @@ contextBridge.exposeInMainWorld('api', {
     addEntity: (entityData) => ipcRenderer.invoke('add-entity', entityData),
     deleteEntity: (entityId) => ipcRenderer.invoke('delete-entity', entityId),
     //
-    getTransactionsHistory: () => ipcRenderer.invoke('get-transactions-history')
+    getTransactionsHistory: () => ipcRenderer.invoke('get-transactions-history'),
+    // دالة النسخ الاحتياطي
+    backupDatabase: () => ipcRenderer.invoke('backup-database')
 });

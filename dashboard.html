@@ -798,6 +798,9 @@
 				  <span class="menu-icon">📊</span>
 				  التقارير والإحصائيات
 			 </a>
+        <a href="#" class="menu-item" style="background: rgba(40, 167, 69, 0.2); color: #28a745;" onclick="handleBackup(event)">
+            💾 نسخة احتياطية
+        </a>
 		</nav>
         <button class="logout-btn" onclick="handleLogout()">
             <span>🚪</span>
@@ -1235,6 +1238,31 @@
                 console.error('خطأ في قراءة الجلسة:', e);
             }
         });
+        // دالة التعامل مع النسخ الاحتياطي
+        async function handleBackup(event) {
+            event.preventDefault(); // لمنع انتقال الرابط
+            const btn = event.currentTarget;
+            const originalText = btn.innerHTML;
+            
+            // تغيير النص لإظهار حالة التحميل
+            btn.innerHTML = '⏳ جاري الحفظ...';
+            btn.style.pointerEvents = 'none'; // منع النقر المزدوج
+            
+            try {
+                const result = await window.api.backupDatabase();
+                if (result.success) {
+                    alert('✅ ' + result.message);
+                } else if (result.message !== 'تم إلغاء عملية الحفظ.') {
+                    alert('❌ ' + result.message);
+                }
+            } catch (error) {
+                alert('❌ حدث خطأ غير متوقع أثناء النسخ الاحتياطي.');
+            } finally {
+                // إعادة الزر لشكله الطبيعي
+                btn.innerHTML = originalText;
+                btn.style.pointerEvents = 'auto';
+            }
+        }
 
         // تحديث تلقائي للبيانات كل 5 دقائق
         setInterval(loadItems, 300000);

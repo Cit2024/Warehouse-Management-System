@@ -346,3 +346,35 @@ ipcMain.handle('get-transactions-history', async () => {
     return [];
   }
 });
+// ==========================================
+// دوال النسخ الاحتياطي (Backup)
+// ==========================================
+
+ipcMain.handle('backup-database', async (event) => {
+  const win = BrowserWindow.getFocusedWindow();
+  
+  try {
+    // توليد اسم افتراضي للملف يحتوي على تاريخ اليوم (مثال: Backup_2026-06-03.sqlite)
+    const date = new Date().toISOString().split('T')[0];
+    const defaultFilename = `Warehouse_Backup_${date}.sqlite`;
+
+    // إظهار نافذة للمستخدم لاختيار مكان حفظ النسخة
+    const { filePath } = await dialog.showSaveDialog(win, {
+      title: 'حفظ نسخة احتياطية لقاعدة البيانات',
+      defaultPath: path.join(app.getPath('desktop'), defaultFilename), // سطح المكتب كمسار افتراضي
+      buttonLabel: 'حفظ النسخة',
+      filters: [{ name: 'SQLite Database', extensions: ['sqlite', 'db'] }]
+    });
+
+    if (filePath) {
+      // استخدام API النسخ الاحتياطي الآمن الخاص بمكتبة better-sqlite3
+      await db.backup(filePath);
+      return { success: true, message: 'تم حفظ النسخة الاحتياطية بنجاح في المسار المحدد!' };
+    } else {
+      return { success: false, message: 'تم إلغاء عملية الحفظ.' };
+    }
+  } catch (error) {
+    console.error('خطأ في النسخ الاحتياطي:', error);
+    return { success: false, message: 'حدث خطأ أثناء أخذ النسخة الاحتياطية.' };
+  }
+});

@@ -24,5 +24,6 @@ contextBridge.exposeInMainWorld('api', {
     //
     getTransactionsHistory: () => ipcRenderer.invoke('get-transactions-history'),
     // دالة النسخ الاحتياطي
-    backupDatabase: () => ipcRenderer.invoke('backup-database')
+    backupDatabase: () => ipcRenderer.invoke('backup-database'),
+    restoreDatabase: () => ipcRenderer.invoke('restore-database') // الدالة الجديدة
 });

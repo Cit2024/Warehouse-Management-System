@@ -2,6 +2,7 @@ const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const fs = require('fs');
 const path = require('path');
 const db = require('./database/db');
+const Database = require('better-sqlite3'); 
 
 const createWindow = () => {
   const win = new BrowserWindow({
@@ -377,5 +378,74 @@ ipcMain.handle('backup-database', async (event) => {
   } catch (error) {
     console.error('خطأ في النسخ الاحتياطي:', error);
     return { success: false, message: 'حدث خطأ أثناء أخذ النسخة الاحتياطية.' };
+  }
+});
+// ==========================================
+// دالة استيراد النسخة الاحتياطية (Restore) المحدثة والآمنة
+// ==========================================
+ipcMain.handle('restore-database', async (event) => {
+  const win = BrowserWindow.getFocusedWindow();
+  
+  try {
+    const { canceled, filePaths } = await dialog.showOpenDialog(win, {
+      title: 'استيراد نسخة احتياطية',
+      properties: ['openFile'],
+      filters: [{ name: 'SQLite Database', extensions: ['sqlite', 'db'] }]
+    });
+
+    if (canceled || filePaths.length === 0) {
+      return { success: false, message: 'تم إلغاء العملية.' };
+    }
+
+    const sourcePath = filePaths[0]; // مسار الملف الذي اختاره المستخدم
+
+    try {
+      // 1. نفتح اتصالاً مؤقتاً بالملف الجديد بوضع "القراءة فقط" لكي لا نفسده
+      const testDb = new Database(sourcePath, { readonly: true, fileMustExist: true });
+
+      // 2. نجلب أسماء كل الجداول الموجودة داخل هذا الملف
+      // جدول sqlite_master هو جدول مخفي في SQLite يحتوي على هيكل القاعدة
+      const tables = testDb.prepare("SELECT name FROM sqlite_master WHERE type='table'").all();
+      const tableNames = tables.map(t => t.name);
+
+      // 3. نحدد الجداول الأساسية التي يجب أن تكون موجودة في منظومتنا
+      const requiredTables = ['users', 'stores', 'items', 'entities', 'transactions', 'transaction_details'];
+
+      // 4. نتحقق هل كل الجداول المطلوبة موجودة داخل الملف؟
+      const isValidSchema = requiredTables.every(table => tableNames.includes(table));
+
+      // 5. نغلق الاتصال المؤقت فوراً
+      testDb.close();
+
+      if (!isValidSchema) {
+        // الملف يعمل كقاعدة بيانات، لكنه لا يخص منظومتنا
+        return { success: false, message: '❌ الملف المختار ليس نسخة احتياطية صالحة لهذه المنظومة (الهيكلية غير مطابقة).' };
+      }
+
+    } catch (dbError) {
+      // إذا حدث خطأ هنا، فهذا يعني أن الملف ليس قاعدة بيانات SQLite من الأساس 
+      // (مثلاً المستخدم قام بتغيير امتداد ملف صورة إلى sqlite)
+      console.error('فحص الملف فشل:', dbError);
+      return { success: false, message: '❌ الملف تالف أو أنه ليس قاعدة بيانات SQLite صالحة.' };
+    }
+    // ================================================================
+
+    // إذا تجاوزنا الفحص بنجاح، نقوم بعملية الاستيراد الفعلية
+    const dataPath = app.getPath('userData');
+    const targetDbPath = path.join(dataPath, 'warehouse_system.sqlite');
+
+    // 6. إغلاق الاتصال الحالي بقاعدة البيانات الحقيقية
+    db.close();
+
+    // 7. نسخ الملف السليم فوق القديم
+    fs.copyFileSync(sourcePath, targetDbPath);
+
+    // 8. إعادة تشغيل التطبيق تلقائياً
+    app.relaunch();
+    app.exit();
+
+  } catch (error) {
+    console.error('خطأ في استيراد القاعدة:', error);
+    return { success: false, message: 'حدث خطأ غير متوقع أثناء الاستيراد.' };
   }
 });

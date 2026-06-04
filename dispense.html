@@ -89,6 +89,9 @@
         <a href="./entities.html" class="menu-item">👥 الجهات والموردين</a>
         <a href="./report.html" class="menu-item">📊 التقارير والإحصائيات</a>
         <a href="#" class="menu-item" style="background: rgba(40, 167, 69, 0.2); color: #28a745;" onclick="handleBackup(event)">💾 نسخة احتياطية</a>
+        <a href="#" class="menu-item" style="background: rgba(23, 162, 184, 0.2); color: #17a2b8;" onclick="handleRestore(event)">
+            📂 استيراد نسخة سابقة
+        </a>
         <a href="index.html" class="menu-item" style="margin-top: 50px; background: rgba(220, 53, 69, 0.2); color: #ff6b6b;">🚪 تسجيل الخروج</a>
     </div>
 
@@ -380,6 +383,32 @@
                 alert('❌ حدث خطأ غير متوقع أثناء النسخ الاحتياطي.');
             } finally {
                 // إعادة الزر لشكله الطبيعي
+                btn.innerHTML = originalText;
+                btn.style.pointerEvents = 'auto';
+            }
+        }
+        // دالة التعامل مع استيراد النسخة الاحتياطية
+        async function handleRestore(event) {
+            event.preventDefault();
+            
+            // تحذير شديد اللهجة قبل مسح البيانات الحالية
+            const confirmRestore = confirm('⚠️ تحذير هام جداً: استيراد نسخة احتياطية سيقوم بمسح كافة بيانات المخزن الحالية واستبدالها بالنسخة المستوردة.\n\nهل أنت متأكد من رغبتك في المتابعة؟ (سيتم إعادة تشغيل المنظومة تلقائياً).');
+            
+            if (!confirmRestore) return; // إذا ضغط إلغاء، تتوقف العملية
+
+            const btn = event.currentTarget;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '⏳ جاري الاستيراد...';
+            btn.style.pointerEvents = 'none';
+            
+            try {
+                const result = await window.api.restoreDatabase();
+                if (result && !result.success && result.message !== 'تم إلغاء العملية.') {
+                    alert('❌ ' + result.message);
+                }
+            } catch (error) {
+                alert('❌ حدث خطأ غير متوقع أثناء الاستيراد.');
+            } finally {
                 btn.innerHTML = originalText;
                 btn.style.pointerEvents = 'auto';
             }

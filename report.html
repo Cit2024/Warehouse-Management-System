@@ -231,7 +231,7 @@
         // دوال الطباعة
         async function handleDirectPrint() { await window.api.printDirect(); }
         async function handlePdfExport() {
-            const result = await window.api.exportPdf();
+            const result = await window.api.generateReport();
             if (result.success) alert('✅ ' + result.message);
         }
 

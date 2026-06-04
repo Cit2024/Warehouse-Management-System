@@ -170,33 +170,6 @@
             color: #FF8F00;
         }
 
-        .remember-forgot {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 24px;
-        }
-
-        .remember-me {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            cursor: pointer;
-        }
-
-        .remember-me input[type="checkbox"] {
-            accent-color: #FF6B00;
-            width: 18px;
-            height: 18px;
-        }
-
-        .remember-me label {
-            color: #555;
-            font-size: 14px;
-            cursor: pointer;
-            user-select: none;
-        }
-
         .forgot-password {
             color: #FF6B00;
             text-decoration: none;
@@ -318,12 +291,8 @@
             .login-header h1 {
                 font-size: 24px;
             }
-            
-            .remember-forgot {
-                flex-direction: column;
-                gap: 12px;
-                align-items: flex-start;
-            }
+       
+
         }
     </style>
 </head>
@@ -385,28 +354,10 @@
                 </div>
             </div>
 
-            <div class="remember-forgot">
-                <div class="remember-me">
-                    <input type="checkbox" id="remember" name="remember">
-                    <label for="remember">تذكرني على هذا الجهاز</label>
-                </div>
-                <a href="#" class="forgot-password" onclick="showForgotPassword()">نسيت كلمة المرور؟</a>
-            </div>
-
             <button type="submit" class="login-btn" id="loginButton">
                 تسجيل الدخول
             </button>
         </form>
-
-        <div class="system-info">
-            <p>🔒 نظام مخصص للمستخدمين المصرح لهم فقط</p>
-            <p class="warning">
-                ⚠️ لا يمكن إنشاء حسابات جديدة من هذه الصفحة
-            </p>
-            <p style="margin-top: 12px; font-size: 12px;">
-                للدعم الفني، يرجى التواصل مع قسم تقنية المعلومات
-            </p>
-        </div>
     </div>
 
     <script>
@@ -441,14 +392,13 @@
                 const result = await window.api.login({ username, password });
                 
                 if (result.success) {
-                    const rememberMe = document.getElementById('remember').checked;
-                    
+                   
                     // حفظ بيانات الجلسة للاستفادة منها في باقي الصفحات (مثل إظهار اسم المستخدم)
                     const sessionData = {
                         userId: result.user.user_id,
                         username: result.user.full_name,
                         role: result.user.role,
-                        rememberMe: rememberMe
+                        rememberMe: false
                     };
                     
                     localStorage.setItem('userSession', JSON.stringify(sessionData));
@@ -489,10 +439,7 @@
                 errorMessage.style.display = 'none';
             }, 5000);
         }
-        
-        function showForgotPassword() {
-            alert('يرجى التواصل مع مسؤول النظام أو قسم تقنية المعلومات لإعادة تعيين كلمة المرور.');
-        }
+    
         
         // التحقق من وجود جلسة سابقة (إذا تم تفعيل "تذكرني")
         window.addEventListener('DOMContentLoaded', () => {

@@ -17,12 +17,8 @@
     "directories": {
       "output": "dist"
     },
-    "win": {
-      "target": "nsis"
-    },
-    "linux": {
-      "target": "AppImage"
-    }
+    "win": { "icon": "assets/ادارة_المخازن.ico", "target": "nsis" },
+    "linux": { "icon": "assets/ادارة_المخازن.png", "target": "AppImage" }
   },
   "devDependencies": {
     "@electron/rebuild": "^4.0.4",

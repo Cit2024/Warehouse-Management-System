@@ -17,8 +17,14 @@
     "directories": {
       "output": "dist"
     },
-    "win": { "icon": "assets/ادارة_المخازن.ico", "target": "nsis" },
-    "linux": { "icon": "assets/ادارة_المخازن.png", "target": "AppImage" }
+    "win": {
+      "icon": "assets/ادارة_المخازن.ico",
+      "target": "nsis"
+    },
+    "linux": {
+      "icon": "assets/ادارة_المخازن.png",
+      "target": "AppImage"
+    }
   },
   "devDependencies": {
     "@electron/rebuild": "^4.0.4",
@@ -26,6 +32,7 @@
     "electron-builder": "^26.8.1"
   },
   "dependencies": {
-    "better-sqlite3": "^12.10.0"
+    "better-sqlite3": "^12.10.0",
+    "isomorphic-git": "^1.38.4"
   }
 }

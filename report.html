@@ -4,77 +4,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>التقارير - منظومة إدارة المخازن</title>
-    <style>
-        :root { --primary: #FF6B00; --primary-hover: #E55A00; --bg-dark: #1a1a2e; --bg-card: rgba(255, 255, 255, 0.95); --text-dark: #333; }
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, sans-serif; }
-        
-        body { 
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); 
-            min-height: 100vh; 
-            display: flex; 
-            color: var(--text-dark);
-            direction: rtl; /* ضمان الاتجاه العربي والقائمة على اليمين */
-        }
-        
-        .sidebar { width: 250px; background: rgba(26, 26, 46, 0.9); padding: 20px; color: white; border-left: 1px solid rgba(255, 107, 0, 0.2); }
-        .logo { text-align: center; padding-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; color: var(--primary); font-weight: bold; font-size: 20px; }
-        .menu-item { display: block; text-decoration: none; color: white; padding: 12px 15px; margin-bottom: 10px; background: rgba(255, 255, 255, 0.05); border-radius: 8px; cursor: pointer; transition: 0.3s; }
-        .menu-item:hover, .menu-item.active { background: var(--primary); color: white; }
-        
-        .content { flex: 1; padding: 30px; overflow-y: auto; }
-        .header { margin-bottom: 20px; color: white; display: flex; justify-content: space-between; align-items: center; }
-        
-        /* تصميم التبويبات (Tabs) */
-        .tabs { display: flex; gap: 10px; margin-bottom: 20px; }
-        .tab-btn { padding: 12px 25px; border: none; background: rgba(255,255,255,0.1); color: white; font-weight: bold; border-radius: 8px; cursor: pointer; transition: 0.3s; }
-        .tab-btn.active { background: var(--bg-card); color: var(--primary); }
-        
-        /* لوحة التحكم العلوية (الأزرار) */
-        .toolbar { background: var(--bg-card); padding: 15px 20px; border-radius: 12px; display: flex; gap: 15px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); justify-content: flex-end; }
-        .btn { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 8px; }
-        
-        /* الجداول */
-        .table-container { background: var(--bg-card); border-radius: 12px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); display: none; }
-        .table-container.active { display: block; } /* يظهر التبويب النشط فقط */
-        table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 15px; text-align: right; border-bottom: 1px solid #eee; }
-        th { background: #f8f9fa; color: #555; font-weight: 600; }
-        
-        /* شارات حالة المستند */
-        .badge { padding: 5px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; color: white;}
-        .badge-in { background: #28a745; } /* توريد */
-        .badge-out { background: #dc3545; } /* صرف */
-        .badge-warning { background: #ffc107; color: #000; } /* تحذير للرصيد */
-
-        /* تنسيقات الطباعة */
-        @media print {
-            .sidebar, .toolbar, .tabs { display: none !important; }
-            body { background: white; color: black; }
-            .content { padding: 0; }
-            .table-container { box-shadow: none; display: none; }
-            .table-container.active { display: block !important; } /* طباعة الجدول النشط فقط */
-            
-            .print-header { display: block !important; text-align: center; margin-bottom: 30px; border-bottom: 2px solid #000; padding-bottom: 10px; }
-        }
-        .print-header { display: none; }
-    </style>
+    <link rel="stylesheet" href="assets/css/main.css">
+    <link rel="stylesheet" href="assets/css/layout.css">
+    <link rel="stylesheet" href="assets/css/components.css">
+    <link rel="stylesheet" href="assets/css/print.css">
 </head>
 <body>
 
     <!-- القائمة الجانبية -->
     <div class="sidebar">
         <div class="logo">📦 منظومة المخازن</div>
-        <a href="dashboard.html" class="menu-item">📋 إدارة الأصناف</a>
+        <div style="margin-top: 30px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;"></div>
+        <a href="dashboard.html" class="menu-item">📋إدارة الأصناف</a>
         <a href="supply.html" class="menu-item">📥 أذونات التوريد</a>
         <a href="dispense.html" class="menu-item">📤 أذونات الصرف</a>
         <a href="entities.html" class="menu-item">👥 الجهات والموردين</a>
         <a href="reports.html" class="menu-item active">📊 التقارير والإحصائيات</a>
-			  <a href="./settings.html" class="menu-item">
-				  <span class="menu-icon">⚙️</span>
-				  الاعدادات
-			  </a>
-        <a href="#" class="menu-item" style="background: rgba(40, 167, 69, 0.2); color: #28a745;" onclick="handleBackup(event)">💾 نسخة احتياطية</a>
-        <a href="#" class="menu-item" style="background: rgba(23, 162, 184, 0.2); color: #17a2b8;" onclick="handleRestore(event)">
+			  <a href="./settings.html" class="menu-item">⚙️الاعدادات</a>
+        <a href="#" class="menu-item" style="color: #28a745;" onclick="handleBackup(event)">💾 نسخة احتياطية</a>
+        <a href="#" class="menu-item" style="color: #17a2b8;" onclick="handleRestore(event)">
             📂 استيراد نسخة سابقة
         </a>
         <a href="index.html" class="menu-item" style="margin-top: 50px; background: rgba(220, 53, 69, 0.2); color: #ff6b6b;">🚪 تسجيل الخروج</a>
@@ -105,7 +53,7 @@
         </div>
 
         <!-- التبويب الأول: جرد المخزون -->
-        <div id="inventoryTab" class="table-container active">
+        <div id="inventoryTab" class="table-container tab-content active">
             <table>
                 <thead>
                     <tr>
@@ -123,7 +71,7 @@
         </div>
 
         <!-- التبويب الثاني: سجل الأذونات -->
-        <div id="historyTab" class="table-container">
+        <div id="historyTab" class="table-container tab-content">
             <table>
                 <thead>
                     <tr>
@@ -233,68 +181,12 @@
                 tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:red;">خطأ في الجلب</td></tr>';
             }
         }
-
-        // دوال الطباعة
-        async function handleDirectPrint() { await window.api.printDirect(); }
-        async function handlePdfExport() {
-            const result = await window.api.generateReport();
-            if (result.success) alert('✅ ' + result.message);
-        }
-
         // تحميل البيانات عند فتح الصفحة
         window.addEventListener('DOMContentLoaded', () => {
             loadInventory();
             loadHistory();
         });
-        // دالة التعامل مع النسخ الاحتياطي
-        async function handleBackup(event) {
-            event.preventDefault(); // لمنع انتقال الرابط
-            const btn = event.currentTarget;
-            const originalText = btn.innerHTML;
-            
-            // تغيير النص لإظهار حالة التحميل
-            btn.innerHTML = '⏳ جاري الحفظ...';
-            btn.style.pointerEvents = 'none'; // منع النقر المزدوج
-            
-            try {
-                const result = await window.api.backupDatabase();
-                if (result.success) {
-                    alert('✅ ' + result.message);
-                } else if (result.message !== 'تم إلغاء عملية الحفظ.') {
-                    alert('❌ ' + result.message);
-                }
-            } catch (error) {
-                alert('❌ حدث خطأ غير متوقع أثناء النسخ الاحتياطي.');
-            } finally {
-                // إعادة الزر لشكله الطبيعي
-                btn.innerHTML = originalText;
-                btn.style.pointerEvents = 'auto';
-            }
-        }
-        // دالة التعامل مع استيراد النسخة الاحتياطية
-        async function handleRestore(event) {
-            event.preventDefault();
-            const confirmRestore = confirm('⚠️ تحذير هام جداً: استيراد نسخة احتياطية سيقوم بمسح كافة بيانات المخزن الحالية واستبدالها بالنسخة المستوردة.\n\nهل أنت متأكد من رغبتك في المتابعة؟ (سيتم إعادة تشغيل المنظومة تلقائياً).');
-            
-            if (!confirmRestore) return; // إذا ضغط إلغاء، تتوقف العملية
-
-            const btn = event.currentTarget;
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '⏳ جاري الاستيراد...';
-            btn.style.pointerEvents = 'none';
-            
-            try {
-                const result = await window.api.restoreDatabase();
-                if (result && !result.success && result.message !== 'تم إلغاء العملية.') {
-                    alert('❌ ' + result.message);
-                }
-            } catch (error) {
-                alert('❌ حدث خطأ غير متوقع أثناء الاستيراد.');
-            } finally {
-                btn.innerHTML = originalText;
-                btn.style.pointerEvents = 'auto';
-            }
-        }
     </script>
+    <script src="assets/js/common.js"></script>
 </body>
 </html>

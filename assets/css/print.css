@@ -1,0 +1,105 @@
+@media print {
+    app-sidebar,
+    .sidebar,
+    .toolbar,
+    .action-col,
+    .btn,
+    .search-box,
+    .modal,
+    .tabs,
+    .add-row-container {
+        display: none !important;
+    }
+
+    /* تهيئة الصفحة لتكون مناسبة للورق الأبيض */
+    body {
+        background: white !important;
+        color: black !important;
+        display: block; /* إلغاء الـ Flex من الـ body لتجنب مشاكل الطباعة */
+    }
+    
+    .content {
+        padding: 0 !important;
+        overflow: visible !important;
+        height: auto !important;
+    }
+
+    /* تهيئة الحاويات الرئيسية */
+    .table-container, .receipt-card {
+        box-shadow: none !important;
+        border: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        background: transparent !important;
+    }
+
+    /* ترويسة الفاتورة المطبوعة */
+    .print-header {
+        display: block !important;
+        text-align: center;
+        margin-bottom: 30px;
+        border-bottom: 2px solid #000;
+        padding-bottom: 10px;
+    }
+    .print-header h1 { font-size: 24px; margin-bottom: 5px; color: black; }
+    .print-header h2 { font-size: 18px; color: #333; }
+    
+    /* تحويل الحقول (Inputs) إلى نصوص ثابتة الشكل */
+    input, select {
+        border: none !important;
+        background: transparent !important;
+        appearance: none;
+        -moz-appearance: none;
+        -webkit-appearance: none;
+        font-weight: bold;
+        color: black !important;
+        padding: 0 !important;
+    }
+
+    /* منطقة التوقيعات (تظهر فقط في أذونات الصرف والتوريد) */
+    .signatures {
+        display: flex !important;
+        justify-content: space-between;
+        margin-top: 50px;
+        text-align: center;
+        font-weight: bold;
+    }
+    .signature-box {
+        width: 30%;
+        border-top: 1px solid #000;
+        padding-top: 10px;
+    }
+
+    /* الجداول في الطباعة */
+    table {
+        border-collapse: collapse !important;
+    }
+    th, td {
+        border: 1px solid #ddd !important;
+        padding: 8px !important;
+        color: black !important;
+    }
+    th {
+        background-color: #f2f2f2 !important;
+        -webkit-print-color-adjust: exact;
+        color-adjust: exact;
+    }
+
+    /* إخفاء عمود "الإجراءات" الأخير في أغلب الجداول */
+    td:last-child, th:last-child {
+        display: none !important;
+    }
+    
+    /* طباعة التبويب النشط فقط (لصفحة التقارير) */
+    .table-container.active { 
+        display: block !important; 
+    }
+    .table-container:not(.active) { 
+        display: none !important; 
+    }
+}
+
+/* مخفية دائماً في وضع الشاشة (تظهر فقط في Print @media) */
+.print-header, .signatures { 
+    display: none; 
+}

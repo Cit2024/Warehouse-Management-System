@@ -55,7 +55,20 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # ——— 6. Upload build artifacts ———
+      # ——— 6. Prune stale artifacts to avoid hitting storage quota ———
+      - name: Delete stale CI artifacts
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          cutoff=$(date -u -d '2 hours ago' +%Y-%m-%dT%H:%M:%SZ)
+          gh api "repos/${{ github.repository }}/actions/artifacts" --paginate \
+            -q ".artifacts[] | select((.name == \"windows-installer\" or .name == \"linux-appimage\") and .created_at < \"$cutoff\") | .id" | \
+          while read -r id; do
+            [ -n "$id" ] && gh api "repos/${{ github.repository }}/actions/artifacts/${id}" -X DELETE || true
+          done
+
+      # ——— 7. Upload build artifacts ———
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:

@@ -19,36 +19,74 @@ jobs:
         include:
           - os: windows-latest
             build_script: build:win
+            artifact_name: windows-installer
+            artifact_path: dist/*.exe
+            ext: .exe
           - os: ubuntu-latest
             build_script: build:linux
+            artifact_name: linux-appimage
+            artifact_path: dist/*.AppImage
+            ext: .AppImage
           - os: ubuntu-latest
-            build_script: build:deb
+            build_script: build:linux-deb
+            artifact_name: linux-deb
+            artifact_path: dist/*.deb
+            ext: .deb
 
     runs-on: ${{ matrix.os }}
-    name: Build — ${{ matrix.os }} (${{ matrix.build_script }})
+    name: Build — ${{ matrix.os }} (${{ matrix.artifact_name }})
 
     steps:
       # ——— 1. Checkout source ———
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # ——— 2. Setup Node.js ———
+      # ——— 2. Setup Bun ———
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      # ——— 3. Setup Node.js 22 (upgraded from 20) ———
       - name: Setup Node.js 22
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
 
-      # ——— 3. Install dependencies ———
+      # ——— 4. Install Linux packaging deps ———
+      - name: Install Linux build dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential python3 libkrb5-dev libsecret-1-dev fakeroot dpkg
+
+      # ——— 5. Install dependencies ———
       - name: Install dependencies
-        run: npm ci
+        run: bun install
 
-      # ——— 4. Rebuild native addons for Electron ———
+      # ——— 6. Rebuild native addons for Electron ———
       - name: Rebuild native addons (better-sqlite3)
-        run: npx @electron/rebuild
+        run: bun run postinstall
 
-      # ——— 5. Build the application ———
+      # ——— 7. Build the application ———
       - name: Build application
-        run: npm run ${{ matrix.build_script }}
+        run: bun run ${{ matrix.build_script }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # ——— 8. Stage installer into dist/ for artifact upload ———
+      - name: Copy installer to dist/
+        shell: bash
+        run: |
+          mkdir -p dist
+          cp release/*${{ matrix.ext }} dist/
+
+      # ——— 9. Upload build artifacts ———
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}-${{ github.run_number }}-${{ github.sha }}
+          path: ${{ matrix.artifact_path }}
+          if-no-files-found: error
+          overwrite: true          # Allow overwriting to prevent duplicate errors
+          retention-days: 1        # Minimal retention — artifacts auto-deleted after 1 day to avoid storage quota

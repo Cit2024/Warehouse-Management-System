@@ -15,44 +15,97 @@ jobs:
         include:
           - os: windows-latest
             build_script: build:win
+            artifact_name: windows-installer
             artifact_path: dist/*.exe
+            ext: .exe
           - os: ubuntu-latest
             build_script: build:linux
+            artifact_name: linux-appimage
             artifact_path: dist/*.AppImage
+            ext: .AppImage
           - os: ubuntu-latest
-            build_script: build:deb
+            build_script: build:linux-deb
+            artifact_name: linux-deb
             artifact_path: dist/*.deb
+            ext: .deb
 
     runs-on: ${{ matrix.os }}
-    name: Build — ${{ matrix.os }}
+    name: Build — ${{ matrix.os }} (${{ matrix.artifact_name }})
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
       - name: Setup Node.js 22
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
+
+      - name: Install Linux build dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential python3 libkrb5-dev libsecret-1-dev fakeroot dpkg
 
       - name: Install dependencies
-        run: npm ci
+        run: bun install
 
       - name: Rebuild native addons (better-sqlite3)
-        run: npx @electron/rebuild
+        run: bun run postinstall
 
       - name: Build application
-        run: npm run ${{ matrix.build_script }}
+        run: bun run ${{ matrix.build_script }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # Upload directly to the GitHub Release instead of using Actions artifacts,
-      # so the workflow is not blocked by the Actions artifact storage quota.
-      - name: Upload release assets
+      - name: Copy installer to dist/
+        shell: bash
+        run: |
+          mkdir -p dist
+          cp release/*${{ matrix.ext }} dist/
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: ${{ matrix.artifact_path }}
+          if-no-files-found: error
+          overwrite: true
+          retention-days: 1
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    name: Publish GitHub Release
+
+    steps:
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-installer
+          path: release-assets/
+
+      - name: Download Linux AppImage artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-appimage
+          path: release-assets/
+
+      - name: Download Linux DEB artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-deb
+          path: release-assets/
+
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: ${{ matrix.artifact_path }}
+          files: release-assets/*
           generate_release_notes: true
           prerelease: ${{ contains(github.ref_name, '-beta') || contains(github.ref_name, '-alpha') || contains(github.ref_name, '-rc') }}
           name: "منظومة المخازن ${{ github.ref_name }}"

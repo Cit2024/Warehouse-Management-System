@@ -8,15 +8,16 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
+    "postinstall": "electron-builder install-app-deps",
     "build:win": "electron-builder --win",
     "build:linux": "electron-builder --linux AppImage",
-    "build:deb": "electron-builder --linux deb"
+    "build:linux-deb": "electron-builder --linux deb"
   },
   "build": {
     "appId": "com.cit.warehousesystem",
     "productName": "منظومة المخازن",
     "directories": {
-      "output": "dist"
+      "output": "release"
     },
     "win": {
       "icon": "assets/ادارة_المخازن.ico",

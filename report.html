@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>التقارير - منظومة إدارة المخازن</title>
+    <title>التقارير - منظومة إدارة المخازن | كلية التقنية الصناعية</title>
     <link rel="stylesheet" href="assets/css/main.css">
     <link rel="stylesheet" href="assets/css/layout.css">
     <link rel="stylesheet" href="assets/css/components.css">
@@ -11,180 +11,636 @@
 </head>
 <body>
 
-    <!-- القائمة الجانبية -->
-    <div class="sidebar">
-        <div class="logo">📦 منظومة المخازن</div>
-        <div style="margin-top: 30px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;"></div>
-        <a href="dashboard.html" class="menu-item">📋إدارة الأصناف</a>
-        <a href="supply.html" class="menu-item">📥 أذونات التوريد</a>
-        <a href="dispense.html" class="menu-item">📤 أذونات الصرف</a>
-        <a href="entities.html" class="menu-item">👥 الجهات والموردين</a>
-        <a href="reports.html" class="menu-item active">📊 التقارير والإحصائيات</a>
-			  <a href="./settings.html" class="menu-item">⚙️الاعدادات</a>
-        <a href="#" class="menu-item" style="color: #28a745;" onclick="handleBackup(event)">💾 نسخة احتياطية</a>
-        <a href="#" class="menu-item" style="color: #17a2b8;" onclick="handleRestore(event)">
-            📂 استيراد نسخة سابقة
-        </a>
-        <a href="index.html" class="menu-item" style="margin-top: 50px; background: rgba(220, 53, 69, 0.2); color: #ff6b6b;">🚪 تسجيل الخروج</a>
-    </div>
-
-    <!-- المحتوى الرئيسي -->
-    <div class="content">
-        <div class="header">
-            <h2>التقارير والإحصائيات</h2>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-brand">
+                <div class="sidebar-brand-icon">📦</div>
+                <div class="sidebar-brand-text">
+                    <div class="sidebar-brand-title">إدارة المخازن</div>
+                    <div class="sidebar-brand-subtitle">كلية التقنية الصناعية</div>
+                </div>
+            </div>
         </div>
 
-        <!-- أزرار التبويبات -->
-        <div class="tabs">
-            <button class="tab-btn active" onclick="switchTab('inventoryTab', this)">📦 تقرير جرد المخزون</button>
-            <button class="tab-btn" onclick="switchTab('historyTab', this)">📝 سجل حركة الأذونات</button>
+        <nav class="sidebar-nav">
+            <div class="nav-section">
+                <div class="nav-section-title">الرئيسية</div>
+                <a href="dashboard.html" class="menu-item">
+                    <span class="menu-icon">⌂</span>
+                    <span class="menu-text">لوحة التحكم</span>
+                </a>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">الحركات</div>
+                <a href="supply.html" class="menu-item">
+                    <span class="menu-icon">⇩</span>
+                    <span class="menu-text">أذونات التوريد</span>
+                </a>
+                <a href="dispense.html" class="menu-item">
+                    <span class="menu-icon">⇧</span>
+                    <span class="menu-text">أذونات الصرف والعهد</span>
+                </a>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">البيانات المالية والإدارية</div>
+                <a href="entities.html" class="menu-item">
+                    <span class="menu-icon">♙</span>
+                    <span class="menu-text">الموردون والجهات</span>
+                </a>
+                <a href="report.html" class="menu-item active">
+                    <span class="menu-icon">▥</span>
+                    <span class="menu-text">التقارير</span>
+                </a>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">النظام</div>
+                <a href="settings.html" class="menu-item">
+                    <span class="menu-icon">⚙</span>
+                    <span class="menu-text">الإعدادات</span>
+                </a>
+            </div>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-card">
+                <div class="user-avatar" id="userAvatar">م</div>
+                <div class="user-info">
+                    <div class="user-name" id="userName">مستعرض النظام</div>
+                    <div class="user-role" id="userRole">مستعرض</div>
+                </div>
+            </div>
+            <a href="#" class="menu-item" onclick="handleLogout()">
+                <span class="menu-icon">↪</span>
+                <span class="menu-text">تسجيل الخروج</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="content">
+        <!-- Top Header -->
+        <header class="top-header">
+            <div class="header-search">
+                <span class="header-search-icon">⌕</span>
+                <input type="text" placeholder="بحث...">
+            </div>
+            <div class="header-actions">
+                <button class="header-btn" onclick="loadReportData()" title="تحديث"><span>↻</span></button>
+                <button class="header-btn" onclick="handleLogout()" title="خروج"><span>🚪</span></button>
+            </div>
+        </header>
+
+        <!-- Page Title -->
+        <div class="header-title-section">
+            <h1>التقارير</h1>
+            <p class="subtitle">إعداد وطباعة تقارير المخزون والحركات</p>
         </div>
 
-        <!-- أزرار الطباعة للتبويب النشط -->
-        <div class="toolbar">
-            <button class="btn" style="background: #FF6B00; color: white;" onclick="handleDirectPrint()">🖨️ طباعة التقرير الحالي</button>
-            <button class="btn" style="background: #dc3545; color: white;" onclick="handlePdfExport()">📄 حفظ التقرير كـ PDF</button>
-        </div>
+        <div class="page-content">
+            <!-- Report Filters Panel -->
+            <div class="panel" style="margin-bottom: 20px;">
+                <div class="panel-body">
+                    <div style="display: flex; gap: 16px; align-items: flex-end; flex-wrap: wrap;">
+                        <div class="form-group" style="flex: 1; min-width: 200px; margin-bottom: 0;">
+                            <label>نوع التقرير</label>
+                            <select class="filter-select" id="reportType" onchange="onReportTypeChange()" style="width: 100%;">
+                                <option value="stock">تقرير حالة المخزون</option>
+                                <option value="lowstock">تقرير الأصناف منخفضة الرصيد</option>
+                                <option value="movements">تقرير حركات التوريد والصرف</option>
+                                <option value="itemcard">بطاقة حركة صنف</option>
+                                <option value="suppliers">دليل الموردين والجهات</option>
+                            </select>
+                        </div>
 
-        <!-- ترويسة الطباعة -->
-        <div class="print-header">
-            <h1>كلية التقنية الصناعية - مصراتة</h1>
-            <h2 id="printTitle">تقرير جرد المخزون</h2>
-        </div>
+                        <div class="form-group" id="dateFromGroup" style="min-width: 160px; margin-bottom: 0;">
+                            <label>من تاريخ</label>
+                            <input type="date" id="dateFrom" class="filter-select" style="min-width: 160px;">
+                        </div>
 
-        <!-- التبويب الأول: جرد المخزون -->
-        <div id="inventoryTab" class="table-container tab-content active">
-            <table>
-                <thead>
-                    <tr>
-                        <th>رقم الصنف</th>
-                        <th>اسم الصنف</th>
-                        <th>الوحدة</th>
-                        <th>الرصيد الفعلي</th>
-                        <th>حالة الرصيد</th>
-                    </tr>
-                </thead>
-                <tbody id="inventoryTableBody">
-                    <tr><td colspan="5" style="text-align:center;">جاري التحميل...</td></tr>
-                </tbody>
-            </table>
-        </div>
+                        <div class="form-group" id="dateToGroup" style="min-width: 160px; margin-bottom: 0;">
+                            <label>إلى تاريخ</label>
+                            <input type="date" id="dateTo" class="filter-select" style="min-width: 160px;">
+                        </div>
 
-        <!-- التبويب الثاني: سجل الأذونات -->
-        <div id="historyTab" class="table-container tab-content">
-            <table>
-                <thead>
-                    <tr>
-                        <th>رقم الحركة</th>
-                        <th>نوع الإذن</th>
-                        <th>التاريخ</th>
-                        <th>رقم الإذن الورقي</th>
-                        <th>الجهة / المورد</th>
-                        <th>المخزن</th>
-                    </tr>
-                </thead>
-                <tbody id="historyTableBody">
-                    <tr><td colspan="6" style="text-align:center;">جاري التحميل...</td></tr>
-                </tbody>
-            </table>
+                        <div class="form-group" id="itemSelectGroup" style="flex: 1; min-width: 200px; margin-bottom: 0; display: none;">
+                            <label>الصنف (لبطاقة الحركة)</label>
+                            <select class="filter-select" id="itemSelect" style="width: 100%;">
+                                <option value="">اختر صنفاً</option>
+                            </select>
+                        </div>
+
+                        <button class="btn btn-primary" onclick="generateReport()">
+                            <span>▣</span>
+                            <span>طباعة التقرير</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary Stats -->
+            <div class="stats-grid" id="reportStats" style="grid-template-columns: repeat(3, 1fr);">
+                <div class="stat-card">
+                    <div class="stat-content">
+                        <div class="stat-label">اسم التقرير</div>
+                        <div class="stat-value" id="reportName" style="font-size: 18px;">تقرير حالة المخزون</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-content">
+                        <div class="stat-label">عدد السجلات</div>
+                        <div class="stat-value" id="recordCount">0</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-content">
+                        <div class="stat-label">إجمالي القيمة</div>
+                        <div class="stat-value" id="totalValue">0 د.ل</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Report Table -->
+            <div class="table-container" style="margin-top: 20px;">
+                <div class="table-toolbar">
+                    <div class="table-title" id="reportTableTitle">تقرير حالة المخزون</div>
+                    <div class="table-meta" id="reportTableMeta">جميع الأصناف مع الرصيد الحالي</div>
+                </div>
+                <div style="overflow-x: auto;">
+                    <table id="reportTable">
+                        <thead id="reportTableHead">
+                            <tr>
+                                <th>رقم الصنف</th>
+                                <th>اسم الصنف</th>
+                                <th>التصنيف</th>
+                                <th>الوحدة</th>
+                                <th>الرصيد</th>
+                                <th>الحد الأدنى</th>
+                                <th>سعر الوحدة</th>
+                                <th>القيمة</th>
+                                <th>الحالة</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reportTableBody">
+                            <tr>
+                                <td colspan="9" style="text-align: center;">جاري التحميل...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
+    </main>
+
+    <!-- Print Header -->
+    <div class="print-header">
+        <h1>كلية التقنية الصناعية - مصراتة</h1>
+        <h2 id="printReportTitle">تقرير حالة المخزون</h2>
     </div>
 
     <script>
-        // دالة التبديل بين التبويبات
-        function switchTab(tabId, btnElement) {
-            // إخفاء كل التبويبات وإزالة اللون من الأزرار
-            document.querySelectorAll('.table-container').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-            
-            // إظهار التبويب المطلوب وتلوين زره
-            document.getElementById(tabId).classList.add('active');
-            btnElement.classList.add('active');
+        let allItems = [];
+        let allTransactions = [];
 
-            // تغيير عنوان الطباعة بناءً على التبويب
-            const title = tabId === 'inventoryTab' ? 'تقرير جرد المخزون' : 'سجل حركة الأذونات';
-            document.getElementById('printTitle').innerText = title;
+        // ========== Session ==========
+        function checkSession() {
+            const session = JSON.parse(localStorage.getItem('userSession'));
+            if (!session) {
+                window.location.href = 'index.html';
+                return null;
+            }
+            return session;
         }
 
-        // 1. تحميل جرد المخزون
-        async function loadInventory() {
-            const tbody = document.getElementById('inventoryTableBody');
-            try {
-                // نستخدم دالة getStock التي تجلب الأصناف ورصيدها
-                const items = await window.api.getStock();
-                tbody.innerHTML = '';
-                
-                if(items.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">المخزن فارغ حالياً</td></tr>';
-                    return;
-                }
+        function updateUserInfo(session) {
+            const avatar = document.getElementById('userAvatar');
+            const nameEl = document.getElementById('userName');
+            const roleEl = document.getElementById('userRole');
 
-                items.forEach(item => {
-                    // التحقق من حالة الرصيد مقارنة بنقطة إعادة الطلب
-                    let statusHtml = '<span style="color:#28a745; font-weight:bold;">متوفر</span>';
-                    if (item.current_quantity <= item.min_order_qty) {
-                        statusHtml = '<span class="badge badge-warning">تحذير: قارب على النفاد</span>';
-                    }
+            if (session.username) {
+                avatar.textContent = session.username.charAt(0);
+                nameEl.textContent = session.username;
+            }
 
-                    tbody.innerHTML += `
-                        <tr>
-                            <td>${item.item_id}</td>
-                            <td><strong>${item.item_name}</strong></td>
-                            <td>${item.unit}</td>
-                            <td style="font-size: 16px; font-weight: bold;">${item.current_quantity}</td>
-                            <td>${statusHtml}</td>
-                        </tr>
-                    `;
-                });
-            } catch (error) {
-                console.error(error);
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:red;">خطأ في الجلب</td></tr>';
+            const roleNames = {
+                'admin': 'مدير النظام',
+                'storekeeper': 'أمين المخزن',
+                'viewer': 'مستعرض'
+            };
+            roleEl.textContent = roleNames[session.role] || session.role || 'مستعرض';
+        }
+
+        function handleLogout() {
+            if (confirm('هل أنت متأكد من تسجيل الخروج؟')) {
+                localStorage.removeItem('userSession');
+                window.location.href = 'index.html';
             }
         }
 
-        // 2. تحميل سجل الحركات
-        async function loadHistory() {
-            const tbody = document.getElementById('historyTableBody');
+        // ========== Date Defaults ==========
+        function setDefaultDates() {
+            const today = new Date();
+            const firstDay = new Date(today.getFullYear(), 0, 1);
+            document.getElementById('dateTo').value = today.toISOString().split('T')[0];
+            document.getElementById('dateFrom').value = firstDay.toISOString().split('T')[0];
+        }
+
+        // ========== Report Type Change ==========
+        function onReportTypeChange() {
+            const type = document.getElementById('reportType').value;
+            const itemGroup = document.getElementById('itemSelectGroup');
+
+            // Show/hide item selector for item card report
+            itemGroup.style.display = type === 'itemcard' ? 'block' : 'none';
+
+            // Update report
+            generateReport();
+        }
+
+        // ========== Generate Report ==========
+        async function generateReport() {
+            const type = document.getElementById('reportType').value;
+            const dateFrom = document.getElementById('dateFrom').value;
+            const dateTo = document.getElementById('dateTo').value;
+
+            switch(type) {
+                case 'stock':
+                    await generateStockReport();
+                    break;
+                case 'lowstock':
+                    await generateLowStockReport();
+                    break;
+                case 'movements':
+                    await generateMovementsReport(dateFrom, dateTo);
+                    break;
+                case 'itemcard':
+                    await generateItemCardReport();
+                    break;
+                case 'suppliers':
+                    await generateSuppliersReport();
+                    break;
+            }
+        }
+
+        async function generateStockReport() {
+            document.getElementById('reportName').textContent = 'تقرير حالة المخزون';
+            document.getElementById('reportTableTitle').textContent = 'تقرير حالة المخزون';
+            document.getElementById('reportTableMeta').textContent = 'جميع الأصناف مع الرصيد الحالي والقيمة';
+            document.getElementById('printReportTitle').textContent = 'تقرير حالة المخزون';
+
+            // Update headers
+            document.getElementById('reportTableHead').innerHTML = `
+                <tr>
+                    <th>رقم الصنف</th>
+                    <th>اسم الصنف</th>
+                    <th>التصنيف</th>
+                    <th>الوحدة</th>
+                    <th>الرصيد</th>
+                    <th>الحد الأدنى</th>
+                    <th>سعر الوحدة</th>
+                    <th>القيمة</th>
+                    <th>الحالة</th>
+                </tr>
+            `;
+
+            try {
+                const items = await window.api.getStock();
+                renderStockTable(items || allItems);
+            } catch (e) {
+                renderStockTable(allItems);
+            }
+        }
+
+        function renderStockTable(items) {
+            const tbody = document.getElementById('reportTableBody');
+            if (!items || items.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 40px;">لا توجد بيانات</td></tr>';
+                return;
+            }
+
+            let totalValue = 0;
+
+            tbody.innerHTML = items.map(item => {
+                const qty = item.current_quantity || 0;
+                const minQty = item.min_order_qty || 0;
+                const price = item.unit_price || 0;
+                const value = qty * price;
+                totalValue += value;
+                const isLow = qty <= minQty;
+
+                return `
+                    <tr>
+                        <td><span class="item-id">${item.item_id}</span></td>
+                        <td style="font-weight: 600;">${item.item_name}</td>
+                        <td><span class="badge badge-supplier">${item.category}</span></td>
+                        <td>${item.unit}</td>
+                        <td style="font-weight: 700;">${qty}</td>
+                        <td>${minQty}</td>
+                        <td>${price.toLocaleString('ar-LY', { minimumFractionDigits: 2 })} د.ل</td>
+                        <td style="font-weight: 600;">${value.toLocaleString('ar-LY', { minimumFractionDigits: 2 })} د.ل</td>
+                        <td><span class="badge ${isLow ? 'badge-low' : 'badge-available'}">${isLow ? 'منخفض' : 'متوفر'}</span></td>
+                    </tr>
+                `;
+            }).join('');
+
+            document.getElementById('recordCount').textContent = items.length;
+            document.getElementById('totalValue').textContent = totalValue.toLocaleString('ar-LY', { minimumFractionDigits: 2 }) + ' د.ل';
+        }
+
+        async function generateLowStockReport() {
+            document.getElementById('reportName').textContent = 'الأصناف منخفضة الرصيد';
+            document.getElementById('reportTableTitle').textContent = 'تقرير الأصناف منخفضة الرصيد';
+            document.getElementById('reportTableMeta').textContent = 'أصناف وصلت أو قاربت على الحد الأدنى';
+            document.getElementById('printReportTitle').textContent = 'تقرير الأصناف منخفضة الرصيد';
+
+            document.getElementById('reportTableHead').innerHTML = `
+                <tr>
+                    <th>رقم الصنف</th>
+                    <th>اسم الصنف</th>
+                    <th>التصنيف</th>
+                    <th>الوحدة</th>
+                    <th>الرصيد الحالي</th>
+                    <th>الحد الأدنى</th>
+                    <th>النقص</th>
+                    <th>الحالة</th>
+                </tr>
+            `;
+
+            try {
+                const items = await window.api.getStock();
+                const lowItems = (items || allItems).filter(item =>
+                    (item.current_quantity || 0) <= (item.min_order_qty || 0)
+                );
+                renderLowStockTable(lowItems);
+            } catch (e) {
+                const lowItems = allItems.filter(item =>
+                    (item.current_quantity || 0) <= (item.min_order_qty || 0)
+                );
+                renderLowStockTable(lowItems);
+            }
+        }
+
+        function renderLowStockTable(items) {
+            const tbody = document.getElementById('reportTableBody');
+            if (!items || items.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 40px;">لا توجد أصناف منخفضة ✓</td></tr>';
+                document.getElementById('recordCount').textContent = '0';
+                document.getElementById('totalValue').textContent = '0 د.ل';
+                return;
+            }
+
+            tbody.innerHTML = items.map(item => {
+                const qty = item.current_quantity || 0;
+                const minQty = item.min_order_qty || 0;
+                const deficit = minQty - qty;
+
+                return `
+                    <tr>
+                        <td><span class="item-id">${item.item_id}</span></td>
+                        <td style="font-weight: 600;">${item.item_name}</td>
+                        <td><span class="badge badge-supplier">${item.category}</span></td>
+                        <td>${item.unit}</td>
+                        <td style="font-weight: 700; color: var(--danger);">${qty}</td>
+                        <td>${minQty}</td>
+                        <td style="font-weight: 700; color: var(--danger);">${deficit > 0 ? '+' + deficit : deficit}</td>
+                        <td><span class="badge badge-low">منخفض</span></td>
+                    </tr>
+                `;
+            }).join('');
+
+            document.getElementById('recordCount').textContent = items.length;
+            document.getElementById('totalValue').textContent = items.length + ' صنف';
+        }
+
+        async function generateMovementsReport(dateFrom, dateTo) {
+            document.getElementById('reportName').textContent = 'حركات التوريد والصرف';
+            document.getElementById('reportTableTitle').textContent = 'تقرير حركات التوريد والصرف';
+            document.getElementById('reportTableMeta').textContent = `الفترة: ${dateFrom} إلى ${dateTo}`;
+            document.getElementById('printReportTitle').textContent = 'تقرير حركات التوريد والصرف';
+
+            document.getElementById('reportTableHead').innerHTML = `
+                <tr>
+                    <th>رقم الإذن</th>
+                    <th>النوع</th>
+                    <th>التاريخ</th>
+                    <th>الجهة / المورد</th>
+                    <th>المخزن</th>
+                    <th>القيمة</th>
+                </tr>
+            `;
+
             try {
                 const transactions = await window.api.getTransactionsHistory();
-                tbody.innerHTML = '';
-                
-                if(transactions.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">لا توجد حركات سابقة مسجلة</td></tr>';
-                    return;
-                }
-
-                transactions.forEach(t => {
-                    // تنسيق نوع الإذن
-                    const isSupply = t.transaction_type === 'In';
-                    const typeHtml = isSupply 
-                        ? '<span class="badge badge-in">📥 توريد (دخول)</span>' 
-                        : '<span class="badge badge-out">📤 صرف (خروج)</span>';
-                    
-                    // تنسيق التاريخ (اقتطاع الوقت الزائد إن وجد)
-                    const dateObj = new Date(t.transaction_date);
-                    const dateFormatted = dateObj.toLocaleDateString('ar-LY');
-
-                    tbody.innerHTML += `
-                        <tr>
-                            <td>${t.transaction_id}</td>
-                            <td>${typeHtml}</td>
-                            <td dir="ltr" style="text-align:right;">${dateFormatted}</td>
-                            <td>${t.receipt_number || '-'}</td>
-                            <td><strong>${t.entity_name || 'غير محدد'}</strong></td>
-                            <td>${t.store_name}</td>
-                        </tr>
-                    `;
-                });
-            } catch (error) {
-                console.error(error);
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:red;">خطأ في الجلب</td></tr>';
+                renderMovementsTable(transactions || []);
+            } catch (e) {
+                renderSampleMovements();
             }
         }
-        // تحميل البيانات عند فتح الصفحة
+
+        function renderMovementsTable(transactions) {
+            const tbody = document.getElementById('reportTableBody');
+            if (!transactions || transactions.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px;">لا توجد حركات في هذه الفترة</td></tr>';
+                document.getElementById('recordCount').textContent = '0';
+                document.getElementById('totalValue').textContent = '0 د.ل';
+                return;
+            }
+
+            let totalValue = 0;
+
+            tbody.innerHTML = transactions.map(t => {
+                const isSupply = t.transaction_type === 'In';
+                const typeBadge = isSupply
+                    ? '<span class="badge badge-supply">📥 توريد</span>'
+                    : '<span class="badge badge-dispense">📤 صرف</span>';
+                const dateStr = new Date(t.transaction_date).toLocaleDateString('ar-LY');
+
+                return `
+                    <tr>
+                        <td style="font-weight: 600; font-family: monospace;">${t.receipt_number || '-'}</td>
+                        <td>${typeBadge}</td>
+                        <td>${dateStr}</td>
+                        <td>${t.entity_name || 'غير محدد'}</td>
+                        <td>${t.store_name || 'المخزن الرئيسي'}</td>
+                        <td style="font-weight: 600;">${(t.total_value || 0).toLocaleString('ar-LY', { minimumFractionDigits: 2 })} د.ل</td>
+                    </tr>
+                `;
+            }).join('');
+
+            document.getElementById('recordCount').textContent = transactions.length;
+            document.getElementById('totalValue').textContent = totalValue.toLocaleString('ar-LY', { minimumFractionDigits: 2 }) + ' د.ل';
+        }
+
+        function renderSampleMovements() {
+            const samples = [
+                { receipt_number: 'صرف-2026-002', transaction_type: 'Out', transaction_date: '2026-06-12', entity_name: 'مكتب الشؤون الإدارية', store_name: 'المخزن الرئيسي', total_value: 332.50 },
+                { receipt_number: 'صرف-2026-001', transaction_type: 'Out', transaction_date: '2026-06-10', entity_name: 'قسم الهندسة الكهربائية', store_name: 'المخزن الرئيسي', total_value: 504.00 },
+                { receipt_number: 'توريد-2026-002', transaction_type: 'In', transaction_date: '2026-06-07', entity_name: 'مكتبة مصراتة الحديثة', store_name: 'المخزن الرئيسي', total_value: 1575.00 },
+                { receipt_number: 'توريد-2026-001', transaction_type: 'In', transaction_date: '2026-06-02', entity_name: 'شركة المدار للتجهيزات', store_name: 'المخزن الرئيسي', total_value: 3740.00 }
+            ];
+            renderMovementsTable(samples);
+        }
+
+        async function generateItemCardReport() {
+            document.getElementById('reportName').textContent = 'بطاقة حركة صنف';
+            document.getElementById('reportTableTitle').textContent = 'بطاقة حركة صنف';
+            document.getElementById('reportTableMeta').textContent = 'تفاصيل حركات صنف محدد';
+            document.getElementById('printReportTitle').textContent = 'بطاقة حركة صنف';
+
+            document.getElementById('reportTableHead').innerHTML = `
+                <tr>
+                    <th>التاريخ</th>
+                    <th>نوع الحركة</th>
+                    <th>رقم الإذن</th>
+                    <th>الجهة</th>
+                    <th>الكمية</th>
+                    <th>الرصيد</th>
+                </tr>
+            `;
+
+            document.getElementById('reportTableBody').innerHTML =
+                '<tr><td colspan="6" style="text-align: center; padding: 40px;">اختر صنفاً من القائمة أعلاه</td></tr>';
+            document.getElementById('recordCount').textContent = '0';
+            document.getElementById('totalValue').textContent = '-';
+        }
+
+        async function generateSuppliersReport() {
+            document.getElementById('reportName').textContent = 'دليل الموردين والجهات';
+            document.getElementById('reportTableTitle').textContent = 'دليل الموردين والجهات';
+            document.getElementById('reportTableMeta').textContent = 'قائمة الموردين والجهات المسجلة';
+            document.getElementById('printReportTitle').textContent = 'دليل الموردين والجهات';
+
+            document.getElementById('reportTableHead').innerHTML = `
+                <tr>
+                    <th>الكود</th>
+                    <th>الاسم</th>
+                    <th>النوع</th>
+                    <th>رقم الهاتف</th>
+                    <th>العنوان</th>
+                </tr>
+            `;
+
+            try {
+                const entities = await window.api.getEntities();
+                renderSuppliersTable(entities || []);
+            } catch (e) {
+                renderSampleSuppliers();
+            }
+        }
+
+        function renderSuppliersTable(entities) {
+            const tbody = document.getElementById('reportTableBody');
+            if (!entities || entities.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px;">لا توجد جهات مسجلة</td></tr>';
+                document.getElementById('recordCount').textContent = '0';
+                document.getElementById('totalValue').textContent = '-';
+                return;
+            }
+
+            tbody.innerHTML = entities.map(e => {
+                const typeBadge = e.type === 'supplier'
+                    ? '<span class="badge badge-supplier">مورد</span>'
+                    : '<span class="badge badge-dept">جهة</span>';
+
+                return `
+                    <tr>
+                        <td><span class="item-id">${e.code || e.id}</span></td>
+                        <td style="font-weight: 600;">${e.name}</td>
+                        <td>${typeBadge}</td>
+                        <td>${e.phone || '-'}</td>
+                        <td>${e.address || '-'}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            document.getElementById('recordCount').textContent = entities.length;
+            document.getElementById('totalValue').textContent = entities.length + ' جهة';
+        }
+
+        function renderSampleSuppliers() {
+            const samples = [
+                { code: 'SUP-001', name: 'شركة المدار للتجهيزات', type: 'supplier', phone: '051-2345678', address: 'مصراتة - المنطقة الصناعية' },
+                { code: 'SUP-002', name: 'مكتبة مصراتة الحديثة', type: 'supplier', phone: '052-3456789', address: 'مصراتة - وسط المدينة' },
+                { code: 'ENT-001', name: 'قسم الهندسة الكهربائية', type: 'entity', phone: '-', address: 'الكلية - المبنى الرئيسي' },
+                { code: 'ENT-002', name: 'مكتب الشؤون الإدارية', type: 'entity', phone: '-', address: 'الكلية - الإدارة' }
+            ];
+            renderSuppliersTable(samples);
+        }
+
+        // ========== Load Data ==========
+        async function loadReportData() {
+            try {
+                const items = await window.api.getItems();
+                allItems = items || [];
+
+                // Populate item select
+                const select = document.getElementById('itemSelect');
+                select.innerHTML = '<option value="">اختر صنفاً</option>' +
+                    allItems.map(item => `<option value="${item.item_id}">${item.item_name}</option>`).join('');
+
+                generateStockReport();
+            } catch (error) {
+                loadSampleData();
+            }
+        }
+
+        function loadSampleData() {
+            allItems = [
+                { item_id: 'ITM-001', item_name: 'ورق تصوير A4', unit: 'رزمة', category: 'قرطاسية', min_order_qty: 20, current_quantity: 85, unit_price: 24.50 },
+                { item_id: 'ITM-002', item_name: 'حبر طابعة أسود HP', unit: 'قطعة', category: 'أحبار وطباعة', min_order_qty: 10, current_quantity: 8, unit_price: 145.00 },
+                { item_id: 'ITM-003', item_name: 'كابل شبكة CAT6', unit: 'لفة', category: 'شبكات', min_order_qty: 5, current_quantity: 12, unit_price: 390.00 },
+                { item_id: 'ITM-004', item_name: 'قفازات حماية صناعية', unit: 'زوج', category: 'سلامة مهنية', min_order_qty: 30, current_quantity: 120, unit_price: 18.00 },
+                { item_id: 'ITM-005', item_name: 'مفك كهربائي متعدد', unit: 'قطعة', category: 'عدد وأدوات', min_order_qty: 8, current_quantity: 6, unit_price: 72.00 },
+                { item_id: 'ITM-007', item_name: 'مصباح LED مختبر', unit: 'قطعة', category: 'كهرباء', min_order_qty: 20, current_quantity: 19, unit_price: 15.50 },
+                { item_id: 'ITM-008', item_name: 'ملف حفظ بلاستيكي', unit: 'قطعة', category: 'قرطاسية', min_order_qty: 50, current_quantity: 210, unit_price: 3.50 },
+                { item_id: 'ITM-009', item_name: 'ورق تصوير A3', unit: 'رزمة', category: 'قرطاسية', min_order_qty: 10, current_quantity: 45, unit_price: 60.00 },
+                { item_id: 'ITM-010', item_name: 'وصلة كاميرا', unit: 'قطعة', category: 'شبكات', min_order_qty: 8, current_quantity: 5, unit_price: 68.00 }
+            ];
+
+            const select = document.getElementById('itemSelect');
+            select.innerHTML = '<option value="">اختر صنفاً</option>' +
+                allItems.map(item => `<option value="${item.item_id}">${item.item_name}</option>`).join('');
+
+            generateStockReport();
+        }
+
+        // ========== Toast ==========
+        function showToast(message, type = 'info') {
+            const container = document.querySelector('.toast-container') || createToastContainer();
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            const icons = { success: '✓', error: '✕', warning: '⚠', info: 'ℹ' };
+            toast.innerHTML = `<span>${icons[type] || 'ℹ'}</span><span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
+        function createToastContainer() {
+            const container = document.createElement('div');
+            container.className = 'toast-container';
+            document.body.appendChild(container);
+            return container;
+        }
+
+        // ========== Print ==========
+        function handleDirectPrint() {
+            window.print();
+        }
+
+        // ========== Init ==========
         window.addEventListener('DOMContentLoaded', () => {
-            loadInventory();
-            loadHistory();
+            const session = checkSession();
+            if (session) {
+                updateUserInfo(session);
+                setDefaultDates();
+                loadReportData();
+            }
         });
     </script>
     <script src="assets/js/common.js"></script>

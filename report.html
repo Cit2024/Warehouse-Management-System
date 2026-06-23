@@ -22,7 +22,6 @@
                 </div>
             </div>
         </div>
-
         <nav class="sidebar-nav">
             <div class="nav-section">
                 <div class="nav-section-title">الرئيسية</div>
@@ -31,7 +30,6 @@
                     <span class="menu-text">لوحة التحكم</span>
                 </a>
             </div>
-
             <div class="nav-section">
                 <div class="nav-section-title">الحركات</div>
                 <a href="supply.html" class="menu-item">
@@ -43,7 +41,6 @@
                     <span class="menu-text">أذونات الصرف والعهد</span>
                 </a>
             </div>
-
             <div class="nav-section">
                 <div class="nav-section-title">البيانات المالية والإدارية</div>
                 <a href="entities.html" class="menu-item">
@@ -55,7 +52,6 @@
                     <span class="menu-text">التقارير</span>
                 </a>
             </div>
-
             <div class="nav-section">
                 <div class="nav-section-title">النظام</div>
                 <a href="settings.html" class="menu-item">
@@ -64,7 +60,6 @@
                 </a>
             </div>
         </nav>
-
         <div class="sidebar-footer">
             <div class="user-card">
                 <div class="user-avatar" id="userAvatar">م</div>
@@ -82,7 +77,6 @@
 
     <!-- Main Content -->
     <main class="content">
-        <!-- Top Header -->
         <header class="top-header">
             <div class="header-search">
                 <span class="header-search-icon">⌕</span>
@@ -93,13 +87,10 @@
                 <button class="header-btn" onclick="handleLogout()" title="خروج"><span>🚪</span></button>
             </div>
         </header>
-
-        <!-- Page Title -->
         <div class="header-title-section">
             <h1>التقارير</h1>
             <p class="subtitle">إعداد وطباعة تقارير المخزون والحركات</p>
         </div>
-
         <div class="page-content">
             <!-- Report Filters Panel -->
             <div class="panel" style="margin-bottom: 20px;">
@@ -115,25 +106,21 @@
                                 <option value="suppliers">دليل الموردين والجهات</option>
                             </select>
                         </div>
-
                         <div class="form-group" id="dateFromGroup" style="min-width: 160px; margin-bottom: 0;">
                             <label>من تاريخ</label>
                             <input type="date" id="dateFrom" class="filter-select" style="min-width: 160px;">
                         </div>
-
                         <div class="form-group" id="dateToGroup" style="min-width: 160px; margin-bottom: 0;">
                             <label>إلى تاريخ</label>
                             <input type="date" id="dateTo" class="filter-select" style="min-width: 160px;">
                         </div>
-
                         <div class="form-group" id="itemSelectGroup" style="flex: 1; min-width: 200px; margin-bottom: 0; display: none;">
                             <label>الصنف (لبطاقة الحركة)</label>
                             <select class="filter-select" id="itemSelect" style="width: 100%;">
                                 <option value="">اختر صنفاً</option>
                             </select>
                         </div>
-
-                        <button class="btn btn-primary" onclick="generateReport()">
+                        <button class="btn btn-primary" onclick="generateAndPrintReport()">
                             <span>▣</span>
                             <span>طباعة التقرير</span>
                         </button>
@@ -167,27 +154,25 @@
             <div class="table-container" style="margin-top: 20px;">
                 <div class="table-toolbar">
                     <div class="table-title" id="reportTableTitle">تقرير حالة المخزون</div>
-                    <div class="table-meta" id="reportTableMeta">جميع الأصناف مع الرصيد الحالي</div>
+                    <div class="table-meta" id="reportTableMeta">جميع الأصناف مع الرصيد الحالي والقيمة</div>
                 </div>
                 <div style="overflow-x: auto;">
                     <table id="reportTable">
                         <thead id="reportTableHead">
                             <tr>
-                                <th>رقم الصنف</th>
-                                <th>اسم الصنف</th>
-                                <th>التصنيف</th>
-                                <th>الوحدة</th>
-                                <th>الرصيد</th>
-                                <th>الحد الأدنى</th>
-                                <th>سعر الوحدة</th>
-                                <th>القيمة</th>
-                                <th>الحالة</th>
+                                <th class="sortable" onclick="sortTable(0)">رقم الصنف <span class="sort-icon">↕</span></th>
+                                <th class="sortable" onclick="sortTable(1)">اسم الصنف <span class="sort-icon">↕</span></th>
+                                <th class="sortable" onclick="sortTable(2)">التصنيف <span class="sort-icon">↕</span></th>
+                                <th class="sortable" onclick="sortTable(3)">الوحدة <span class="sort-icon">↕</span></th>
+                                <th class="sortable" onclick="sortTable(4)">الرصيد <span class="sort-icon">↕</span></th>
+                                <th class="sortable" onclick="sortTable(5)">الحد الأدنى <span class="sort-icon">↕</span></th>
+                                <th class="sortable" onclick="sortTable(6)">سعر الوحدة <span class="sort-icon">↕</span></th>
+                                <th class="sortable" onclick="sortTable(7)">القيمة <span class="sort-icon">↕</span></th>
+                                <th class="sortable" onclick="sortTable(8)">الحالة <span class="sort-icon">↕</span></th>
                             </tr>
                         </thead>
                         <tbody id="reportTableBody">
-                            <tr>
-                                <td colspan="9" style="text-align: center;">جاري التحميل...</td>
-                            </tr>
+                            <tr><td colspan="9" style="text-align: center; padding: 40px;">جاري التحميل...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -195,49 +180,35 @@
         </div>
     </main>
 
-    <!-- Print Header -->
+    <!-- Print Header (hidden, shown only when printing) -->
     <div class="print-header">
         <h1>كلية التقنية الصناعية - مصراتة</h1>
         <h2 id="printReportTitle">تقرير حالة المخزون</h2>
+        <p id="printReportDate"></p>
     </div>
 
     <script>
         let allItems = [];
         let allTransactions = [];
+        let currentReportData = [];
+        let sortDirection = {};
 
         // ========== Session ==========
         function checkSession() {
             const session = JSON.parse(localStorage.getItem('userSession'));
-            if (!session) {
-                window.location.href = 'index.html';
-                return null;
-            }
+            if (!session) { window.location.href = 'index.html'; return null; }
             return session;
         }
-
         function updateUserInfo(session) {
             const avatar = document.getElementById('userAvatar');
             const nameEl = document.getElementById('userName');
             const roleEl = document.getElementById('userRole');
-
-            if (session.username) {
-                avatar.textContent = session.username.charAt(0);
-                nameEl.textContent = session.username;
-            }
-
-            const roleNames = {
-                'admin': 'مدير النظام',
-                'storekeeper': 'أمين المخزن',
-                'viewer': 'مستعرض'
-            };
+            if (session.username) { avatar.textContent = session.username.charAt(0); nameEl.textContent = session.username; }
+            const roleNames = { 'admin': 'مدير النظام', 'storekeeper': 'أمين المخزن', 'viewer': 'مستعرض' };
             roleEl.textContent = roleNames[session.role] || session.role || 'مستعرض';
         }
-
         function handleLogout() {
-            if (confirm('هل أنت متأكد من تسجيل الخروج؟')) {
-                localStorage.removeItem('userSession');
-                window.location.href = 'index.html';
-            }
+            if (confirm('هل أنت متأكد من تسجيل الخروج؟')) { localStorage.removeItem('userSession'); window.location.href = 'index.html'; }
         }
 
         // ========== Date Defaults ==========
@@ -251,13 +222,60 @@
         // ========== Report Type Change ==========
         function onReportTypeChange() {
             const type = document.getElementById('reportType').value;
-            const itemGroup = document.getElementById('itemSelectGroup');
-
-            // Show/hide item selector for item card report
-            itemGroup.style.display = type === 'itemcard' ? 'block' : 'none';
-
-            // Update report
+            document.getElementById('itemSelectGroup').style.display = type === 'itemcard' ? 'block' : 'none';
             generateReport();
+        }
+
+        // ========== MAIN PRINT FUNCTION ==========
+        function generateAndPrintReport() {
+            generateReport();           // Step 1: refresh/generate the table data
+            setTimeout(function() {     // Step 2: wait for DOM update, then print
+                handleDirectPrint();
+            }, 300);
+        }
+
+        function handleDirectPrint() {
+            document.getElementById('printReportDate').textContent = 'التاريخ: ' + new Date().toLocaleDateString('ar-LY');
+            window.print();
+        }
+
+        // ========== TABLE SORTING ==========
+        function sortTable(colIndex) {
+            const tbody = document.getElementById('reportTableBody');
+            const rows = Array.from(tbody.querySelectorAll('tr')).filter(r => r.querySelectorAll('td').length > 1);
+            if (rows.length === 0) return;
+
+            const currentDir = sortDirection[colIndex] || 'asc';
+            const newDir = currentDir === 'asc' ? 'desc' : 'asc';
+            sortDirection = {}; // reset others
+            sortDirection[colIndex] = newDir;
+
+            // Update sort icons
+            document.querySelectorAll('.sort-icon').forEach((span, idx) => {
+                span.textContent = '↕';
+            });
+            const headers = document.querySelectorAll('#reportTableHead th');
+            if (headers[colIndex]) {
+                const icon = headers[colIndex].querySelector('.sort-icon');
+                if (icon) icon.textContent = newDir === 'asc' ? '↑' : '↓';
+            }
+
+            rows.sort((a, b) => {
+                const aText = a.cells[colIndex] ? a.cells[colIndex].textContent.trim() : '';
+                const bText = b.cells[colIndex] ? b.cells[colIndex].textContent.trim() : '';
+
+                // Try numeric comparison first
+                const aNum = parseFloat(aText.replace(/[^\d.-]/g, ''));
+                const bNum = parseFloat(bText.replace(/[^\d.-]/g, ''));
+
+                if (!isNaN(aNum) && !isNaN(bNum) && aText !== '' && bText !== '') {
+                    return newDir === 'asc' ? aNum - bNum : bNum - aNum;
+                }
+                // Fall back to string comparison
+                return newDir === 'asc' ? aText.localeCompare(bText, 'ar') : bText.localeCompare(aText, 'ar');
+            });
+
+            rows.forEach(r => tbody.appendChild(r));
         }
 
         // ========== Generate Report ==========
@@ -265,64 +283,42 @@
             const type = document.getElementById('reportType').value;
             const dateFrom = document.getElementById('dateFrom').value;
             const dateTo = document.getElementById('dateTo').value;
-
             switch(type) {
-                case 'stock':
-                    await generateStockReport();
-                    break;
-                case 'lowstock':
-                    await generateLowStockReport();
-                    break;
-                case 'movements':
-                    await generateMovementsReport(dateFrom, dateTo);
-                    break;
-                case 'itemcard':
-                    await generateItemCardReport();
-                    break;
-                case 'suppliers':
-                    await generateSuppliersReport();
-                    break;
+                case 'stock': await generateStockReport(); break;
+                case 'lowstock': await generateLowStockReport(); break;
+                case 'movements': await generateMovementsReport(dateFrom, dateTo); break;
+                case 'itemcard': await generateItemCardReport(); break;
+                case 'suppliers': await generateSuppliersReport(); break;
             }
         }
 
         async function generateStockReport() {
-            document.getElementById('reportName').textContent = 'تقرير حالة المخزون';
-            document.getElementById('reportTableTitle').textContent = 'تقرير حالة المخزون';
-            document.getElementById('reportTableMeta').textContent = 'جميع الأصناف مع الرصيد الحالي والقيمة';
-            document.getElementById('printReportTitle').textContent = 'تقرير حالة المخزون';
-
-            // Update headers
-            document.getElementById('reportTableHead').innerHTML = `
-                <tr>
-                    <th>رقم الصنف</th>
-                    <th>اسم الصنف</th>
-                    <th>التصنيف</th>
-                    <th>الوحدة</th>
-                    <th>الرصيد</th>
-                    <th>الحد الأدنى</th>
-                    <th>سعر الوحدة</th>
-                    <th>القيمة</th>
-                    <th>الحالة</th>
-                </tr>
-            `;
-
+            setReportMeta('تقرير حالة المخزون', 'جميع الأصناف مع الرصيد الحالي والقيمة');
+            setTableHeaders([
+                { text: 'رقم الصنف', sortable: true },
+                { text: 'اسم الصنف', sortable: true },
+                { text: 'التصنيف', sortable: true },
+                { text: 'الوحدة', sortable: true },
+                { text: 'الرصيد', sortable: true },
+                { text: 'الحد الأدنى', sortable: true },
+                { text: 'سعر الوحدة', sortable: true },
+                { text: 'القيمة', sortable: true },
+                { text: 'الحالة', sortable: true }
+            ]);
             try {
                 const items = await window.api.getStock();
                 renderStockTable(items || allItems);
-            } catch (e) {
-                renderStockTable(allItems);
-            }
+            } catch (e) { renderStockTable(allItems); }
         }
 
         function renderStockTable(items) {
             const tbody = document.getElementById('reportTableBody');
             if (!items || items.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 40px;">لا توجد بيانات</td></tr>';
-                return;
+                updateStats(0, '0 د.ل'); return;
             }
-
             let totalValue = 0;
-
+            currentReportData = items;
             tbody.innerHTML = items.map(item => {
                 const qty = item.current_quantity || 0;
                 const minQty = item.min_order_qty || 0;
@@ -330,56 +326,36 @@
                 const value = qty * price;
                 totalValue += value;
                 const isLow = qty <= minQty;
-
-                return `
-                    <tr>
-                        <td><span class="item-id">${item.item_id}</span></td>
-                        <td style="font-weight: 600;">${item.item_name}</td>
-                        <td><span class="badge badge-supplier">${item.category}</span></td>
-                        <td>${item.unit}</td>
-                        <td style="font-weight: 700;">${qty}</td>
-                        <td>${minQty}</td>
-                        <td>${price.toLocaleString('ar-LY', { minimumFractionDigits: 2 })} د.ل</td>
-                        <td style="font-weight: 600;">${value.toLocaleString('ar-LY', { minimumFractionDigits: 2 })} د.ل</td>
-                        <td><span class="badge ${isLow ? 'badge-low' : 'badge-available'}">${isLow ? 'منخفض' : 'متوفر'}</span></td>
-                    </tr>
-                `;
+                return `<tr>
+                    <td><span class="item-id">${item.item_id}</span></td>
+                    <td style="font-weight: 600;">${item.item_name}</td>
+                    <td><span class="badge badge-supplier">${item.category}</span></td>
+                    <td>${item.unit}</td>
+                    <td style="font-weight: 700;">${qty}</td>
+                    <td>${minQty}</td>
+                    <td>${price.toLocaleString('ar-LY', {minimumFractionDigits: 2})} د.ل</td>
+                    <td style="font-weight: 600;">${value.toLocaleString('ar-LY', {minimumFractionDigits: 2})} د.ل</td>
+                    <td><span class="badge ${isLow ? 'badge-low' : 'badge-available'}">${isLow ? 'منخفض' : 'متوفر'}</span></td>
+                </tr>`;
             }).join('');
-
-            document.getElementById('recordCount').textContent = items.length;
-            document.getElementById('totalValue').textContent = totalValue.toLocaleString('ar-LY', { minimumFractionDigits: 2 }) + ' د.ل';
+            updateStats(items.length, totalValue.toLocaleString('ar-LY', {minimumFractionDigits: 2}) + ' د.ل');
         }
 
         async function generateLowStockReport() {
-            document.getElementById('reportName').textContent = 'الأصناف منخفضة الرصيد';
-            document.getElementById('reportTableTitle').textContent = 'تقرير الأصناف منخفضة الرصيد';
-            document.getElementById('reportTableMeta').textContent = 'أصناف وصلت أو قاربت على الحد الأدنى';
-            document.getElementById('printReportTitle').textContent = 'تقرير الأصناف منخفضة الرصيد';
-
-            document.getElementById('reportTableHead').innerHTML = `
-                <tr>
-                    <th>رقم الصنف</th>
-                    <th>اسم الصنف</th>
-                    <th>التصنيف</th>
-                    <th>الوحدة</th>
-                    <th>الرصيد الحالي</th>
-                    <th>الحد الأدنى</th>
-                    <th>النقص</th>
-                    <th>الحالة</th>
-                </tr>
-            `;
-
+            setReportMeta('الأصناف منخفضة الرصيد', 'أصناف وصلت أو قاربت على الحد الأدنى');
+            setTableHeaders([
+                { text: 'رقم الصنف', sortable: true }, { text: 'اسم الصنف', sortable: true },
+                { text: 'التصنيف', sortable: true }, { text: 'الوحدة', sortable: true },
+                { text: 'الرصيد الحالي', sortable: true }, { text: 'الحد الأدنى', sortable: true },
+                { text: 'النقص', sortable: true }, { text: 'الحالة', sortable: true }
+            ]);
             try {
                 const items = await window.api.getStock();
-                const lowItems = (items || allItems).filter(item =>
-                    (item.current_quantity || 0) <= (item.min_order_qty || 0)
-                );
-                renderLowStockTable(lowItems);
+                const low = (items || allItems).filter(i => (i.current_quantity || 0) <= (i.min_order_qty || 0));
+                renderLowStockTable(low);
             } catch (e) {
-                const lowItems = allItems.filter(item =>
-                    (item.current_quantity || 0) <= (item.min_order_qty || 0)
-                );
-                renderLowStockTable(lowItems);
+                const low = allItems.filter(i => (i.current_quantity || 0) <= (i.min_order_qty || 0));
+                renderLowStockTable(low);
             }
         }
 
@@ -387,187 +363,144 @@
             const tbody = document.getElementById('reportTableBody');
             if (!items || items.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 40px;">لا توجد أصناف منخفضة ✓</td></tr>';
-                document.getElementById('recordCount').textContent = '0';
-                document.getElementById('totalValue').textContent = '0 د.ل';
-                return;
+                updateStats(0, '0'); return;
             }
-
+            currentReportData = items;
             tbody.innerHTML = items.map(item => {
                 const qty = item.current_quantity || 0;
                 const minQty = item.min_order_qty || 0;
                 const deficit = minQty - qty;
-
-                return `
-                    <tr>
-                        <td><span class="item-id">${item.item_id}</span></td>
-                        <td style="font-weight: 600;">${item.item_name}</td>
-                        <td><span class="badge badge-supplier">${item.category}</span></td>
-                        <td>${item.unit}</td>
-                        <td style="font-weight: 700; color: var(--danger);">${qty}</td>
-                        <td>${minQty}</td>
-                        <td style="font-weight: 700; color: var(--danger);">${deficit > 0 ? '+' + deficit : deficit}</td>
-                        <td><span class="badge badge-low">منخفض</span></td>
-                    </tr>
-                `;
+                return `<tr>
+                    <td><span class="item-id">${item.item_id}</span></td>
+                    <td style="font-weight: 600;">${item.item_name}</td>
+                    <td><span class="badge badge-supplier">${item.category}</span></td>
+                    <td>${item.unit}</td>
+                    <td style="font-weight: 700; color: var(--danger);">${qty}</td>
+                    <td>${minQty}</td>
+                    <td style="font-weight: 700; color: var(--danger);">${deficit > 0 ? '+' + deficit : deficit}</td>
+                    <td><span class="badge badge-low">منخفض</span></td>
+                </tr>`;
             }).join('');
-
-            document.getElementById('recordCount').textContent = items.length;
-            document.getElementById('totalValue').textContent = items.length + ' صنف';
+            updateStats(items.length, items.length + ' صنف');
         }
 
         async function generateMovementsReport(dateFrom, dateTo) {
-            document.getElementById('reportName').textContent = 'حركات التوريد والصرف';
-            document.getElementById('reportTableTitle').textContent = 'تقرير حركات التوريد والصرف';
-            document.getElementById('reportTableMeta').textContent = `الفترة: ${dateFrom} إلى ${dateTo}`;
-            document.getElementById('printReportTitle').textContent = 'تقرير حركات التوريد والصرف';
-
-            document.getElementById('reportTableHead').innerHTML = `
-                <tr>
-                    <th>رقم الإذن</th>
-                    <th>النوع</th>
-                    <th>التاريخ</th>
-                    <th>الجهة / المورد</th>
-                    <th>المخزن</th>
-                    <th>القيمة</th>
-                </tr>
-            `;
-
+            setReportMeta('حركات التوريد والصرف', `الفترة: ${dateFrom} إلى ${dateTo}`);
+            setTableHeaders([
+                { text: 'رقم الإذن', sortable: true }, { text: 'النوع', sortable: true },
+                { text: 'التاريخ', sortable: true }, { text: 'الجهة / المورد', sortable: true },
+                { text: 'المخزن', sortable: true }, { text: 'القيمة', sortable: true }
+            ]);
             try {
                 const transactions = await window.api.getTransactionsHistory();
                 renderMovementsTable(transactions || []);
-            } catch (e) {
-                renderSampleMovements();
-            }
+            } catch (e) { renderSampleMovements(); }
         }
 
         function renderMovementsTable(transactions) {
             const tbody = document.getElementById('reportTableBody');
             if (!transactions || transactions.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px;">لا توجد حركات في هذه الفترة</td></tr>';
-                document.getElementById('recordCount').textContent = '0';
-                document.getElementById('totalValue').textContent = '0 د.ل';
-                return;
+                updateStats(0, '0 د.ل'); return;
             }
-
             let totalValue = 0;
-
+            currentReportData = transactions;
             tbody.innerHTML = transactions.map(t => {
                 const isSupply = t.transaction_type === 'In';
-                const typeBadge = isSupply
-                    ? '<span class="badge badge-supply">📥 توريد</span>'
-                    : '<span class="badge badge-dispense">📤 صرف</span>';
+                const typeBadge = isSupply ? '<span class="badge badge-supply">📥 توريد</span>' : '<span class="badge badge-dispense">📤 صرف</span>';
                 const dateStr = new Date(t.transaction_date).toLocaleDateString('ar-LY');
-
-                return `
-                    <tr>
-                        <td style="font-weight: 600; font-family: monospace;">${t.receipt_number || '-'}</td>
-                        <td>${typeBadge}</td>
-                        <td>${dateStr}</td>
-                        <td>${t.entity_name || 'غير محدد'}</td>
-                        <td>${t.store_name || 'المخزن الرئيسي'}</td>
-                        <td style="font-weight: 600;">${(t.total_value || 0).toLocaleString('ar-LY', { minimumFractionDigits: 2 })} د.ل</td>
-                    </tr>
-                `;
+                const val = t.total_value || 0; totalValue += val;
+                return `<tr>
+                    <td style="font-weight: 600; font-family: monospace;">${t.receipt_number || '-'}</td>
+                    <td>${typeBadge}</td>
+                    <td>${dateStr}</td>
+                    <td>${t.entity_name || 'غير محدد'}</td>
+                    <td>${t.store_name || 'المخزن الرئيسي'}</td>
+                    <td style="font-weight: 600;">${val.toLocaleString('ar-LY', {minimumFractionDigits: 2})} د.ل</td>
+                </tr>`;
             }).join('');
-
-            document.getElementById('recordCount').textContent = transactions.length;
-            document.getElementById('totalValue').textContent = totalValue.toLocaleString('ar-LY', { minimumFractionDigits: 2 }) + ' د.ل';
+            updateStats(transactions.length, totalValue.toLocaleString('ar-LY', {minimumFractionDigits: 2}) + ' د.ل');
         }
 
         function renderSampleMovements() {
-            const samples = [
+            renderMovementsTable([
                 { receipt_number: 'صرف-2026-002', transaction_type: 'Out', transaction_date: '2026-06-12', entity_name: 'مكتب الشؤون الإدارية', store_name: 'المخزن الرئيسي', total_value: 332.50 },
                 { receipt_number: 'صرف-2026-001', transaction_type: 'Out', transaction_date: '2026-06-10', entity_name: 'قسم الهندسة الكهربائية', store_name: 'المخزن الرئيسي', total_value: 504.00 },
                 { receipt_number: 'توريد-2026-002', transaction_type: 'In', transaction_date: '2026-06-07', entity_name: 'مكتبة مصراتة الحديثة', store_name: 'المخزن الرئيسي', total_value: 1575.00 },
                 { receipt_number: 'توريد-2026-001', transaction_type: 'In', transaction_date: '2026-06-02', entity_name: 'شركة المدار للتجهيزات', store_name: 'المخزن الرئيسي', total_value: 3740.00 }
-            ];
-            renderMovementsTable(samples);
+            ]);
         }
 
         async function generateItemCardReport() {
-            document.getElementById('reportName').textContent = 'بطاقة حركة صنف';
-            document.getElementById('reportTableTitle').textContent = 'بطاقة حركة صنف';
-            document.getElementById('reportTableMeta').textContent = 'تفاصيل حركات صنف محدد';
-            document.getElementById('printReportTitle').textContent = 'بطاقة حركة صنف';
-
-            document.getElementById('reportTableHead').innerHTML = `
-                <tr>
-                    <th>التاريخ</th>
-                    <th>نوع الحركة</th>
-                    <th>رقم الإذن</th>
-                    <th>الجهة</th>
-                    <th>الكمية</th>
-                    <th>الرصيد</th>
-                </tr>
-            `;
-
-            document.getElementById('reportTableBody').innerHTML =
-                '<tr><td colspan="6" style="text-align: center; padding: 40px;">اختر صنفاً من القائمة أعلاه</td></tr>';
-            document.getElementById('recordCount').textContent = '0';
-            document.getElementById('totalValue').textContent = '-';
+            setReportMeta('بطاقة حركة صنف', 'تفاصيل حركات صنف محدد');
+            setTableHeaders([
+                { text: 'التاريخ', sortable: true }, { text: 'نوع الحركة', sortable: true },
+                { text: 'رقم الإذن', sortable: true }, { text: 'الجهة', sortable: true },
+                { text: 'الكمية', sortable: true }, { text: 'الرصيد', sortable: true }
+            ]);
+            document.getElementById('reportTableBody').innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px;">اختر صنفاً من القائمة أعلاه ثم اضغط طباعة التقرير</td></tr>';
+            updateStats(0, '-');
         }
 
         async function generateSuppliersReport() {
-            document.getElementById('reportName').textContent = 'دليل الموردين والجهات';
-            document.getElementById('reportTableTitle').textContent = 'دليل الموردين والجهات';
-            document.getElementById('reportTableMeta').textContent = 'قائمة الموردين والجهات المسجلة';
-            document.getElementById('printReportTitle').textContent = 'دليل الموردين والجهات';
-
-            document.getElementById('reportTableHead').innerHTML = `
-                <tr>
-                    <th>الكود</th>
-                    <th>الاسم</th>
-                    <th>النوع</th>
-                    <th>رقم الهاتف</th>
-                    <th>العنوان</th>
-                </tr>
-            `;
-
+            setReportMeta('دليل الموردين والجهات', 'قائمة الموردين والجهات المسجلة');
+            setTableHeaders([
+                { text: 'الكود', sortable: true }, { text: 'الاسم', sortable: true },
+                { text: 'النوع', sortable: true }, { text: 'رقم الهاتف', sortable: true },
+                { text: 'العنوان', sortable: true }
+            ]);
             try {
-                const entities = await window.api.getEntities();
+                const entities = await window.api.getAllEntities();
                 renderSuppliersTable(entities || []);
-            } catch (e) {
-                renderSampleSuppliers();
-            }
+            } catch (e) { renderSampleSuppliers(); }
         }
 
         function renderSuppliersTable(entities) {
             const tbody = document.getElementById('reportTableBody');
             if (!entities || entities.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px;">لا توجد جهات مسجلة</td></tr>';
-                document.getElementById('recordCount').textContent = '0';
-                document.getElementById('totalValue').textContent = '-';
-                return;
+                updateStats(0, '-'); return;
             }
-
+            currentReportData = entities;
             tbody.innerHTML = entities.map(e => {
-                const typeBadge = e.type === 'supplier'
-                    ? '<span class="badge badge-supplier">مورد</span>'
-                    : '<span class="badge badge-dept">جهة</span>';
-
-                return `
-                    <tr>
-                        <td><span class="item-id">${e.code || e.id}</span></td>
-                        <td style="font-weight: 600;">${e.name}</td>
-                        <td>${typeBadge}</td>
-                        <td>${e.phone || '-'}</td>
-                        <td>${e.address || '-'}</td>
-                    </tr>
-                `;
+                const typeBadge = e.entity_type === 'Supplier' ? '<span class="badge badge-supplier">مورد</span>' : '<span class="badge badge-dept">جهة</span>';
+                return `<tr>
+                    <td><span class="item-id">${e.code || e.entity_id}</span></td>
+                    <td style="font-weight: 600;">${e.entity_name}</td>
+                    <td>${typeBadge}</td>
+                    <td>${e.phone || '-'}</td>
+                    <td>${e.address || '-'}</td>
+                </tr>`;
             }).join('');
-
-            document.getElementById('recordCount').textContent = entities.length;
-            document.getElementById('totalValue').textContent = entities.length + ' جهة';
+            updateStats(entities.length, entities.length + ' جهة');
         }
 
         function renderSampleSuppliers() {
-            const samples = [
-                { code: 'SUP-001', name: 'شركة المدار للتجهيزات', type: 'supplier', phone: '051-2345678', address: 'مصراتة - المنطقة الصناعية' },
-                { code: 'SUP-002', name: 'مكتبة مصراتة الحديثة', type: 'supplier', phone: '052-3456789', address: 'مصراتة - وسط المدينة' },
-                { code: 'ENT-001', name: 'قسم الهندسة الكهربائية', type: 'entity', phone: '-', address: 'الكلية - المبنى الرئيسي' },
-                { code: 'ENT-002', name: 'مكتب الشؤون الإدارية', type: 'entity', phone: '-', address: 'الكلية - الإدارة' }
-            ];
-            renderSuppliersTable(samples);
+            renderSuppliersTable([
+                { code: 'SUP-001', entity_name: 'شركة المدار للتجهيزات', entity_type: 'Supplier', phone: '051-2345678', address: 'مصراتة - المنطقة الصناعية' },
+                { code: 'SUP-002', entity_name: 'مكتبة مصراتة الحديثة', entity_type: 'Supplier', phone: '052-3456789', address: 'مصراتة - وسط المدينة' },
+                { code: 'ENT-001', entity_name: 'قسم الهندسة الكهربائية', entity_type: 'Department', phone: '', address: 'الكلية - المبنى الرئيسي' },
+                { code: 'ENT-002', entity_name: 'مكتب الشؤون الإدارية', entity_type: 'Department', phone: '', address: 'الكلية - الإدارة' }
+            ]);
+        }
+
+        // ========== Helpers ==========
+        function setReportMeta(name, desc) {
+            document.getElementById('reportName').textContent = name;
+            document.getElementById('printReportTitle').textContent = name;
+            document.getElementById('reportTableTitle').textContent = name;
+            document.getElementById('reportTableMeta').textContent = desc;
+        }
+        function updateStats(count, value) {
+            document.getElementById('recordCount').textContent = count;
+            document.getElementById('totalValue').textContent = value;
+        }
+        function setTableHeaders(headers) {
+            const thead = document.getElementById('reportTableHead');
+            thead.innerHTML = '<tr>' + headers.map((h, i) =>
+                `<th class="sortable" onclick="sortTable(${i})">${h.text} <span class="sort-icon">↕</span></th>`
+            ).join('') + '</tr>';
+            sortDirection = {};
         }
 
         // ========== Load Data ==========
@@ -575,18 +508,12 @@
             try {
                 const items = await window.api.getItems();
                 allItems = items || [];
-
-                // Populate item select
                 const select = document.getElementById('itemSelect');
                 select.innerHTML = '<option value="">اختر صنفاً</option>' +
                     allItems.map(item => `<option value="${item.item_id}">${item.item_name}</option>`).join('');
-
                 generateStockReport();
-            } catch (error) {
-                loadSampleData();
-            }
+            } catch (error) { loadSampleData(); }
         }
-
         function loadSampleData() {
             allItems = [
                 { item_id: 'ITM-001', item_name: 'ورق تصوير A4', unit: 'رزمة', category: 'قرطاسية', min_order_qty: 20, current_quantity: 85, unit_price: 24.50 },
@@ -599,48 +526,26 @@
                 { item_id: 'ITM-009', item_name: 'ورق تصوير A3', unit: 'رزمة', category: 'قرطاسية', min_order_qty: 10, current_quantity: 45, unit_price: 60.00 },
                 { item_id: 'ITM-010', item_name: 'وصلة كاميرا', unit: 'قطعة', category: 'شبكات', min_order_qty: 8, current_quantity: 5, unit_price: 68.00 }
             ];
-
             const select = document.getElementById('itemSelect');
             select.innerHTML = '<option value="">اختر صنفاً</option>' +
                 allItems.map(item => `<option value="${item.item_id}">${item.item_name}</option>`).join('');
-
             generateStockReport();
         }
 
         // ========== Toast ==========
-        function showToast(message, type = 'info') {
-            const container = document.querySelector('.toast-container') || createToastContainer();
-            const toast = document.createElement('div');
-            toast.className = `toast toast-${type}`;
+        function showToast(message, type) {
+            const container = document.querySelector('.toast-container') || (() => { const c = document.createElement('div'); c.className = 'toast-container'; document.body.appendChild(c); return c; })();
+            const toast = document.createElement('div'); toast.className = `toast toast-${type}`;
             const icons = { success: '✓', error: '✕', warning: '⚠', info: 'ℹ' };
-            toast.innerHTML = `<span>${icons[type] || 'ℹ'}</span><span>${message}</span>`;
+            toast.innerHTML = `<span>${icons[type]}</span><span>${message}</span>`;
             container.appendChild(toast);
-            setTimeout(() => {
-                toast.style.opacity = '0';
-                setTimeout(() => toast.remove(), 300);
-            }, 4000);
-        }
-
-        function createToastContainer() {
-            const container = document.createElement('div');
-            container.className = 'toast-container';
-            document.body.appendChild(container);
-            return container;
-        }
-
-        // ========== Print ==========
-        function handleDirectPrint() {
-            window.print();
+            setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 4000);
         }
 
         // ========== Init ==========
         window.addEventListener('DOMContentLoaded', () => {
             const session = checkSession();
-            if (session) {
-                updateUserInfo(session);
-                setDefaultDates();
-                loadReportData();
-            }
+            if (session) { updateUserInfo(session); setDefaultDates(); loadReportData(); }
         });
     </script>
     <script src="assets/js/common.js"></script>

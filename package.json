@@ -24,7 +24,8 @@
     },
     "linux": {
       "icon": "assets/ادارة_المخازن.png",
-      "target": ["AppImage", "deb"]
+      "target": ["AppImage", "deb"],
+      "maintainer": "CIT Warehouse System <cit-warehouse@example.com>"
     }
   },
   "devDependencies": {

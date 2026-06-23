@@ -11,6 +11,10 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  actions: write   # required to delete stale artifacts before upload
+  contents: read
+
 jobs:
   build:
     strategy:

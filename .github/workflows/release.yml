@@ -26,49 +26,41 @@ jobs:
     name: Build — ${{ matrix.os }}
 
     steps:
-      # ——— 1. Checkout source ———
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # ——— 2. Setup Node.js ———
-      - name: Setup Node.js 20
+      - name: Setup Node.js 22
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
-      # ——— 3. Install dependencies ———
       - name: Install dependencies
         run: npm ci
 
-      # ——— 4. Rebuild native addons for Electron ———
       - name: Rebuild native addons (better-sqlite3)
         run: npx @electron/rebuild
 
-      # ——— 5. Build the application ———
       - name: Build application
         run: npm run ${{ matrix.build_script }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # ——— 6. Upload build artifacts (for the release job) ———
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact_name }}
           path: ${{ matrix.artifact_path }}
           if-no-files-found: error
+          overwrite: true
+          retention-days: 1
 
-  # ——————————————————————————————————————
-  # Create a GitHub Release with all built artifacts
-  # ——————————————————————————————————————
   release:
     needs: build
     runs-on: ubuntu-latest
     name: Publish GitHub Release
 
     steps:
-      # ——— 1. Download all build artifacts ———
       - name: Download Windows artifact
         uses: actions/download-artifact@v4
         with:
@@ -81,7 +73,6 @@ jobs:
           name: linux-appimage
           path: release-assets/
 
-      # ——— 2. Create GitHub Release ———
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:

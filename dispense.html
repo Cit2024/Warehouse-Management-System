@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>إذن صرف - منظومة إدارة المخازن</title>
+    <title>إذن صرف - منظومة إدارة المخازن | كلية التقنية الصناعية</title>
     <link rel="stylesheet" href="assets/css/main.css">
     <link rel="stylesheet" href="assets/css/layout.css">
     <link rel="stylesheet" href="assets/css/components.css">
@@ -11,274 +11,347 @@
 </head>
 <body>
 
-    <div class="sidebar">
-        <div class="logo">📦 منظومة المخازن</div>
-        <div style="margin-top: 30px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;"></div>
-        <a href="dashboard.html" class="menu-item">📋 إدارة الأصناف</a>
-        <a href="supply.html" class="menu-item">📥 أذونات التوريد</a>
-        <a href="dispense.html" class="menu-item active">📤 أذونات الصرف</a>
-        <a href="./entities.html" class="menu-item">👥 الجهات والموردين</a>
-        <a href="./report.html" class="menu-item">📊 التقارير والإحصائيات</a>
-			  <a href="./settings.html" class="menu-item">⚙️الاعدادات</a>
-        <a href="#" class="menu-item" style="color: #28a745;" onclick="handleBackup(event)">💾 نسخة احتياطية</a>
-        <a href="#" class="menu-item" style="color: #17a2b8;" onclick="handleRestore(event)">📂 استيراد نسخة سابقة</a>
-        <a href="index.html" class="menu-item" style="margin-top: 50px; background: rgba(220, 53, 69, 0.2); color: #ff6b6b;">🚪 تسجيل الخروج</a>
-    </div>
-
-    <!-- المحتوى -->
-    <div class="content">
-        <div class="header">
-            <h2>إضافة إذن صرف (تسليم بضاعة)</h2>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-brand">
+                <div class="sidebar-brand-icon">📦</div>
+                <div class="sidebar-brand-text">
+                    <div class="sidebar-brand-title">إدارة المخازن</div>
+                    <div class="sidebar-brand-subtitle">كلية التقنية الصناعية</div>
+                </div>
+            </div>
         </div>
 
-        <div class="receipt-card">
-             <div class="print-header">
-                <h1>كلية التقنية الصناعية - مصراتة</h1>
-                <h2>إذن صرف مخزني</h2>
-            </div>
-            <!-- رأس المستند -->
-            <div class="form-grid">
-                <div class="form-group">
-                    <label>رقم إذن الصرف الورقي</label>
-                    <input type="text" id="receiptNumber" placeholder="رقم الإذن..." required>
-                </div>
-                <div class="form-group">
-                    <label>تاريخ الصرف</label>
-                    <input type="date" id="receiptDate" required>
-                </div>
-                <div class="form-group">
-                    <label>الجهة الطالبة (القسم/الموظف)</label>
-                    <select id="requesterSelect" required>
-                        <option value="">-- اختر الجهة --</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>المخزن المصروف منه</label>
-                    <select id="storeSelect" required>
-                        <option value="">-- اختر المخزن --</option>
-                    </select>
-                </div>
-                <div class="form-group" style="grid-column: span 2;">
-                    <label>ملاحظات / سبب الصرف</label>
-                    <input type="text" id="receiptNotes" placeholder="مثال: عهدة شخصية، احتياج معمل...">
-                </div>
+        <nav class="sidebar-nav">
+            <div class="nav-section">
+                <div class="nav-section-title">الرئيسية</div>
+                <a href="dashboard.html" class="menu-item">
+                    <span class="menu-icon">⌂</span>
+                    <span class="menu-text">لوحة التحكم</span>
+                </a>
             </div>
 
-            <!-- سطور المستند (الأصناف) -->
-            <div class="items-section">
-                <h3 style="margin-bottom: 15px; color: var(--primary);">الأصناف المصروفة</h3>
-                
-                <div class="add-row-container">
-                    <select id="itemSelect" onchange="updateStockBadge()" style="flex: 2; padding: 10px; border-radius: 6px; border: 1px solid #ccc;">
-                        <option value="">-- اختر الصنف --</option>
-                    </select>
-                    
-                    <!-- عرض الكمية المتاحة كدليل للمستخدم -->
-                    <div class="stock-badge" id="stockBadge">المتاح: 0</div>
-                    
-                    <input type="number" id="itemQty" placeholder="الكمية المطلوبة" min="1" style="flex: 1; padding: 10px; border-radius: 6px; border: 1px solid #ccc;">
-                    
-                    <button type="button" class="btn btn-primary" onclick="addRow()">➕ إضافة للجدول</button>
+            <div class="nav-section">
+                <div class="nav-section-title">الحركات</div>
+                <a href="supply.html" class="menu-item">
+                    <span class="menu-icon">⇩</span>
+                    <span class="menu-text">أذونات التوريد</span>
+                </a>
+                <a href="dispense.html" class="menu-item active">
+                    <span class="menu-icon">⇧</span>
+                    <span class="menu-text">أذونات الصرف والعهد</span>
+                </a>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">البيانات المالية والإدارية</div>
+                <a href="entities.html" class="menu-item">
+                    <span class="menu-icon">♙</span>
+                    <span class="menu-text">الموردون والجهات</span>
+                </a>
+                <a href="report.html" class="menu-item">
+                    <span class="menu-icon">▥</span>
+                    <span class="menu-text">التقارير</span>
+                </a>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">النظام</div>
+                <a href="settings.html" class="menu-item">
+                    <span class="menu-icon">⚙</span>
+                    <span class="menu-text">الإعدادات</span>
+                </a>
+            </div>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-card">
+                <div class="user-avatar" id="userAvatar">م</div>
+                <div class="user-info">
+                    <div class="user-name" id="userName">مستعرض النظام</div>
+                    <div class="user-role" id="userRole">مستعرض</div>
                 </div>
-
-                <table id="receiptTable">
-                    <thead>
-                        <tr>
-                            <th>رقم الصنف</th>
-                            <th>اسم الصنف</th>
-                            <th>الكمية المصروفة</th>
-                            <th>إجراء</th>
-                        </tr>
-                    </thead>
-                    <tbody id="receiptTableBody">
-                    </tbody>
-                </table>
             </div>
-<!-- توقيعات تظهر فقط عند الطباعة -->
-            <div class="signatures">
-                <div class="signature-box">المستلم (الجهة الطالبة)</div>
-                <div class="signature-box">أمين المخزن</div>
-                <div class="signature-box">مدير الإدارة / الاعتماد</div>
-            </div>
+            <a href="#" class="menu-item" onclick="handleLogout()">
+                <span class="menu-icon">↪</span>
+                <span class="menu-text">تسجيل الخروج</span>
+            </a>
+        </div>
+    </aside>
 
-            <!-- أزرار الإجراءات -->
-            <div style="display: flex; gap: 10px; margin-top: 20px;">
-                <button type="button" class="btn btn-success btn-block" style="flex: 2;" onclick="saveReceipt()">💾 حفظ واعتماد إذن الصرف</button>
+    <!-- Main Content -->
+    <main class="content">
+        <!-- Top Header -->
+        <header class="top-header">
+            <div class="header-search">
+                <span class="header-search-icon">⌕</span>
+                <input type="text" placeholder="بحث...">
+            </div>
+            <div class="header-actions">
+                <button class="header-btn" onclick="handleLogout()" title="خروج"><span>🚪</span></button>
+            </div>
+        </header>
+
+        <!-- Page Title -->
+        <div class="header-title-section">
+            <h1>إضافة إذن صرف جديد</h1>
+            <p class="subtitle">تسليم بضاعة لجهة طالبة</p>
+        </div>
+
+        <div class="page-content">
+            <div class="panel">
+                <div class="panel-body">
+                    <!-- Print Header -->
+                    <div class="print-header">
+                        <h1>كلية التقنية الصناعية - مصراتة</h1>
+                        <h2>إذن صرف مخزني</h2>
+                    </div>
+
+                    <!-- Document Header -->
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>رقم إذن الصرف الورقي</label>
+                            <input type="text" id="receiptNumber" placeholder="رقم الإذن..." required>
+                        </div>
+                        <div class="form-group">
+                            <label>تاريخ الصرف</label>
+                            <input type="date" id="receiptDate" required>
+                        </div>
+                        <div class="form-group">
+                            <label>الجهة الطالبة (القسم/الموظف)</label>
+                            <select id="requesterSelect" required>
+                                <option value="">-- اختر الجهة --</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>المخزن المصروف منه</label>
+                            <select id="storeSelect" required>
+                                <option value="">-- اختر المخزن --</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="grid-column: span 2;">
+                            <label>ملاحظات / سبب الصرف</label>
+                            <input type="text" id="receiptNotes" placeholder="مثال: عهدة شخصية، احتياج معمل...">
+                        </div>
+                    </div>
+
+                    <!-- Items Section -->
+                    <div class="items-section" style="margin-top: 30px; border-top: 2px dashed var(--border-color); padding-top: 20px;">
+                        <h3 style="margin-bottom: 20px; color: var(--primary); font-size: 16px;">الأصناف المصروفة</h3>
+
+                        <div style="display: flex; gap: 12px; align-items: flex-end; margin-bottom: 20px; flex-wrap: wrap;">
+                            <div class="form-group" style="flex: 2; min-width: 200px; margin-bottom: 0;">
+                                <label>الصنف</label>
+                                <select id="itemSelect" onchange="updateStockBadge()">
+                                    <option value="">-- اختر الصنف --</option>
+                                </select>
+                            </div>
+                            <div class="stock-badge" id="stockBadge" style="margin-bottom: 8px;">المتاح: 0</div>
+                            <div class="form-group" style="flex: 1; min-width: 100px; margin-bottom: 0;">
+                                <label>الكمية المطلوبة</label>
+                                <input type="number" id="itemQty" placeholder="الكمية" min="1">
+                            </div>
+                            <button type="button" class="btn btn-primary" onclick="addRow()">
+                                <span>➕</span>
+                                <span>إضافة</span>
+                            </button>
+                        </div>
+
+                        <div class="table-container" style="margin-bottom: 20px;">
+                            <table id="receiptTable">
+                                <thead>
+                                    <tr>
+                                        <th>رقم الصنف</th>
+                                        <th>اسم الصنف</th>
+                                        <th>الكمية المصروفة</th>
+                                        <th>إجراء</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="receiptTableBody">
+                                    <tr>
+                                        <td colspan="4" style="text-align: center; padding: 32px; color: var(--text-muted);">
+                                            لم تتم إضافة أصناف بعد
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Signatures (Print Only) -->
+                    <div class="signatures" style="display: none;">
+                        <div class="signature-box">المستلم (الجهة الطالبة)</div>
+                        <div class="signature-box">أمين المخزن</div>
+                        <div class="signature-box">مدير الإدارة / الاعتماد</div>
+                    </div>
+
+                    <div style="display: flex; gap: 12px; margin-top: 24px;">
+                        <button type="button" class="btn btn-success btn-lg" style="flex: 1;" onclick="saveReceipt()">
+                            <span>💾</span>
+                            <span>حفظ واعتماد إذن الصرف</span>
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
-    <!-- نافذة خيارات الطباعة بعد نجاح الحفظ (تظهر برمجياً) -->
-    <div class="modal" id="printModal" style="z-index: 9999; display:none;">
-        <div class="modal-content" style="text-align: center; width: 450px;">
-            <div style="font-size: 50px; margin-bottom: 10px;">✅</div>
-            <h3 style="margin-bottom: 10px; color: #28a745;" id="successMessage">تم حفظ إذن الصرف بنجاح</h3>
-            <p style="margin-bottom: 25px; color: #666; font-size: 16px;">كيف تود التعامل مع هذا المستند؟</p>
-            
+    </main>
+
+    <!-- Print Modal -->
+    <div class="modal" id="printModal">
+        <div class="modal-content" style="text-align: center; max-width: 420px;">
+            <div style="font-size: 56px; margin-bottom: 16px;">✅</div>
+            <h3 style="margin-bottom: 8px; color: var(--success); font-size: 18px;" id="successMessage">تم الحفظ بنجاح</h3>
+            <p style="margin-bottom: 28px; color: var(--text-gray); font-size: 14px;">كيف تود التعامل مع هذا المستند؟</p>
+
             <div style="display: flex; gap: 10px; justify-content: center;">
-                <button type="button" class="btn" style="flex: 1; background: #FF6B00; color: white;" onclick="executePrint('direct')">
-                    🖨️ طباعة مباشرة
+                <button type="button" class="btn btn-primary" onclick="executePrint('direct')">
+                    <span>🖨️</span>
+                    <span>طباعة</span>
                 </button>
-                <button type="button" class="btn" style="flex: 1; background: #dc3545; color: white;" onclick="executePrint('pdf')">
-                    📄 حفظ كـ PDF
-                </button>
-                <button type="button" class="btn" style="flex: 1; background: #e0e0e0; color: #333;" onclick="executePrint('none')">
-                    ❌ لا، شكراً
+                <button type="button" class="btn btn-secondary" onclick="executePrint('none')">
+                    <span>❌</span>
+                    <span>إغلاق</span>
                 </button>
             </div>
         </div>
     </div>
+
     <script>
         let availableStock = [];
-        let receiptRows = []; 
+        let receiptRows = [];
 
+        // Session
+        function checkSession() {
+            const session = JSON.parse(localStorage.getItem('userSession'));
+            if (!session) { window.location.href = 'index.html'; return null; }
+            return session;
+        }
+
+        function updateUserInfo(session) {
+            const avatar = document.getElementById('userAvatar');
+            const nameEl = document.getElementById('userName');
+            const roleEl = document.getElementById('userRole');
+            if (session.username) { avatar.textContent = session.username.charAt(0); nameEl.textContent = session.username; }
+            const roleNames = { 'admin': 'مدير النظام', 'storekeeper': 'أمين المخزن', 'viewer': 'مستعرض' };
+            roleEl.textContent = roleNames[session.role] || session.role || 'مستعرض';
+        }
+
+        function handleLogout() {
+            if (confirm('هل أنت متأكد من تسجيل الخروج؟')) { localStorage.removeItem('userSession'); window.location.href = 'index.html'; }
+        }
+
+        // Init
         window.addEventListener('DOMContentLoaded', async () => {
+            const session = checkSession();
+            if (session) {
+                updateUserInfo(session);
+                if (session.role === 'viewer') {
+                    document.querySelectorAll('button, input, select').forEach(el => {
+                        if (!el.closest('.sidebar') && !el.closest('.modal')) el.disabled = true;
+                    });
+                }
+            }
             document.getElementById('receiptDate').valueAsDate = new Date();
-            
+
             try {
                 const stores = await window.api.getStores();
                 const requesters = await window.api.getRequesters();
-                availableStock = await window.api.getStock(); // نجلب الأصناف التي لها رصيد فقط
+                availableStock = await window.api.getStock();
 
                 const storeSelect = document.getElementById('storeSelect');
                 stores.forEach(s => storeSelect.innerHTML += `<option value="${s.store_id}">${s.store_name}</option>`);
 
                 const requesterSelect = document.getElementById('requesterSelect');
-                requesters.forEach(req => requesterSelect.innerHTML += `<option value="${req.entity_id}">${req.entity_name} (${req.entity_type === 'Department' ? 'قسم' : 'موظف'})</option>`);
+                requesters.forEach(r => requesterSelect.innerHTML += `<option value="${r.entity_id}">${r.entity_name} (${r.entity_type === 'Department' ? 'قسم' : 'موظف'})</option>`);
 
                 const itemSelect = document.getElementById('itemSelect');
-                availableStock.forEach(item => {
-                    itemSelect.innerHTML += `<option value="${item.item_id}">${item.item_name} (${item.unit})</option>`;
-                });
-
-            } catch (error) {
-                console.error(error);
-                alert("حدث خطأ في جلب البيانات.");
-            }
+                availableStock.forEach(item => itemSelect.innerHTML += `<option value="${item.item_id}">${item.item_name} (${item.unit})</option>`);
+            } catch (error) { console.error(error); }
         });
 
-        // تحديث شارة الرصيد عند اختيار صنف
         function updateStockBadge() {
             const itemId = parseInt(document.getElementById('itemSelect').value);
             const badge = document.getElementById('stockBadge');
-            
-            if(!itemId) {
-                badge.innerText = "المتاح: 0";
-                return;
-            }
-
+            if (!itemId) { badge.textContent = "المتاح: 0"; return; }
             const item = availableStock.find(i => i.item_id === itemId);
-            badge.innerText = `المتاح: ${item.current_quantity} ${item.unit}`;
-            // تعيين الحد الأقصى لحقل الإدخال
+            badge.textContent = `المتاح: ${item.current_quantity} ${item.unit}`;
             document.getElementById('itemQty').max = item.current_quantity;
         }
 
         function addRow() {
             const itemSelect = document.getElementById('itemSelect');
             const qtyInput = document.getElementById('itemQty');
-
             const itemId = parseInt(itemSelect.value);
             const qty = parseFloat(qtyInput.value);
 
-            if (!itemId || !qty || qty <= 0) {
-                alert('الرجاء اختيار صنف وإدخال كمية صحيحة.');
-                return;
-            }
+            if (!itemId || !qty || qty <= 0) { showToast('الرجاء اختيار صنف وإدخال كمية صحيحة', 'warning'); return; }
 
             const itemData = availableStock.find(i => i.item_id === itemId);
+            if (qty > itemData.current_quantity) { showToast(`الكمية المتاحة (${itemData.current_quantity}) لا تكفي`, 'error'); return; }
+            if (receiptRows.find(r => r.itemId === itemId)) { showToast('هذا الصنف مضاف مسبقاً', 'warning'); return; }
 
-            // التحقق الجوهري: هل الكمية المطلوبة متوفرة؟
-            if (qty > itemData.current_quantity) {
-                alert(`عذراً، الكمية المتاحة في المخزن (${itemData.current_quantity}) لا تكفي للصرف!`);
-                return;
-            }
-
-            if (receiptRows.find(r => r.itemId === itemId)) {
-                alert('هذا الصنف مضاف مسبقاً، يرجى حذفه وإضافته بالكمية الجديدة إذا أردت التعديل.');
-                return;
-            }
-
-            receiptRows.push({
-                itemId: itemId,
-                itemName: itemData.item_name,
-                quantity: qty
-            });
-
-            itemSelect.value = '';
-            qtyInput.value = '';
-            updateStockBadge();
-            renderTable();
+            receiptRows.push({ itemId, itemName: itemData.item_name, quantity: qty });
+            itemSelect.value = ''; qtyInput.value = ''; updateStockBadge(); renderTable();
         }
 
-        function removeRow(itemId) {
-            receiptRows = receiptRows.filter(r => r.itemId !== itemId);
-            renderTable();
-        }
+        function removeRow(itemId) { receiptRows = receiptRows.filter(r => r.itemId !== itemId); renderTable(); }
 
         function renderTable() {
             const tbody = document.getElementById('receiptTableBody');
-            tbody.innerHTML = '';
-            receiptRows.forEach(row => {
-                tbody.innerHTML += `
-                    <tr>
-                        <td>${row.itemId}</td>
-                        <td><strong>${row.itemName}</strong></td>
-                        <td><span style="color: red; font-weight: bold;">- ${row.quantity}</span></td>
-                        <td><button type="button" class="btn btn-danger" onclick="removeRow(${row.itemId})">❌ حذف</button></td>
-                    </tr>
-                `;
-            });
+            if (receiptRows.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 32px; color: var(--text-muted);">لم تتم إضافة أصناف بعد</td></tr>';
+                return;
+            }
+            tbody.innerHTML = receiptRows.map(row => `
+                <tr>
+                    <td><span class="item-id">${row.itemId}</span></td>
+                    <td style="font-weight: 600;">${row.itemName}</td>
+                    <td style="font-weight: 700; color: var(--danger);">- ${row.quantity}</td>
+                    <td><button type="button" class="btn btn-sm btn-danger" onclick="removeRow(${row.itemId})">حذف</button></td>
+                </tr>
+            `).join('');
         }
 
         async function saveReceipt() {
+            const session = checkSession();
+            if (session && session.role === 'viewer') { showToast('لا تملك صلاحية الإضافة', 'error'); return; }
+
             const receiptNumber = document.getElementById('receiptNumber').value.trim();
             const receiptDate = document.getElementById('receiptDate').value;
             const requesterId = document.getElementById('requesterSelect').value;
             const storeId = document.getElementById('storeSelect').value;
             const notes = document.getElementById('receiptNotes').value.trim();
 
-            if (!receiptNumber || !receiptDate || !requesterId || !storeId) {
-                alert('الرجاء تعبئة كافة البيانات الأساسية للإذن.');
-                return;
-            }
+            if (!receiptNumber || !receiptDate || !requesterId || !storeId) { showToast('الرجاء تعبئة كافة البيانات الأساسية', 'warning'); return; }
+            if (receiptRows.length === 0) { showToast('لا يمكن حفظ إذن صرف فارغ', 'warning'); return; }
 
-            if (receiptRows.length === 0) {
-                alert('لا يمكن حفظ إذن صرف فارغ!');
-                return;
-            }
-
-            const receiptData = {
-                receiptNumber,
-                date: receiptDate + ' 00:00:00',
-                requesterId: parseInt(requesterId),
-                storeId: parseInt(storeId),
-                notes,
-                items: receiptRows
-            };
-
-            const result = await window.api.saveDispenseReceipt(receiptData);
-            if (result.success) {
-                alert('✅ ' + result.message);
-                const result1 = await window.api.saveDispenseReceipt(receiptData);
-                if (result1.success) {
-                    document.getElementById('successMessage').innerText = result.message;
-                    document.getElementById('printModal').style.display = 'flex';
-                } else {
-                    alert('❌ ' + result1.message);
-                }
-              } else {
-                  alert('❌ ' + result.message);
-              }
+            try {
+                const result = await window.api.saveDispenseReceipt({
+                    receiptNumber, date: receiptDate + ' 00:00:00',
+                    requesterId: parseInt(requesterId), storeId: parseInt(storeId),
+                    notes, items: receiptRows
+                });
+                if (result.success) {
+                    document.getElementById('successMessage').textContent = result.message;
+                    document.getElementById('printModal').classList.add('active');
+                } else { showToast(result.message, 'error'); }
+            } catch (error) { showToast('حدث خطأ أثناء الحفظ', 'error'); }
         }
-        async function executePrint(choice) {
-            document.getElementById('printModal').style.display = 'none';
 
-            if (choice === 'direct') {
-                await handleDirectPrint();
-            } else if (choice === 'pdf') {
-                await handlePdfExport();
-            }
-          
-            window.location.reload();
+        function executePrint(choice) {
+            document.getElementById('printModal').classList.remove('active');
+            if (choice === 'direct') window.print();
+            setTimeout(() => window.location.reload(), 500);
+        }
+
+        function showToast(message, type) {
+            const container = document.querySelector('.toast-container') || (() => { const c = document.createElement('div'); c.className = 'toast-container'; document.body.appendChild(c); return c; })();
+            const toast = document.createElement('div'); toast.className = `toast toast-${type}`;
+            const icons = { success: '✓', error: '✕', warning: '⚠', info: 'ℹ' };
+            toast.innerHTML = `<span>${icons[type]}</span><span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 4000);
         }
     </script>
     <script src="assets/js/common.js"></script>

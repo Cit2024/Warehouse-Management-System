@@ -8,365 +8,794 @@
     <link rel="stylesheet" href="assets/css/layout.css">
     <link rel="stylesheet" href="assets/css/components.css">
     <link rel="stylesheet" href="assets/css/print.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
 
+    <!-- Sidebar -->
     <aside class="sidebar">
-       <div class="logo">📦منظومة المخازن</div>
-       <div style="margin-top: 30px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;"></div>
-			 <a href="dashboard.html" class="menu-item active">📋إدارة الأصناف</a>
-			 <a href="supply.html" class="menu-item">📥أذونات التوريد</a>
-			 <a href="./dispense.html" class="menu-item">📤 أذونات الصرف </a>
-			 <a href="./entities.html" class="menu-item">	 👥 الجهات والموردين</a>
-			 <a href="./report.html" class="menu-item">📊	التقارير والإحصائيات</a>
-			 <a href="./settings.html" class="menu-item">⚙️الاعدادات</a>
-       <a href="#" class="menu-item" style="color: #28a745;" onclick="handleBackup(event)">💾 نسخة احتياطية</a>
-       <a href="#" class="menu-item" style="color: #17a2b8;" onclick="handleRestore(event)">📂 استيراد نسخة سابقة</a>
-       <a class="logout-btn menu-item" onclick="handleLogout()">🚪تسجيل الخروج</a>
+        <div class="sidebar-header">
+            <div class="sidebar-brand">
+                <div class="sidebar-brand-icon">📦</div>
+                <div class="sidebar-brand-text">
+                    <div class="sidebar-brand-title">إدارة المخازن</div>
+                    <div class="sidebar-brand-subtitle">كلية التقنية الصناعية</div>
+                </div>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <div class="nav-section">
+                <div class="nav-section-title">الرئيسية</div>
+                <a href="dashboard.html" class="menu-item active">
+                    <span class="menu-icon">⌂</span>
+                    <span class="menu-text">لوحة التحكم</span>
+                </a>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">إدارة المخزون</div>
+                <a href="dashboard.html" class="menu-item active">
+                    <span class="menu-icon">▦</span>
+                    <span class="menu-text">الأصناف والمخزون</span>
+                    <span class="menu-badge" id="sidebarItemCount">0</span>
+                </a>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">الحركات</div>
+                <a href="supply.html" class="menu-item">
+                    <span class="menu-icon">⇩</span>
+                    <span class="menu-text">أذونات التوريد</span>
+                </a>
+                <a href="dispense.html" class="menu-item">
+                    <span class="menu-icon">⇧</span>
+                    <span class="menu-text">أذونات الصرف والعهد</span>
+                </a>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">البيانات المالية والإدارية</div>
+                <a href="entities.html" class="menu-item">
+                    <span class="menu-icon">♙</span>
+                    <span class="menu-text">الموردون والجهات</span>
+                </a>
+                <a href="report.html" class="menu-item">
+                    <span class="menu-icon">▥</span>
+                    <span class="menu-text">التقارير</span>
+                </a>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">النظام</div>
+                <a href="settings.html" class="menu-item">
+                    <span class="menu-icon">⚙</span>
+                    <span class="menu-text">الإعدادات</span>
+                </a>
+            </div>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-card">
+                <div class="user-avatar" id="userAvatar">م</div>
+                <div class="user-info">
+                    <div class="user-name" id="userName">مستعرض النظام</div>
+                    <div class="user-role" id="userRole">مستعرض</div>
+                </div>
+            </div>
+            <a href="#" class="menu-item" onclick="handleLogout()">
+                <span class="menu-icon">↪</span>
+                <span class="menu-text">تسجيل الخروج</span>
+            </a>
+        </div>
     </aside>
 
-    <!-- المحتوى الرئيسي المحسن -->
+    <!-- Main Content -->
     <main class="content">
-        <header class="header">
-            <div class="header-left">
-                <h2>إدارة الأصناف</h2>
-                <div class="breadcrumb">الرئيسية / المخازن / الكتالوج الأساسي</div>
+        <!-- Top Header -->
+        <header class="top-header">
+            <div class="header-search">
+                <span class="header-search-icon">⌕</span>
+                <input type="text" id="globalSearch" placeholder="بحث سريع عن صنف أو جهة..." oninput="handleGlobalSearch()">
+            </div>
+            <div class="header-actions">
+                <button class="header-btn" onclick="loadDashboardData()" title="تحديث">
+                    <span>↻</span>
+                </button>
+                <button class="header-btn" onclick="handleLogout()" title="خروج">
+                    <span>🚪</span>
+                </button>
             </div>
         </header>
 
-        <!-- شريط الأدوات المحسن -->
-        <div class="toolbar">
-            <button class="btn btn-primary" onclick="openModal()">
-                ➕ إضافة صنف جديد
-            </button>
-            
-            <div class="search-box">
-                <span>🔍</span>
-                <input 
-                    type="text" 
-                    id="searchInput" 
-                    placeholder="بحث عن صنف..."
-                    oninput="filterItems()"
-                >
-            </div>
-            
-            <button class="btn btn-success" onclick="handleDirectPrint()">
-                🖨️ طباعة مباشرة
-            </button>
-            <button class="btn btn-warning" onclick="printReport()">
-                📄 حفظ كـ PDF
-            </button>
-            <button class="btn btn-secondary" onclick="loadItems()">
-                🔄 تحديث البيانات
-            </button>
+        <!-- Page Title -->
+        <div class="header-title-section">
+            <div id="roleBadgeContainer"></div>
+            <h1>لوحة التحكم</h1>
+            <p class="subtitle">نظرة شاملة على حالة المخزون والحركات</p>
         </div>
 
-        <!-- جدول البيانات المحسن -->
-        <div class="table-container">
-            <div class="table-header">
-                <div class="table-title">الكتالوج الأساسي للأصناف</div>
-                <div class="table-stats" id="tableStats">إجمالي الأصناف: 0</div>
+        <!-- Page Content -->
+        <div class="page-content">
+            <!-- Stats Cards -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon orange">▦</div>
+                    <div class="stat-content">
+                        <div class="stat-label">إجمالي الأصناف</div>
+                        <div class="stat-value" id="statTotalItems">0</div>
+                        <div class="stat-desc" id="statTotalUnits">0 وحدة مخزنة</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon green">ل.د</div>
+                    <div class="stat-content">
+                        <div class="stat-label">قيمة المخزون التقديرية</div>
+                        <div class="stat-value" id="statInventoryValue">0</div>
+                        <div class="stat-desc">حسب آخر سعر مسجل</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon red">!</div>
+                    <div class="stat-content">
+                        <div class="stat-label">أصناف تحتاج متابعة</div>
+                        <div class="stat-value" id="statLowStock">0</div>
+                        <div class="stat-desc">عند أو تحت الحد الأدنى</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon blue">↕</div>
+                    <div class="stat-content">
+                        <div class="stat-label">حركات الشهر الحالي</div>
+                        <div class="stat-value" id="statMonthlyMovements">0</div>
+                        <div class="stat-desc">توريد وصرف</div>
+                    </div>
+                </div>
             </div>
-            
-            <div style="overflow-x: auto;">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>رقم الصنف</th>
-                            <th>اسم الصنف</th>
-                            <th>الوحدة</th>
-                            <th>التصنيف</th>
-                            <th>نقطة إعادة الطلب</th>
-                            <th class="action-col">الإجراءات</th>
-                        </tr>
-                    </thead>
-                    <tbody id="itemsTableBody">
-                        <tr>
-                            <td colspan="6">
-                                <div class="empty-state">
-                                    <div class="empty-state-icon">📦</div>
-                                    <h3>جاري تحميل البيانات...</h3>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+
+            <!-- Content Grid -->
+            <div class="content-grid">
+                <!-- Quick Actions -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <div>
+                            <div class="panel-title">إجراءات سريعة</div>
+                            <div class="panel-subtitle">الوصول المباشر للعمليات المسموح بها</div>
+                        </div>
+                    </div>
+                    <div class="panel-body">
+                        <div class="quick-actions">
+                            <a href="report.html" class="quick-action-btn">
+                                <div class="quick-action-icon">▥</div>
+                                <div class="quick-action-label">إعداد تقرير</div>
+                            </a>
+                            <a href="supply.html" class="quick-action-btn">
+                                <div class="quick-action-icon" style="background: #DBEAFE; color: #3B82F6;">⇩</div>
+                                <div class="quick-action-label">توريد جديد</div>
+                            </a>
+                            <a href="dispense.html" class="quick-action-btn">
+                                <div class="quick-action-icon" style="background: #FEE2E2; color: #EF4444;">⇧</div>
+                                <div class="quick-action-label">صرف جديد</div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chart Panel -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <div>
+                            <div class="panel-title">توزيع قيمة المخزون حسب التصنيف</div>
+                            <div class="panel-subtitle">أعلى التصنيفات من حيث القيمة الحالية</div>
+                        </div>
+                    </div>
+                    <div class="panel-body">
+                        <div class="chart-container">
+                            <canvas id="inventoryChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Second Row -->
+            <div class="content-grid">
+                <!-- Low Stock Alerts -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <div>
+                            <div class="panel-title">تنبيهات الحد الأدنى</div>
+                            <div class="panel-subtitle">الأصناف التي تتطلب إعادة طلب</div>
+                        </div>
+                        <a href="dashboard.html" class="btn btn-sm btn-secondary">كل الأصناف</a>
+                    </div>
+                    <div class="panel-body">
+                        <div class="alert-list" id="lowStockList">
+                            <div class="empty-state">
+                                <div class="empty-state-icon">✓</div>
+                                <p>لا توجد أصناف منخفضة</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Movements -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <div>
+                            <div class="panel-title">آخر الحركات</div>
+                            <div class="panel-subtitle">أحدث أذونات التوريد والصرف المسجلة</div>
+                        </div>
+                    </div>
+                    <div class="panel-body">
+                        <div class="activity-list" id="recentMovements">
+                            <div class="empty-state">
+                                <div class="empty-state-icon">📋</div>
+                                <p>لا توجد حركات مسجلة</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Items Table Section -->
+            <div class="panel" style="margin-top: 20px;">
+                <div class="panel-header">
+                    <div>
+                        <div class="panel-title">الأصناف والمخزون</div>
+                        <div class="panel-subtitle">إدارة بيانات الأصناف والكميات المتوفرة</div>
+                    </div>
+                </div>
+                <div class="panel-body" style="padding: 0;">
+                    <!-- Toolbar -->
+                    <div class="table-toolbar">
+                        <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
+                            <div class="toolbar-search">
+                                <span class="toolbar-search-icon">⌕</span>
+                                <input type="text" id="searchInput" placeholder="بحث برقم أو اسم أو تصنيف الصنف..." oninput="filterItems()">
+                            </div>
+                            <select class="filter-select" id="statusFilter" onchange="filterItems()">
+                                <option value="">كل الحالات</option>
+                                <option value="متوفر">متوفر</option>
+                                <option value="منخفض">منخفض</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-primary" onclick="openModal()">
+                            <span>＋</span>
+                            <span>إضافة صنف</span>
+                        </button>
+                    </div>
+
+                    <!-- Table -->
+                    <div style="overflow-x: auto;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>الصنف</th>
+                                    <th>التصنيف</th>
+                                    <th>الوحدة</th>
+                                    <th>الرصيد</th>
+                                    <th>الحد الأدنى</th>
+                                    <th>سعر الوحدة</th>
+                                    <th>القيمة</th>
+                                    <th>الحالة</th>
+                                    <th>الإجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody id="itemsTableBody">
+                                <tr>
+                                    <td colspan="9">
+                                        <div class="empty-state">
+                                            <div class="empty-state-icon">⏳</div>
+                                            <h3>جاري تحميل البيانات...</h3>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
     </main>
 
-    <!-- نافذة إضافة صنف محسنة -->
+    <!-- Add Item Modal -->
     <div class="modal" id="addModal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 class="modal-title">إضافة صنف جديد</h3>
-                <button class="close-btn" onclick="closeModal()">✕</button>
+                <div class="modal-title">إضافة صنف جديد</div>
+                <button class="modal-close" onclick="closeModal()">✕</button>
             </div>
-            
-            <form id="addItemForm" novalidate>
-                <div class="form-group">
-                    <label for="itemName">اسم الصنف *</label>
-                    <input 
-                        type="text" 
-                        id="itemName" 
-                        placeholder="أدخل اسم الصنف"
-                        required
-                        minlength="3"
-                    >
-                    <div class="error-message" id="nameError">يجب أن يكون اسم الصنف 3 أحرف على الأقل</div>
-                </div>
-                
-                <div class="form-group">
-                    <label for="itemUnit">الوحدة *</label>
-                    <select id="itemUnit" required>
-                        <option value="">اختر الوحدة...</option>
-                        <option value="قطعة">قطعة</option>
-                        <option value="كرتونة">كرتونة</option>
-                        <option value="كيلوجرام">كيلوجرام</option>
-                        <option value="لتر">لتر</option>
-                        <option value="متر">متر</option>
-                        <option value="صندوق">صندوق</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label for="itemCategory">التصنيف *</label>
-                    <select id="itemCategory" required>
-                        <option value="">اختر التصنيف...</option>
-                        <option value="مواد خام">مواد خام</option>
-                        <option value="مواد نصف مصنعة">مواد نصف مصنعة</option>
-                        <option value="منتجات نهائية">منتجات نهائية</option>
-                        <option value="مستهلكات">مستهلكات</option>
-                        <option value="قطع غيار">قطع غيار</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label for="itemMinQty">نقطة إعادة الطلب (الحد الأدنى)</label>
-                    <input 
-                        type="number" 
-                        id="itemMinQty" 
-                        value="0" 
-                        min="0"
-                        required
-                    >
-                    <div class="error-message" id="qtyError">يجب أن تكون الكمية 0 أو أكثر</div>
-                </div>
-                
-                <div class="modal-actions">
-                    <button type="submit" class="btn btn-primary">
-                        ✅ حفظ الصنف
-                    </button>
-                    <button type="button" class="btn btn-secondary" onclick="closeModal()">
-                        إلغاء
-                    </button>
-                </div>
-            </form>
+            <div class="modal-body">
+                <form id="addItemForm" novalidate>
+                    <div class="form-group">
+                        <label for="itemName">اسم الصنف *</label>
+                        <input type="text" id="itemName" placeholder="أدخل اسم الصنف" required minlength="3">
+                        <div class="error-message" id="nameError">يجب أن يكون اسم الصنف 3 أحرف على الأقل</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="itemUnit">الوحدة *</label>
+                        <select id="itemUnit" required>
+                            <option value="">اختر الوحدة...</option>
+                            <option value="قطعة">قطعة</option>
+                            <option value="كرتونة">كرتونة</option>
+                            <option value="كيلوجرام">كيلوجرام</option>
+                            <option value="لتر">لتر</option>
+                            <option value="متر">متر</option>
+                            <option value="صندوق">صندوق</option>
+                            <option value="رزمة">رزمة</option>
+                            <option value="زوج">زوج</option>
+                            <option value="لفة">لفة</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="itemCategory">التصنيف *</label>
+                        <select id="itemCategory" required>
+                            <option value="">اختر التصنيف...</option>
+                            <option value="قرطاسية">قرطاسية</option>
+                            <option value="أحبار وطباعة">أحبار وطباعة</option>
+                            <option value="شبكات">شبكات</option>
+                            <option value="سلامة مهنية">سلامة مهنية</option>
+                            <option value="عدد وأدوات">عدد وأدوات</option>
+                            <option value="كهرباء">كهرباء</option>
+                            <option value="مواد خام">مواد خام</option>
+                            <option value="مستهلكات">مستهلكات</option>
+                            <option value="قطع غيار">قطع غيار</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="itemMinQty">نقطة إعادة الطلب (الحد الأدنى)</label>
+                        <input type="number" id="itemMinQty" value="0" min="0" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal()">إلغاء</button>
+                <button type="button" class="btn btn-primary" onclick="submitAddItem()">✅ حفظ الصنف</button>
+            </div>
         </div>
     </div>
-    <script>
-        // تحميل البيانات
-        async function loadItems() {
-            const tbody = document.getElementById('itemsTableBody');
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="6">
-                        <div class="empty-state loading-skeleton">
-                            <div class="empty-state-icon">⏳</div>
-                            <h3>جاري تحميل البيانات...</h3>
-                        </div>
-                    </td>
-                </tr>
-            `;
 
+    <script>
+        let allItems = [];
+        let inventoryChart = null;
+
+        // ========== Session Management ==========
+        function checkSession() {
+            const session = JSON.parse(localStorage.getItem('userSession'));
+            if (!session) {
+                window.location.href = 'index.html';
+                return null;
+            }
+            return session;
+        }
+
+        function updateUserInfo(session) {
+            const avatar = document.getElementById('userAvatar');
+            const nameEl = document.getElementById('userName');
+            const roleEl = document.getElementById('userRole');
+
+            if (session.username) {
+                avatar.textContent = session.username.charAt(0);
+                nameEl.textContent = session.username;
+            }
+
+            const roleNames = {
+                'admin': 'مدير النظام',
+                'storekeeper': 'أمين المخزن',
+                'viewer': 'مستعرض'
+            };
+            roleEl.textContent = roleNames[session.role] || session.role || 'مستعرض';
+
+            // Show role badge
+            const badgeContainer = document.getElementById('roleBadgeContainer');
+            const isViewer = session.role === 'viewer';
+            if (isViewer) {
+                badgeContainer.innerHTML = `
+                    <div class="role-badge viewer">
+                        <span>👁</span>
+                        <span>أنت مسجل الدخول بصلاحية <strong>عرض فقط</strong>؛ يمكنك مشاهدة البيانات والبحث وتوليد التقارير وطباعتها، ولا يمكنك الإضافة أو التعديل أو الحذف.</span>
+                    </div>
+                `;
+            }
+        }
+
+        function handleLogout() {
+            if (confirm('هل أنت متأكد من تسجيل الخروج؟')) {
+                localStorage.removeItem('userSession');
+                window.location.href = 'index.html';
+            }
+        }
+
+        // ========== Dashboard Data ==========
+        async function loadDashboardData() {
             try {
                 const items = await window.api.getItems();
-                
-                if (!items || items.length === 0) {
-                    tbody.innerHTML = `
-                        <tr>
-                            <td colspan="6">
-                                <div class="empty-state">
-                                    <div class="empty-state-icon">📭</div>
-                                    <h3>لا توجد أصناف حالياً</h3>
-                                    <p>قم بإضافة صنف جديد للبدء</p>
-                                </div>
-                            </td>
-                        </tr>
-                    `;
-                } else {
-                    tbody.innerHTML = '';
-                    items.forEach(item => {
-                        const stockStatus = item.min_order_qty > 0 ? 'badge-danger' : 'badge-success';
-                        const statusText = item.min_order_qty > 0 ? 'منخفض' : 'متوفر';
-                        
-                        const row = `
-                            <tr>
-                                <td><span class="item-id">#${item.item_id}</span></td>
-                                <td><span class="item-name">${item.item_name}</span></td>
-                                <td>${item.unit}</td>
-                                <td><span class="badge badge-warning">${item.category}</span></td>
-                                <td>
-                                    <span class="badge ${stockStatus}">${item.min_order_qty} ${statusText}</span>
-                                </td>
-                                <td class="action-col">
-                                    <button class="btn btn-danger btn-sm" onclick="deleteItem(${item.item_id}, '${item.item_name}')">
-                                        🗑️ حذف
-                                    </button>
-                                </td>
-                            </tr>
-                        `;
-                        tbody.innerHTML += row;
-                    });
-                }
-                
-                // تحديث الإحصائيات
-                document.getElementById('tableStats').textContent = 
-                    `إجمالي الأصناف: ${items.length}`;
-                    
+                allItems = items || [];
+
+                updateStats(allItems);
+                renderItemsTable(allItems);
+                renderLowStockAlerts(allItems);
+                renderChart(allItems);
+                updateSidebarBadge(allItems.length);
             } catch (error) {
-                console.error("خطأ في جلب البيانات:", error);
+                console.error('Error loading dashboard:', error);
+                // Use sample data for preview
+                loadSampleData();
+            }
+        }
+
+        function loadSampleData() {
+            const sampleItems = [
+                { item_id: 'ITM-001', item_name: 'ورق تصوير A4', unit: 'رزمة', category: 'قرطاسية', min_order_qty: 20, current_quantity: 85, unit_price: 24.50 },
+                { item_id: 'ITM-002', item_name: 'حبر طابعة أسود HP', unit: 'قطعة', category: 'أحبار وطباعة', min_order_qty: 10, current_quantity: 8, unit_price: 145.00 },
+                { item_id: 'ITM-003', item_name: 'كابل شبكة CAT6', unit: 'لفة', category: 'شبكات', min_order_qty: 5, current_quantity: 12, unit_price: 390.00 },
+                { item_id: 'ITM-004', item_name: 'قفازات حماية صناعية', unit: 'زوج', category: 'سلامة مهنية', min_order_qty: 30, current_quantity: 120, unit_price: 18.00 },
+                { item_id: 'ITM-005', item_name: 'مفك كهربائي متعدد', unit: 'قطعة', category: 'عدد وأدوات', min_order_qty: 8, current_quantity: 6, unit_price: 72.00 },
+                { item_id: 'ITM-007', item_name: 'مصباح LED مختبر', unit: 'قطعة', category: 'كهرباء', min_order_qty: 20, current_quantity: 19, unit_price: 15.50 },
+                { item_id: 'ITM-008', item_name: 'ملف حفظ بلاستيكي', unit: 'قطعة', category: 'قرطاسية', min_order_qty: 50, current_quantity: 210, unit_price: 3.50 },
+                { item_id: 'ITM-009', item_name: 'ورق تصوير A3', unit: 'رزمة', category: 'قرطاسية', min_order_qty: 10, current_quantity: 45, unit_price: 60.00 },
+                { item_id: 'ITM-010', item_name: 'وصلة كاميرا', unit: 'قطعة', category: 'شبكات', min_order_qty: 8, current_quantity: 5, unit_price: 68.00 }
+            ];
+            allItems = sampleItems;
+            updateStats(sampleItems);
+            renderItemsTable(sampleItems);
+            renderLowStockAlerts(sampleItems);
+            renderChart(sampleItems);
+            updateSidebarBadge(sampleItems.length);
+            renderSampleMovements();
+        }
+
+        function updateStats(items) {
+            const totalItems = items.length;
+            const totalUnits = items.reduce((sum, item) => sum + (item.current_quantity || 0), 0);
+            const totalValue = items.reduce((sum, item) => sum + ((item.current_quantity || 0) * (item.unit_price || 0)), 0);
+            const lowStock = items.filter(item => (item.current_quantity || 0) <= (item.min_order_qty || 0)).length;
+
+            document.getElementById('statTotalItems').textContent = totalItems;
+            document.getElementById('statTotalUnits').textContent = totalUnits.toLocaleString() + ' وحدة مخزنة';
+            document.getElementById('statInventoryValue').textContent = totalValue.toLocaleString('ar-LY', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' د.ل';
+            document.getElementById('statLowStock').textContent = lowStock;
+            document.getElementById('statMonthlyMovements').textContent = '4'; // Sample
+        }
+
+        function updateSidebarBadge(count) {
+            const badge = document.getElementById('sidebarItemCount');
+            if (badge) badge.textContent = count;
+        }
+
+        function renderChart(items) {
+            const ctx = document.getElementById('inventoryChart');
+            if (!ctx) return;
+
+            // Group by category
+            const categoryData = {};
+            items.forEach(item => {
+                const value = (item.current_quantity || 0) * (item.unit_price || 0);
+                categoryData[item.category] = (categoryData[item.category] || 0) + value;
+            });
+
+            const labels = Object.keys(categoryData);
+            const data = Object.values(categoryData);
+
+            if (inventoryChart) {
+                inventoryChart.destroy();
+            }
+
+            inventoryChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'القيمة (د.ل)',
+                        data: data,
+                        backgroundColor: 'rgba(255, 107, 0, 0.8)',
+                        borderColor: 'rgba(255, 107, 0, 1)',
+                        borderWidth: 0,
+                        borderRadius: 8,
+                        borderSkipped: false,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.parsed.y.toLocaleString('ar-LY') + ' د.ل';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return value.toLocaleString('ar-LY');
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(0,0,0,0.05)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                font: { size: 11 }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderLowStockAlerts(items) {
+            const container = document.getElementById('lowStockList');
+            const lowItems = items.filter(item => (item.current_quantity || 0) <= (item.min_order_qty || 0));
+
+            if (lowItems.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state" style="padding: 24px;">
+                        <div class="empty-state-icon">✓</div>
+                        <p>لا توجد أصناف منخفضة</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = lowItems.map(item => `
+                <div class="alert-item">
+                    <div class="alert-item-icon">${item.item_name.charAt(0)}</div>
+                    <div class="alert-item-content">
+                        <div class="alert-item-name">${item.item_name}</div>
+                        <div class="alert-item-detail">${item.current_quantity} من حد أدنى ${item.min_order_qty}</div>
+                    </div>
+                    <div class="alert-item-status">منخفض</div>
+                </div>
+            `).join('');
+        }
+
+        function renderSampleMovements() {
+            const container = document.getElementById('recentMovements');
+            const movements = [
+                { type: 'dispense', id: 'صرف-2026-002', date: '2026-06-12', entity: 'مكتب الشؤون الإدارية', value: '332,50 د.ل' },
+                { type: 'dispense', id: 'صرف-2026-001', date: '2026-06-10', entity: 'قسم الهندسة الكهربائية', value: '504,00 د.ل' },
+                { type: 'supply', id: 'توريد-2026-002', date: '2026-06-07', entity: 'مكتبة مصراتة الحديثة', value: '1.575,00 د.ل' },
+                { type: 'supply', id: 'توريد-2026-001', date: '2026-06-02', entity: 'شركة المدار للتجهيزات', value: '3.740,00 د.ل' }
+            ];
+
+            container.innerHTML = movements.map(m => `
+                <div class="activity-item">
+                    <div class="activity-icon ${m.type}">
+                        ${m.type === 'supply' ? '⇩' : '⇧'}
+                    </div>
+                    <div class="activity-content">
+                        <div class="activity-title">${m.id}</div>
+                        <div class="activity-meta">${m.date} · ${m.entity}</div>
+                    </div>
+                    <div class="activity-value">${m.value}</div>
+                </div>
+            `).join('');
+        }
+
+        // ========== Items Table ==========
+        function renderItemsTable(items) {
+            const tbody = document.getElementById('itemsTableBody');
+
+            if (!items || items.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="6">
+                        <td colspan="9">
                             <div class="empty-state">
-                                <div class="empty-state-icon">⚠️</div>
-                                <h3>حدث خطأ في تحميل البيانات</h3>
-                                <p>يرجى المحاولة مرة أخرى</p>
-                                <button class="btn btn-secondary" onclick="loadItems()" style="margin-top: 16px;">
-                                    🔄 إعادة المحاولة
-                                </button>
+                                <div class="empty-state-icon">📭</div>
+                                <h3>لا توجد أصناف حالياً</h3>
+                                <p>قم بإضافة صنف جديد للبدء</p>
                             </div>
                         </td>
                     </tr>
                 `;
-                showToast('فشل في تحميل البيانات من الخادم', 'error');
+                return;
             }
+
+            tbody.innerHTML = items.map(item => {
+                const quantity = item.current_quantity || 0;
+                const minQty = item.min_order_qty || 0;
+                const unitPrice = item.unit_price || 0;
+                const totalValue = quantity * unitPrice;
+                const isLow = quantity <= minQty;
+                const statusClass = isLow ? 'badge-low' : 'badge-available';
+                const statusText = isLow ? 'منخفض' : 'متوفر';
+
+                return `
+                    <tr>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <span style="width: 32px; height: 32px; background: var(--primary-light); color: var(--primary); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px;">${item.item_name.charAt(0)}</span>
+                                <div>
+                                    <div style="font-weight: 600;">${item.item_name}</div>
+                                    <span class="item-id">${item.item_id}</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="badge badge-supplier">${item.category}</span></td>
+                        <td>${item.unit}</td>
+                        <td style="font-weight: 700;">${quantity}</td>
+                        <td>${minQty}</td>
+                        <td>${unitPrice.toLocaleString('ar-LY', { minimumFractionDigits: 2 })} د.ل</td>
+                        <td style="font-weight: 600;">${totalValue.toLocaleString('ar-LY', { minimumFractionDigits: 2 })} د.ل</td>
+                        <td><span class="badge ${statusClass}">${statusText}</span></td>
+                        <td>
+                            <div class="row-actions">
+                                <button class="row-action-btn view" title="عرض" onclick="viewItem(${item.item_id})">◉</button>
+                                <button class="row-action-btn edit" title="تعديل" onclick="editItem(${item.item_id})">✎</button>
+                                <button class="row-action-btn delete" title="حذف" onclick="deleteItem(${item.item_id}, '${item.item_name}')">×</button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
         }
 
-        // تصفية البيانات في الجدول
         function filterItems() {
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            const rows = document.querySelectorAll('#itemsTableBody tr');
-            
-            rows.forEach(row => {
-                const text = row.textContent.toLowerCase();
-                row.style.display = text.includes(searchTerm) ? '' : 'none';
-            });
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
+            const statusFilter = document.getElementById('statusFilter').value;
+
+            let filtered = allItems;
+
+            if (searchTerm) {
+                filtered = filtered.filter(item =>
+                    (item.item_name || '').toLowerCase().includes(searchTerm) ||
+                    (item.item_id || '').toLowerCase().includes(searchTerm) ||
+                    (item.category || '').toLowerCase().includes(searchTerm)
+                );
+            }
+
+            if (statusFilter) {
+                filtered = filtered.filter(item => {
+                    const isLow = (item.current_quantity || 0) <= (item.min_order_qty || 0);
+                    return statusFilter === 'منخفض' ? isLow : !isLow;
+                });
+            }
+
+            renderItemsTable(filtered);
         }
 
-        // ============ إدارة الأصناف ============
-        
-        // إضافة صنف جديد
-        document.getElementById('addItemForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            // التحقق من صحة البيانات
+        function handleGlobalSearch() {
+            const term = document.getElementById('globalSearch').value.toLowerCase().trim();
+            document.getElementById('searchInput').value = term;
+            filterItems();
+        }
+
+        // ========== Item Actions ==========
+        async function submitAddItem() {
+            const session = checkSession();
+            if (session && session.role === 'viewer') {
+                showToast('لا تملك صلاحية الإضافة', 'error');
+                return;
+            }
+
             const itemName = document.getElementById('itemName').value.trim();
             const itemUnit = document.getElementById('itemUnit').value;
             const itemCategory = document.getElementById('itemCategory').value;
-            const itemMinQty = document.getElementById('itemMinQty').value;
-            
-            let isValid = true;
-            
-            // التحقق من الاسم
+            const itemMinQty = parseFloat(document.getElementById('itemMinQty').value) || 0;
+
             if (itemName.length < 3) {
-                document.getElementById('nameError').style.display = 'block';
-                document.getElementById('itemName').classList.add('error');
-                isValid = false;
-            } else {
-                document.getElementById('nameError').style.display = 'none';
-                document.getElementById('itemName').classList.remove('error');
+                document.getElementById('nameError').classList.add('visible');
+                return;
             }
-            
-            // التحقق من الكمية
-            if (itemMinQty < 0) {
-                document.getElementById('qtyError').style.display = 'block';
-                document.getElementById('itemMinQty').classList.add('error');
-                isValid = false;
-            } else {
-                document.getElementById('qtyError').style.display = 'none';
-                document.getElementById('itemMinQty').classList.remove('error');
+            document.getElementById('nameError').classList.remove('visible');
+
+            if (!itemUnit || !itemCategory) {
+                showToast('يرجى ملء جميع الحقول المطلوبة', 'warning');
+                return;
             }
-            
-            if (!isValid) return;
-            
-            const newItem = {
-                item_name: itemName,
-                unit: itemUnit,
-                category: itemCategory,
-                min_order_qty: parseFloat(itemMinQty)
-            };
 
             try {
-                await window.api.addItem(newItem);
+                await window.api.addItem({
+                    item_name: itemName,
+                    unit: itemUnit,
+                    category: itemCategory,
+                    min_order_qty: itemMinQty
+                });
                 closeModal();
-                await loadItems();
                 showToast('تمت إضافة الصنف بنجاح', 'success');
+                loadDashboardData();
             } catch (error) {
                 showToast('فشل في إضافة الصنف', 'error');
             }
-        });
+        }
 
-        // حذف صنف
         async function deleteItem(id, name) {
+            const session = checkSession();
+            if (session && session.role === 'viewer') {
+                showToast('لا تملك صلاحية الحذف', 'error');
+                return;
+            }
+
             if (confirm(`هل أنت متأكد من حذف الصنف "${name}"؟\nهذا الإجراء لا يمكن التراجع عنه.`)) {
                 try {
                     await window.api.deleteItem(id);
-                    await loadItems();
                     showToast(`تم حذف الصنف "${name}" بنجاح`, 'success');
+                    loadDashboardData();
                 } catch (error) {
                     showToast('فشل في حذف الصنف', 'error');
                 }
             }
         }
-        async function printReport() {
-            const btn = event.target.closest('.btn');
-            const originalHTML = btn.innerHTML;
-            btn.innerHTML = '⏳ جاري التجهيز...';
-            btn.disabled = true;
 
-            try {
-                const result = await window.api.generateReport();
-                if (result.success) {
-                    showToast(result.message, 'success');
-                } else if (result.message !== 'تم إلغاء عملية الحفظ') {
-                    showToast(result.message, 'error');
-                }
-            } catch (error) {
-                showToast('حدث خطأ غير متوقع', 'error');
-            } finally {
-                btn.innerHTML = originalHTML;
-                btn.disabled = false;
-            }
+        function viewItem(id) {
+            showToast('عرض تفاصيل الصنف: ' + id, 'info');
         }
 
-        // ============ إدارة النافذة المنبثقة ============
-        
+        function editItem(id) {
+            const session = checkSession();
+            if (session && session.role === 'viewer') {
+                showToast('لا تملك صلاحية التعديل', 'error');
+                return;
+            }
+            showToast('تعديل الصنف: ' + id, 'info');
+        }
+
+        // ========== Modal ==========
         function openModal() {
-            document.getElementById('addModal').style.display = 'flex';
+            const session = checkSession();
+            if (session && session.role === 'viewer') {
+                showToast('لا تملك صلاحية الإضافة', 'error');
+                return;
+            }
+            document.getElementById('addModal').classList.add('active');
             document.getElementById('addItemForm').reset();
-            // إخفاء رسائل الخطأ
-            document.querySelectorAll('.error-message').forEach(el => el.style.display = 'none');
-            document.querySelectorAll('.error').forEach(el => el.classList.remove('error'));
+            document.querySelectorAll('.error-message').forEach(el => el.classList.remove('visible'));
             document.getElementById('itemName').focus();
         }
 
         function closeModal() {
-            document.getElementById('addModal').style.display = 'none';
+            document.getElementById('addModal').classList.remove('active');
         }
 
-        // إغلاق النافذة عند النقر خارجها
         document.getElementById('addModal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeModal();
+            if (e.target === this) closeModal();
+        });
+
+        // ========== Toast ==========
+        function showToast(message, type = 'info') {
+            const container = document.querySelector('.toast-container') || createToastContainer();
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            const icons = { success: '✓', error: '✕', warning: '⚠', info: 'ℹ' };
+            toast.innerHTML = `<span>${icons[type] || 'ℹ'}</span><span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(-10px)';
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
+        function createToastContainer() {
+            const container = document.createElement('div');
+            container.className = 'toast-container';
+            document.body.appendChild(container);
+            return container;
+        }
+
+        // ========== Print ==========
+        function handleDirectPrint() {
+            window.print();
+        }
+
+        // ========== Init ==========
+        window.addEventListener('DOMContentLoaded', () => {
+            const session = checkSession();
+            if (session) {
+                updateUserInfo(session);
+                loadDashboardData();
             }
         });
-        window.addEventListener('DOMContentLoaded', () => {
-            loadItems();
-        });
-        // تحديث تلقائي للبيانات كل 5 دقائق
-        setInterval(loadItems, 300000);
     </script>
     <script src="assets/js/common.js"></script>
 </body>

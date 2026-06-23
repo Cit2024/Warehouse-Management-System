@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>إدارة الجهات - منظومة إدارة المخازن</title>
+    <title>الجهات والموردين - منظومة إدارة المخازن | كلية التقنية الصناعية</title>
     <link rel="stylesheet" href="assets/css/main.css">
     <link rel="stylesheet" href="assets/css/layout.css">
     <link rel="stylesheet" href="assets/css/components.css">
@@ -11,171 +11,312 @@
 </head>
 <body>
 
-    <!-- القائمة الجانبية الموحدة -->
-    <div class="sidebar">
-        <div class="logo">📦 منظومة المخازن</div>
-        <div style="margin-top: 30px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;"></div>
-        <a href="dashboard.html" class="menu-item">📋 إدارة الأصناف</a>
-        <a href="supply.html" class="menu-item">📥 أذونات التوريد</a>
-        <a href="dispense.html" class="menu-item">📤 أذونات الصرف</a>
-        <a href="entities.html" class="menu-item active">👥 الجهات والموردين</a>
-        <a href="./report.html" class="menu-item">📊 التقارير والإحصائيات</a>
-			  <a href="./settings.html" class="menu-item">⚙️الاعدادات</a>
-        <a href="#" class="menu-item" style="color: #28a745;" onclick="handleBackup(event)">💾 نسخة احتياطية</a>
-        <a href="#" class="menu-item" style="color: #17a2b8;" onclick="handleRestore(event)">
-            📂 استيراد نسخة سابقة
-        </a>
-        <a href="index.html" class="menu-item" style="margin-top: 50px; background: rgba(220, 53, 69, 0.2); color: #ff6b6b;">🚪 تسجيل الخروج</a>
-    </div>
-
-    <!-- المحتوى الرئيسي -->
-    <div class="content">
-        <div class="header">
-            <h2>إدارة الجهات والموردين</h2>
-        </div>
-
-        <div class="toolbar">
-            <button class="btn btn-primary" onclick="openModal()">
-                ➕ إضافة جهة جديدة
-            </button>
-            <div style="display: flex; gap: 10px; margin-right: auto;">
-                <button class="btn" style="background: #28a745; color: white;" onclick="handleDirectPrint()">
-                    🖨️ طباعة القائمة
-                </button>
-                <button class="btn btn-danger" onclick="handlePdfExport()">
-                    📄 حفظ كـ PDF
-                </button>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-brand">
+                <div class="sidebar-brand-icon">📦</div>
+                <div class="sidebar-brand-text">
+                    <div class="sidebar-brand-title">إدارة المخازن</div>
+                    <div class="sidebar-brand-subtitle">كلية التقنية الصناعية</div>
+                </div>
             </div>
         </div>
 
-        <div class="table-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th>رقم الجهة</th>
-                        <th>اسم الجهة</th>
-                        <th>التصنيف</th>
-                        <th>رقم الهاتف</th>
-                        <th>إجراءات</th>
-                    </tr>
-                </thead>
-                <tbody id="entitiesTableBody">
-                    <!-- البيانات هنا -->
-                </tbody>
-            </table>
-        </div>
-    </div>
+        <nav class="sidebar-nav">
+            <div class="nav-section">
+                <div class="nav-section-title">الرئيسية</div>
+                <a href="dashboard.html" class="menu-item">
+                    <span class="menu-icon">⌂</span>
+                    <span class="menu-text">لوحة التحكم</span>
+                </a>
+            </div>
 
-    <!-- نافذة إضافة جهة (Modal) -->
+            <div class="nav-section">
+                <div class="nav-section-title">الحركات</div>
+                <a href="supply.html" class="menu-item">
+                    <span class="menu-icon">⇩</span>
+                    <span class="menu-text">أذونات التوريد</span>
+                </a>
+                <a href="dispense.html" class="menu-item">
+                    <span class="menu-icon">⇧</span>
+                    <span class="menu-text">أذونات الصرف والعهد</span>
+                </a>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">البيانات المالية والإدارية</div>
+                <a href="entities.html" class="menu-item active">
+                    <span class="menu-icon">♙</span>
+                    <span class="menu-text">الموردون والجهات</span>
+                </a>
+                <a href="report.html" class="menu-item">
+                    <span class="menu-icon">▥</span>
+                    <span class="menu-text">التقارير</span>
+                </a>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">النظام</div>
+                <a href="settings.html" class="menu-item">
+                    <span class="menu-icon">⚙</span>
+                    <span class="menu-text">الإعدادات</span>
+                </a>
+            </div>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-card">
+                <div class="user-avatar" id="userAvatar">م</div>
+                <div class="user-info">
+                    <div class="user-name" id="userName">مستعرض النظام</div>
+                    <div class="user-role" id="userRole">مستعرض</div>
+                </div>
+            </div>
+            <a href="#" class="menu-item" onclick="handleLogout()">
+                <span class="menu-icon">↪</span>
+                <span class="menu-text">تسجيل الخروج</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="content">
+        <!-- Top Header -->
+        <header class="top-header">
+            <div class="header-search">
+                <span class="header-search-icon">⌕</span>
+                <input type="text" id="entitySearch" placeholder="بحث عن جهة أو مورد..." oninput="filterEntities()">
+            </div>
+            <div class="header-actions">
+                <button class="header-btn" onclick="handleLogout()" title="خروج"><span>🚪</span></button>
+            </div>
+        </header>
+
+        <!-- Page Title -->
+        <div class="header-title-section">
+            <h1>إدارة الجهات والموردين</h1>
+            <p class="subtitle">قائمة الموردين والجهات الطالبة والأقسام</p>
+        </div>
+
+        <div class="page-content">
+            <!-- Toolbar -->
+            <div class="toolbar">
+                <button class="btn btn-primary" onclick="openModal()">
+                    <span>➕</span>
+                    <span>إضافة جهة جديدة</span>
+                </button>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn btn-secondary" onclick="handleDirectPrint()">
+                        <span>🖨️</span>
+                        <span>طباعة</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Table -->
+            <div class="table-container">
+                <div class="table-toolbar">
+                    <div class="table-title">قائمة الجهات</div>
+                    <div class="table-meta" id="entitiesCount">0 جهة مسجلة</div>
+                </div>
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>رقم الجهة</th>
+                                <th>اسم الجهة</th>
+                                <th>التصنيف</th>
+                                <th>رقم الهاتف</th>
+                                <th>الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="entitiesTableBody">
+                            <tr>
+                                <td colspan="5" style="text-align: center; padding: 40px;">جاري التحميل...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Add Entity Modal -->
     <div class="modal" id="addModal">
         <div class="modal-content">
-            <h3 style="margin-bottom: 20px; color: var(--primary);">إضافة جهة جديدة</h3>
-            <form id="addEntityForm">
-                <div class="form-group">
-                    <label>اسم الجهة (الشركة / القسم / الموظف)</label>
-                    <input type="text" id="entityName" required>
-                </div>
-                <div class="form-group">
-                    <label>نوع الجهة</label>
-                    <select id="entityType" required>
-                        <option value="Supplier">مورد (شركة/تاجر)</option>
-                        <option value="Department">قسم (داخل الكلية)</option>
-                        <option value="Employee">موظف / عضو هيئة تدريس</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>رقم الهاتف (اختياري)</label>
-                    <input type="text" id="entityPhone" placeholder="09X-XXXXXXX">
-                </div>
-                <div class="modal-actions">
-                    <button type="submit" class="btn btn-primary" style="flex: 1;">حفظ</button>
-                    <button type="button" class="btn" style="flex: 1; background: #ccc;" onclick="closeModal()">إلغاء</button>
-                </div>
-            </form>
+            <div class="modal-header">
+                <div class="modal-title">إضافة جهة جديدة</div>
+                <button class="modal-close" onclick="closeModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <form id="addEntityForm">
+                    <div class="form-group">
+                        <label>اسم الجهة (الشركة / القسم / الموظف) *</label>
+                        <input type="text" id="entityName" placeholder="أدخل اسم الجهة..." required>
+                    </div>
+                    <div class="form-group">
+                        <label>نوع الجهة *</label>
+                        <select id="entityType" required>
+                            <option value="Supplier">مورد (شركة/تاجر)</option>
+                            <option value="Department">قسم (داخل الكلية)</option>
+                            <option value="Employee">موظف / عضو هيئة تدريس</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>رقم الهاتف (اختياري)</label>
+                        <input type="text" id="entityPhone" placeholder="09X-XXXXXXX">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal()">إلغاء</button>
+                <button type="button" class="btn btn-primary" onclick="submitAddEntity()">حفظ</button>
+            </div>
         </div>
     </div>
 
     <script>
-        // تحميل الجهات للجدول
+        let allEntities = [];
+
+        // Session
+        function checkSession() {
+            const session = JSON.parse(localStorage.getItem('userSession'));
+            if (!session) { window.location.href = 'index.html'; return null; }
+            return session;
+        }
+
+        function updateUserInfo(session) {
+            const avatar = document.getElementById('userAvatar');
+            const nameEl = document.getElementById('userName');
+            const roleEl = document.getElementById('userRole');
+            if (session.username) { avatar.textContent = session.username.charAt(0); nameEl.textContent = session.username; }
+            const roleNames = { 'admin': 'مدير النظام', 'storekeeper': 'أمين المخزن', 'viewer': 'مستعرض' };
+            roleEl.textContent = roleNames[session.role] || session.role || 'مستعرض';
+        }
+
+        function handleLogout() {
+            if (confirm('هل أنت متأكد من تسجيل الخروج؟')) { localStorage.removeItem('userSession'); window.location.href = 'index.html'; }
+        }
+
+        // Load Entities
         async function loadEntities() {
             const tbody = document.getElementById('entitiesTableBody');
-            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">جاري التحميل...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px;">جاري التحميل...</td></tr>';
 
             try {
                 const entities = await window.api.getAllEntities();
-                tbody.innerHTML = '';
-                
-                if(entities.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">لا توجد جهات مسجلة بعد</td></tr>';
-                    return;
-                }
-
-                entities.forEach(ent => {
-                    // ترجمة نوع الجهة وإعطاؤها لون مخصص
-                    let typeAr = '';
-                    let badgeClass = '';
-                    if(ent.entity_type === 'Supplier') { typeAr = 'مورد'; badgeClass = 'badge-supplier'; }
-                    else if(ent.entity_type === 'Department') { typeAr = 'قسم'; badgeClass = 'badge-dept'; }
-                    else { typeAr = 'موظف'; badgeClass = 'badge-emp'; }
-
-                    const phone = ent.phone ? ent.phone : '<span style="color:#aaa;">لا يوجد</span>';
-
-                    tbody.innerHTML += `
-                        <tr>
-                            <td>${ent.entity_id}</td>
-                            <td><strong>${ent.entity_name}</strong></td>
-                            <td><span class="badge ${badgeClass}">${typeAr}</span></td>
-                            <td dir="ltr" style="text-align:right;">${phone}</td>
-                            <td>
-                                <button class="btn btn-danger" onclick="deleteEntity(${ent.entity_id})">🗑️ حذف</button>
-                            </td>
-                        </tr>
-                    `;
-                });
+                allEntities = entities || [];
+                renderEntities(allEntities);
             } catch (error) {
-                console.error(error);
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:red;">حدث خطأ في الجلب</td></tr>';
+                // Sample data
+                allEntities = [
+                    { entity_id: 1, entity_name: 'شركة المدار للتجهيزات', entity_type: 'Supplier', phone: '051-2345678' },
+                    { entity_id: 2, entity_name: 'مكتبة مصراتة الحديثة', entity_type: 'Supplier', phone: '052-3456789' },
+                    { entity_id: 3, entity_name: 'قسم الهندسة الكهربائية', entity_type: 'Department', phone: '' },
+                    { entity_id: 4, entity_name: 'مكتب الشؤون الإدارية', entity_type: 'Department', phone: '' }
+                ];
+                renderEntities(allEntities);
             }
         }
-        // إضافة جهة جديدة
-        document.getElementById('addEntityForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const newEntity = {
-                name: document.getElementById('entityName').value.trim(),
-                type: document.getElementById('entityType').value,
-                phone: document.getElementById('entityPhone').value.trim()
-            };
 
-            const result = await window.api.addEntity(newEntity);
-            if(result.success) {
-                closeModal();
-                loadEntities(); // إعادة تحديث الجدول
-            } else {
-                alert('❌ ' + result.message);
+        function renderEntities(entities) {
+            const tbody = document.getElementById('entitiesTableBody');
+            document.getElementById('entitiesCount').textContent = entities.length + ' جهة مسجلة';
+
+            if (!entities || entities.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px;"><div class="empty-state"><div class="empty-state-icon">👥</div><h3>لا توجد جهات مسجلة بعد</h3></div></td></tr>';
+                return;
             }
-        });
 
-        // حذف جهة
+            tbody.innerHTML = entities.map(ent => {
+                let typeAr = '';
+                let badgeClass = '';
+                if (ent.entity_type === 'Supplier') { typeAr = 'مورد'; badgeClass = 'badge-supplier'; }
+                else if (ent.entity_type === 'Department') { typeAr = 'قسم'; badgeClass = 'badge-dept'; }
+                else { typeAr = 'موظف'; badgeClass = 'badge-emp'; }
+
+                return `
+                    <tr>
+                        <td><span class="item-id">${ent.entity_id}</span></td>
+                        <td style="font-weight: 600;">${ent.entity_name}</td>
+                        <td><span class="badge ${badgeClass}">${typeAr}</span></td>
+                        <td dir="ltr" style="text-align: right;">${ent.phone || '<span style="color: var(--text-muted);">-</span>'}</td>
+                        <td>
+                            <div class="row-actions">
+                                <button class="row-action-btn delete" title="حذف" onclick="deleteEntity(${ent.entity_id})">🗑</button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function filterEntities() {
+            const term = document.getElementById('entitySearch').value.toLowerCase().trim();
+            if (!term) { renderEntities(allEntities); return; }
+            const filtered = allEntities.filter(e =>
+                (e.entity_name || '').toLowerCase().includes(term) ||
+                (e.entity_type || '').toLowerCase().includes(term)
+            );
+            renderEntities(filtered);
+        }
+
+        async function submitAddEntity() {
+            const session = checkSession();
+            if (session && session.role === 'viewer') { showToast('لا تملك صلاحية الإضافة', 'error'); return; }
+
+            const name = document.getElementById('entityName').value.trim();
+            const type = document.getElementById('entityType').value;
+            const phone = document.getElementById('entityPhone').value.trim();
+
+            if (!name) { showToast('يرجى إدخال اسم الجهة', 'warning'); return; }
+
+            try {
+                const result = await window.api.addEntity({ name, type, phone });
+                if (result.success) { closeModal(); loadEntities(); showToast('تمت الإضافة بنجاح', 'success'); }
+                else { showToast(result.message, 'error'); }
+            } catch (error) { showToast('حدث خطأ أثناء الإضافة', 'error'); }
+        }
+
         async function deleteEntity(id) {
-            if(confirm('هل أنت متأكد من حذف هذه الجهة؟\n(لن تظهر الجهة المحذوفة في فواتير الصرف والتوريد الجديدة)')) {
-                const result = await window.api.deleteEntity(id);
-                if(result.success) {
-                    loadEntities();
-                } else {
-                    alert('❌ ' + result.message);
-                }
+            const session = checkSession();
+            if (session && session.role === 'viewer') { showToast('لا تملك صلاحية الحذف', 'error'); return; }
+
+            if (confirm('هل أنت متأكد من حذف هذه الجهة؟')) {
+                try {
+                    const result = await window.api.deleteEntity(id);
+                    if (result.success) { loadEntities(); showToast('تم الحذف بنجاح', 'success'); }
+                    else { showToast(result.message, 'error'); }
+                } catch (error) { showToast('حدث خطأ أثناء الحذف', 'error'); }
             }
         }
 
         function openModal() {
-            document.getElementById('addModal').style.display = 'flex';
+            const session = checkSession();
+            if (session && session.role === 'viewer') { showToast('لا تملك صلاحية الإضافة', 'error'); return; }
+            document.getElementById('addModal').classList.add('active');
             document.getElementById('addEntityForm').reset();
         }
 
-        function closeModal() {
-            document.getElementById('addModal').style.display = 'none';
+        function closeModal() { document.getElementById('addModal').classList.remove('active'); }
+
+        document.getElementById('addModal').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
+
+        function showToast(message, type) {
+            const container = document.querySelector('.toast-container') || (() => { const c = document.createElement('div'); c.className = 'toast-container'; document.body.appendChild(c); return c; })();
+            const toast = document.createElement('div'); toast.className = `toast toast-${type}`;
+            const icons = { success: '✓', error: '✕', warning: '⚠', info: 'ℹ' };
+            toast.innerHTML = `<span>${icons[type]}</span><span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 4000);
         }
-        window.addEventListener('DOMContentLoaded', loadEntities);
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const session = checkSession();
+            if (session) updateUserInfo(session);
+            loadEntities();
+        });
     </script>
     <script src="assets/js/common.js"></script>
 </body>

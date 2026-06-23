@@ -23,11 +23,11 @@ jobs:
         include:
           - os: windows-latest
             build_script: build:win
-            artifact_name: windows-installer
+            artifact_name: ci-windows-installer
             artifact_path: dist/*.exe
           - os: ubuntu-latest
             build_script: build:linux
-            artifact_name: linux-appimage
+            artifact_name: ci-linux-appimage
             artifact_path: dist/*.AppImage
 
     runs-on: ${{ matrix.os }}
@@ -59,15 +59,15 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # ——— 6. Prune stale artifacts to avoid hitting storage quota ———
-      - name: Delete stale CI artifacts
+      # ——— 6. Prune old CI artifacts to avoid hitting storage quota ———
+      # CI artifacts are prefixed with "ci-" so they never overlap with release artifacts.
+      - name: Delete previous CI artifacts
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: bash
         run: |
-          cutoff=$(date -u -d '2 hours ago' +%Y-%m-%dT%H:%M:%SZ)
           gh api "repos/${{ github.repository }}/actions/artifacts" --paginate \
-            -q ".artifacts[] | select((.name == \"windows-installer\" or .name == \"linux-appimage\") and .created_at < \"$cutoff\") | .id" | \
+            -q ".artifacts[] | select(.name | startswith(\"ci-\")) | .id" | \
           while read -r id; do
             [ -n "$id" ] && gh api "repos/${{ github.repository }}/actions/artifacts/${id}" -X DELETE || true
           done

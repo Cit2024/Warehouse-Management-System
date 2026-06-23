@@ -63,6 +63,7 @@ jobs:
       # CI artifacts are prefixed with "ci-" so they never overlap with release artifacts.
       # Also remove legacy non-prefixed CI artifacts (>2h old) until they expire naturally.
       - name: Delete previous CI artifacts
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: bash

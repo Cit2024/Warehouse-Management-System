@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>إعدادات النظام - منظومة إدارة المخازن</title>
+    <title>إعدادات النظام - منظومة إدارة المخازن | كلية التقنية الصناعية</title>
     <link rel="stylesheet" href="assets/css/main.css">
     <link rel="stylesheet" href="assets/css/layout.css">
     <link rel="stylesheet" href="assets/css/components.css">
@@ -11,320 +11,341 @@
 </head>
 <body>
 
-    <div class="sidebar">
-        <div class="logo">📦 منظومة المخازن</div>
-        <div style="margin-top: 30px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px;"></div>
-        <a href="./dashboard.html" class="menu-item">📋 إدارة الأصناف</a>
-        <a href="./supply.html" class="menu-item">📥 أذونات التوريد</a>
-        <a href="./dispense.html" class="menu-item">📤 أذونات الصرف</a>
-        <a href="./entities.html" class="menu-item">👥 الجهات والموردين</a>
-        <a href="./report.html" class="menu-item">📊 التقارير والإحصائيات</a>
-        <a href="settings.html" class="menu-item active">⚙️الاعدادات</a>
-        <a href="#" class="menu-item" style=" color: #28a745;" onclick="handleBackup(event)">💾 نسخة احتياطية</a>
-        <a href="#" class="menu-item" style="color: #17a2b8;" onclick="handleRestore(event)">📂 استيراد نسخة سابقة</a>
-        <a class="logout-btn menu-item" onclick="handleLogout()">🚪تسجيل الخروج</a>
-    </div>
-
-    <div class="content">
-        <div class="header">
-            <h2>إعدادات النظام والأمان</h2>
-        </div>
-
-        <div class="alert-banner" id="alertBanner">
-            ⚠️ النظام غير متصل بالمستودع السحابي حالياً. يرجى إعداد الروابط أدناه لتفادي فقدان بيانات المخزن.
-        </div>
-
-        <div class="settings-card">
-            <h3 class="card-title">☁️ إعدادات التخزين السحابي (GitHub Backup)</h3>
-            
-            <form id="cloudSettingsForm">
-                <div class="form-grid">
-                    <div class="form-group" style="grid-column: span 2;">
-                        <label>رابط المستودع (HTTPS Repo URL)</label>
-                        <input type="url" id="repoUrl" placeholder="https://github.com/username/repo.git" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>رمز الوصول الدائم (Personal Access Token)</label>
-                        <input type="password" id="accessToken" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" required>
-                        <div class="hint">يتم تشفير هذا الرمز وحفظه محلياً ولا يتم مشاركته.</div>
-                    </div>
-
-                    <div class="form-group">
-                        <label>معدل النسخ التلقائي (المدة حتى التخزين الإجباري)</label>
-                        <select id="backupFrequency">
-                            <option value="14">كل أسبوعين (موصى به)</option>
-                            <option value="21">كل 3 أسابيع</option>
-                            <option value="30">كل شهر (أقصى حد)</option>
-                        </select>
-                        <div class="hint">سيقوم النظام بالرفع التلقائي عند توفر الإنترنت.</div>
-                    </div>
-                </div>
-
-                <div style="margin-top: 25px; border-top: 1px solid #eee; padding-top: 20px; display: flex; justify-content: flex-end;">
-                    <button type="submit" class="btn btn-primary" id="saveBtn">
-                        🔗 فحص الاتصال وحفظ الإعدادات
-                    </button>
-                </div>
-            </form>
-        </div>
-
-        <div class="settings-card">
-            <h3 class="card-title" style="color: #dc3545;">🔄 الاسترجاع والعودة بالزمن (Restore)</h3>
-            <p style="color: #666; margin-bottom: 20px;">يمكنك استرجاع أي نسخة سابقة تم حفظها محلياً. إذا فقدت بياناتك، يمكنك جلب النسخ من المستودع السحابي.</p>
-            
-            <!-- حالة الاتصال -->
-            <div id="connectionStatus" style="margin-bottom: 20px; padding: 10px; background: #f8f9fa; border-radius: 8px;">
-                <span>🌐 حالة الاتصال: </span>
-                <span id="statusText" class="status-badge status-offline">غير متصل</span>
-            </div>
-            
-            <div class="form-grid" id="restoreControls">
-                <div class="form-group" style="grid-column: span 2;">
-                    <label>النسخ الاحتياطية المتوفرة (Commits)</label>
-                    <select id="cloudBackupsSelect">
-                        <option value="">-- اضغط على زر عرض النسخ --</option>
-                    </select>
-                </div>
-                
-                <div class="form-group" style="grid-column: span 2; display: flex; gap: 10px;">
-                    <button type="button" class="btn btn-info" style="flex: 1;" id="syncAndShowBtn">
-                        🔄 عرض النسخ السابقة
-                    </button>
-
-                    <button type="button" class="btn btn-danger" style="flex: 1;" id="restoreBtn" onclick="restoreDatabase()">
-                        ⚠️ استرجاع النسخة المحددة
-                    </button>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-brand">
+                <div class="sidebar-brand-icon">📦</div>
+                <div class="sidebar-brand-text">
+                    <div class="sidebar-brand-title">إدارة المخازن</div>
+                    <div class="sidebar-brand-subtitle">كلية التقنية الصناعية</div>
                 </div>
             </div>
         </div>
-    </div>
+
+        <nav class="sidebar-nav">
+            <div class="nav-section">
+                <div class="nav-section-title">الرئيسية</div>
+                <a href="dashboard.html" class="menu-item">
+                    <span class="menu-icon">⌂</span>
+                    <span class="menu-text">لوحة التحكم</span>
+                </a>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">الحركات</div>
+                <a href="supply.html" class="menu-item">
+                    <span class="menu-icon">⇩</span>
+                    <span class="menu-text">أذونات التوريد</span>
+                </a>
+                <a href="dispense.html" class="menu-item">
+                    <span class="menu-icon">⇧</span>
+                    <span class="menu-text">أذونات الصرف والعهد</span>
+                </a>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">البيانات المالية والإدارية</div>
+                <a href="entities.html" class="menu-item">
+                    <span class="menu-icon">♙</span>
+                    <span class="menu-text">الموردون والجهات</span>
+                </a>
+                <a href="report.html" class="menu-item">
+                    <span class="menu-icon">▥</span>
+                    <span class="menu-text">التقارير</span>
+                </a>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">النظام</div>
+                <a href="settings.html" class="menu-item active">
+                    <span class="menu-icon">⚙</span>
+                    <span class="menu-text">الإعدادات</span>
+                </a>
+            </div>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-card">
+                <div class="user-avatar" id="userAvatar">م</div>
+                <div class="user-info">
+                    <div class="user-name" id="userName">مستعرض النظام</div>
+                    <div class="user-role" id="userRole">مستعرض</div>
+                </div>
+            </div>
+            <a href="#" class="menu-item" onclick="handleLogout()">
+                <span class="menu-icon">↪</span>
+                <span class="menu-text">تسجيل الخروج</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="content">
+        <!-- Top Header -->
+        <header class="top-header">
+            <div class="header-search">
+                <span class="header-search-icon">⌕</span>
+                <input type="text" placeholder="بحث...">
+            </div>
+            <div class="header-actions">
+                <button class="header-btn" onclick="handleLogout()" title="خروج"><span>🚪</span></button>
+            </div>
+        </header>
+
+        <!-- Page Title -->
+        <div class="header-title-section">
+            <h1>إعدادات النظام والأمان</h1>
+            <p class="subtitle">إدارة النسخ الاحتياطي والاسترجاع</p>
+        </div>
+
+        <div class="page-content">
+            <!-- Alert Banner -->
+            <div class="alert alert-warning" id="alertBanner" style="display: none;">
+                <span>⚠️</span>
+                <span>النظام غير متصل بالمستودع السحابي حالياً. يرجى إعداد الروابط أدناه لتفادي فقدان بيانات المخزن.</span>
+            </div>
+
+            <!-- Cloud Settings Panel -->
+            <div class="panel" style="margin-bottom: 20px;">
+                <div class="panel-header">
+                    <div>
+                        <div class="panel-title">☁️ إعدادات التخزين السحابي (GitHub Backup)</div>
+                        <div class="panel-subtitle">حفظ نسخ احتياطية في مستودع GitHub</div>
+                    </div>
+                </div>
+                <div class="panel-body">
+                    <form id="cloudSettingsForm">
+                        <div class="form-grid">
+                            <div class="form-group" style="grid-column: span 2;">
+                                <label>رابط المستودع (HTTPS Repo URL)</label>
+                                <input type="url" id="repoUrl" placeholder="https://github.com/username/repo.git" required>
+                            </div>
+                            <div class="form-group">
+                                <label>رمز الوصول الدائم (Personal Access Token)</label>
+                                <input type="password" id="accessToken" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" required>
+                                <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">يتم تشفير هذا الرمز وحفظه محلياً ولا يتم مشاركته.</div>
+                            </div>
+                            <div class="form-group">
+                                <label>معدل النسخ التلقائي</label>
+                                <select id="backupFrequency">
+                                    <option value="14">كل أسبوعين (موصى به)</option>
+                                    <option value="21">كل 3 أسابيع</option>
+                                    <option value="30">كل شهر (أقصى حد)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
+                            <button type="submit" class="btn btn-primary" id="saveBtn">
+                                <span>🔗</span>
+                                <span>فحص الاتصال وحفظ الإعدادات</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Restore Panel -->
+            <div class="panel">
+                <div class="panel-header">
+                    <div>
+                        <div class="panel-title" style="color: var(--danger);">🔄 الاسترجاع والعودة بالزمن (Restore)</div>
+                        <div class="panel-subtitle">استرجاع نسخة سابقة من البيانات</div>
+                    </div>
+                </div>
+                <div class="panel-body">
+                    <p style="color: var(--text-gray); margin-bottom: 20px; font-size: 13px;">
+                        يمكنك استرجاع أي نسخة سابقة تم حفظها محلياً أو سحابياً. إذا فقدت بياناتك، يمكنك جلب النسخ من المستودع السحابي.
+                    </p>
+
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px; padding: 12px; background: var(--bg-hover); border-radius: 10px;">
+                        <span>🌐 حالة الاتصال:</span>
+                        <span id="statusText" class="status-badge status-offline">غير متصل</span>
+                    </div>
+
+                    <div class="form-grid" id="restoreControls">
+                        <div class="form-group" style="grid-column: span 2;">
+                            <label>النسخ الاحتياطية المتوفرة</label>
+                            <select id="cloudBackupsSelect">
+                                <option value="">-- اضغط على زر عرض النسخ --</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="grid-column: span 2; display: flex; gap: 12px;">
+                            <button type="button" class="btn btn-primary" style="flex: 1;" id="syncAndShowBtn">
+                                <span>🔄</span>
+                                <span>عرض النسخ السابقة</span>
+                            </button>
+                            <button type="button" class="btn btn-danger" style="flex: 1;" id="restoreBtn" onclick="restoreDatabase()">
+                                <span>⚠️</span>
+                                <span>استرجاع النسخة المحددة</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
 
     <script>
         let isOnline = false;
-        
-        // التحقق من حالة الاتصال بالإنترنت
+
+        // Session
+        function checkSession() {
+            const session = JSON.parse(localStorage.getItem('userSession'));
+            if (!session) { window.location.href = 'index.html'; return null; }
+            return session;
+        }
+
+        function updateUserInfo(session) {
+            const avatar = document.getElementById('userAvatar');
+            const nameEl = document.getElementById('userName');
+            const roleEl = document.getElementById('userRole');
+            if (session.username) { avatar.textContent = session.username.charAt(0); nameEl.textContent = session.username; }
+            const roleNames = { 'admin': 'مدير النظام', 'storekeeper': 'أمين المخزن', 'viewer': 'مستعرض' };
+            roleEl.textContent = roleNames[session.role] || session.role || 'مستعرض';
+        }
+
+        function handleLogout() {
+            if (confirm('هل أنت متأكد من تسجيل الخروج؟')) { localStorage.removeItem('userSession'); window.location.href = 'index.html'; }
+        }
+
         async function checkInternetConnection() {
             try {
-                // محاولة الاتصال بـ GitHub API للتحقق من الإنترنت
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 5000);
-                
-                const response = await fetch('https://api.github.com', {
-                    signal: controller.signal,
-                    mode: 'no-cors'
-                });
-                
+                await fetch('https://api.github.com', { signal: controller.signal, mode: 'no-cors' });
                 clearTimeout(timeoutId);
-                isOnline = true;
-                updateConnectionStatus(true);
-                return true;
-            } catch (error) {
-                isOnline = false;
-                updateConnectionStatus(false);
-                return false;
-            }
+                isOnline = true; updateConnectionStatus(true); return true;
+            } catch (error) { isOnline = false; updateConnectionStatus(false); return false; }
         }
-        
-        // تحديث واجهة حالة الاتصال
+
         function updateConnectionStatus(online) {
             const statusText = document.getElementById('statusText');
-            if (online) {
-                statusText.textContent = 'متصل بالإنترنت';
-                statusText.className = 'status-badge status-online';
-            } else {
-                statusText.textContent = 'غير متصل (وضع غير متصل)';
-                statusText.className = 'status-badge status-offline';
-            }
+            if (online) { statusText.textContent = 'متصل بالإنترنت'; statusText.className = 'status-badge status-online'; }
+            else { statusText.textContent = 'غير متصل (وضع غير متصل)'; statusText.className = 'status-badge status-offline'; }
         }
-        
-        // الزر الرئيسي - المزامنة وعرض النسخ
+
         async function syncAndShowBackups() {
             const btn = document.getElementById('syncAndShowBtn');
             const select = document.getElementById('cloudBackupsSelect');
             const originalText = btn.innerHTML;
-            
-            btn.innerHTML = '<div class="loading-spinner"></div> جاري فحص الاتصال...';
+            btn.innerHTML = '<span class="loading-spinner"></span> جاري الفحص...';
             btn.disabled = true;
-            
+
             try {
-                // 1. التحقق من الاتصال بالإنترنت
                 const hasInternet = await checkInternetConnection();
-                
                 if (!hasInternet) {
-                    console.log('📡 لا يوجد اتصال بالإنترنت، جاري عرض النسخ المحلية فقط...');
-                    btn.innerHTML = '💾 جاري عرض النسخ المحلية...';
-                    
-                    // عرض النسخ المحلية فقط
+                    btn.innerHTML = originalText; btn.disabled = false;
                     const localBackups = await window.api.getLocalBackups();
                     displayBackups(localBackups, false);
-                    
-                    alert('⚠️ لا يوجد اتصال بالإنترنت. تم عرض النسخ المحلية فقط.');
+                    showToast('لا يوجد اتصال - عرض النسخ المحلية فقط', 'warning');
+                    return;
+                }
+
+                const settings = await window.api.getSettings();
+                if (!settings || !settings.repoUrl || !settings.accessToken) {
+                    btn.innerHTML = originalText; btn.disabled = false;
+                    const localBackups = await window.api.getLocalBackups();
+                    displayBackups(localBackups, false);
+                    showToast('لا توجد إعدادات سحابية', 'warning');
+                    return;
+                }
+
+                btn.innerHTML = '<span class="loading-spinner"></span> جاري المزامنة...';
+                const syncResult = await window.api.syncWithCloud();
+
+                if (syncResult.success) {
+                    const allBackups = await window.api.getMergedBackups();
+                    displayBackups(allBackups, true);
+                    showToast('تمت المزامنة بنجاح: ' + allBackups.length + ' نسخة', 'success');
                 } else {
-                    // التحقق من وجود إعدادات السحابة
-                    const settings = await window.api.getSettings();
-                    
-                    if (!settings || !settings.repoUrl || !settings.accessToken) {
-                        btn.innerHTML = '⚠️ لا توجد إعدادات سحابية';
-                        alert('⚠️ يرجى إدخال إعدادات السحابة (رابط المستودع ورمز الوصول) أولاً سيتم تحميل البيانات المحلية حاليا.');
-                        displayBackups(await window.api.getLocalBackups(), false);
-                        return;
-                    }
-                    
-                    btn.innerHTML = '<div class="loading-spinner"></div> جاري المزامنة مع السحابة...';
-                    
-                    // محاولة المزامنة مع السحابة
-                    const syncResult = await window.api.syncWithCloud();
-                    
-                    if (syncResult.success) {
-                        btn.innerHTML = '<div class="loading-spinner"></div> جاري جلب النسخ المدمجة...';
-                        
-                        // جلب النسخ المدمجة (محلية + سحابية)
-                        const allBackups = await window.api.getMergedBackups();
-                        displayBackups(allBackups, true);
-                        
-                        alert(`✅ المزامنة ناجحة!\n${syncResult.message}\nتم جلب ${allBackups.length} نسخة احتياطية.`);
-                    } else {
-                        // فشلت المزامنة، نعرض النسخ المحلية فقط
-                        console.warn('فشلت المزامنة:', syncResult.message);
-                        btn.innerHTML = '💾 جاري عرض النسخ المحلية...';
-                        
-                        const localBackups = await window.api.getLocalBackups();
-                        displayBackups(localBackups, false);
-                        
-                        alert(`⚠️ فشلت المزامنة مع السحابة: ${syncResult.message}\nتم عرض النسخ المحلية فقط.`);
-                    }
+                    const localBackups = await window.api.getLocalBackups();
+                    displayBackups(localBackups, false);
+                    showToast('فشلت المزامنة - عرض المحلية فقط', 'warning');
                 }
             } catch (error) {
-                console.error('خطأ في المزامنة:', error);
-                alert('❌ حدث خطأ أثناء محاولة المزامنة: ' + error.message);
-                
-                // محاولة عرض النسخ المحلية على الأقل
-                try {
-                    const localBackups = await window.api.getLocalBackups();
-                    displayBackups(localBackups, false);
-                } catch (e) {
-                    console.error('فشل في عرض النسخ المحلية:', e);
-                }
-            } finally {
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-            }
+                showToast('حدث خطأ أثناء المزامنة', 'error');
+            } finally { btn.innerHTML = originalText; btn.disabled = false; }
         }
-        
-        // عرض النسخ في القائمة المنسدلة
+
         function displayBackups(backups, isOnlineMode) {
             const select = document.getElementById('cloudBackupsSelect');
-            
-            if (!backups || backups.length === 0) {
-                select.innerHTML = '<option value="">لا توجد نسخ احتياطية متاحة</option>';
-                return;
-            }
-            
-            select.innerHTML = '<option value="">-- اختر نسخة لاسترجاعها --</option>';
-            
-            backups.forEach(backup => {
-                const source = backup.source || (backup.fullCommitId ? 'local' : 'unknown');
-                const icon = source === 'cloud' ? '☁️' : (source === 'local' ? '💾' : '📦');
-                const sourceClass = source === 'cloud' ? 'commit-source-cloud' : 'commit-source-local';
-                const sourceText = source === 'cloud' ? 'سحابية' : 'محلية';
-                
-                select.innerHTML += `<option value="${backup.fullCommitId || backup.commitId}" class="${sourceClass}">
-                    ${icon} [${sourceText}] ${backup.date} - ${backup.message} (${backup.commitId || backup.fullCommitId?.substring(0,7)})
-                </option>`;
+            if (!backups || backups.length === 0) { select.innerHTML = '<option value="">لا توجد نسخ احتياطية</option>'; return; }
+
+            select.innerHTML = '<option value="">-- اختر نسخة --</option>';
+            backups.forEach(b => {
+                const source = b.source || 'local';
+                const icon = source === 'cloud' ? '☁️' : '💾';
+                const sText = source === 'cloud' ? 'سحابية' : 'محلية';
+                select.innerHTML += `<option value="${b.fullCommitId || b.commitId}">${icon} [${sText}] ${b.date} - ${b.message}</option>`;
             });
-            
-            if (!isOnlineMode) {
-                const infoOption = document.createElement('option');
-                infoOption.disabled = true;
-                infoOption.textContent = '─── عرض النسخ المحلية فقط (وضع غير متصل) ───';
-                infoOption.style.backgroundColor = '#f0f0f0';
-                select.insertBefore(infoOption, select.options[1]);
-            }
         }
-        
-        // استرجاع قاعدة البيانات
+
         async function restoreDatabase() {
-            const select = document.getElementById('cloudBackupsSelect');
-            const commitId = select.value;
-            
-            if(!commitId || commitId === '') {
-                alert('الرجاء عرض النسخ واختيار واحدة أولاً.');
-                return;
-            }
-            
-            const confirmRestore = confirm('⚠️ تحذير: استرجاع هذه النسخة سيمسح قاعدة البيانات الحالية ويستبدلها بالبيانات التي كانت موجودة في تلك النقطة الزمنية.\n\nسيتم توثيق عملية الاسترجاع كنسخة جديدة (Commit) لضمان عدم ضياع الترتيب الزمني.\n\nهل أنت متأكد من المتابعة؟');
-            
-            if(confirmRestore) {
-                const restoreBtn = document.getElementById('restoreBtn');
-                const originalText = restoreBtn.innerHTML;
-                restoreBtn.innerHTML = '<div class="loading-spinner"></div> جاري الاسترجاع وإعادة التشغيل...';
-                restoreBtn.disabled = true;
+            const commitId = document.getElementById('cloudBackupsSelect').value;
+            if (!commitId) { showToast('يرجى اختيار نسخة أولاً', 'warning'); return; }
+
+            if (confirm('⚠️ استرجاع هذه النسخة سيمسح البيانات الحالية ويستبدلها. هل أنت متأكد؟')) {
+                const btn = document.getElementById('restoreBtn');
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<span class="loading-spinner"></span> جاري الاسترجاع...';
+                btn.disabled = true;
 
                 try {
                     const result = await window.api.restoreFromGit(commitId);
-                    
-                    if (result && result.success) {
-                        alert('✅ ' + (result.message || 'تم الاسترجاع بنجاح! سيتم إعادة تشغيل التطبيق.'));
-                    } else {
-                        const errorMsg = result?.message || 'فشل في استرجاع النسخة';
-                        alert('❌ ' + errorMsg);
-                        restoreBtn.innerHTML = originalText;
-                        restoreBtn.disabled = false;
-                    }
-                } catch (error) {
-                    console.error('❌ خطأ في الاسترجاع:', error);
-                    alert('❌ حدث خطأ أثناء الاسترجاع: ' + error.message);
-                    restoreBtn.innerHTML = originalText;
-                    restoreBtn.disabled = false;
-                }
+                    if (result && result.success) { showToast('تم الاسترجاع بنجاح', 'success'); }
+                    else { showToast(result?.message || 'فشل الاسترجاع', 'error'); }
+                } catch (error) { showToast('حدث خطأ أثناء الاسترجاع', 'error'); }
+                finally { btn.innerHTML = originalText; btn.disabled = false; }
             }
         }
-        
-        // تحميل الإعدادات عند فتح الصفحة
+
+        // Init
         window.addEventListener('DOMContentLoaded', async () => {
-            const settings = await window.api.getSettings();
-            
-            if (settings) {
-                document.getElementById('repoUrl').value = settings.repoUrl;
-                document.getElementById('accessToken').value = settings.accessToken;
-                document.getElementById('backupFrequency').value = settings.backupFrequency;
-                document.getElementById('alertBanner').style.display = 'none';
-            } else {
-                document.getElementById('alertBanner').style.display = 'flex';
-            }
-            
-            // التحقق من حالة الاتصال
+            const session = checkSession();
+            if (session) { updateUserInfo(session); }
+
+            try {
+                const settings = await window.api.getSettings();
+                if (settings) {
+                    document.getElementById('repoUrl').value = settings.repoUrl || '';
+                    document.getElementById('accessToken').value = settings.accessToken || '';
+                    document.getElementById('backupFrequency').value = settings.backupFrequency || '14';
+                    document.getElementById('alertBanner').style.display = 'none';
+                } else { document.getElementById('alertBanner').style.display = 'flex'; }
+            } catch (e) { document.getElementById('alertBanner').style.display = 'flex'; }
+
             await checkInternetConnection();
-            
-            // ربط حدث الزر المدمج
             document.getElementById('syncAndShowBtn').addEventListener('click', syncAndShowBackups);
         });
 
-        // حفظ الإعدادات
+        // Save settings
         document.getElementById('cloudSettingsForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            
             const btn = document.getElementById('saveBtn');
             const originalText = btn.innerHTML;
-            btn.innerHTML = '<div class="loading-spinner"></div> جاري فحص الاتصال بـ GitHub...';
+            btn.innerHTML = '<span class="loading-spinner"></span> جاري الحفظ...';
             btn.disabled = true;
 
-            const settingsData = {
+            const result = await window.api.saveSettings({
                 repoUrl: document.getElementById('repoUrl').value.trim(),
                 accessToken: document.getElementById('accessToken').value.trim(),
                 backupFrequency: document.getElementById('backupFrequency').value
-            };
-            const result = await window.api.saveSettings(settingsData);
-            if (result.success) {
-                alert('✅ ' + result.message);
-                document.getElementById('alertBanner').style.display = 'none';
-            } else {
-                alert('❌ ' + result.message);
-            }
-            btn.innerHTML = originalText;
-            btn.disabled = false;
+            });
+
+            if (result.success) { showToast(result.message, 'success'); document.getElementById('alertBanner').style.display = 'none'; }
+            else { showToast(result.message, 'error'); }
+            btn.innerHTML = originalText; btn.disabled = false;
         });
+
+        function showToast(message, type) {
+            const container = document.querySelector('.toast-container') || (() => { const c = document.createElement('div'); c.className = 'toast-container'; document.body.appendChild(c); return c; })();
+            const toast = document.createElement('div'); toast.className = `toast toast-${type}`;
+            const icons = { success: '✓', error: '✕', warning: '⚠', info: 'ℹ' };
+            toast.innerHTML = `<span>${icons[type]}</span><span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 4000);
+        }
     </script>
     <script src="assets/js/common.js"></script>
 </body>

@@ -1,62 +1,95 @@
 :root {
-    /* الألوان الأساسية */
+    /* Primary Orange Theme */
     --primary: #FF6B00;
     --primary-hover: #E55A00;
     --primary-light: #FFF0E5;
     --primary-gradient: linear-gradient(135deg, #FF6B00, #FF8F00);
-    
-    /* ألوان الخلفيات */
-    --bg-dark: #1a1a2e;
-    --bg-darker: #16213e;
-    --bg-card: rgba(255, 255, 255, 0.98);
-    
-    /* ألوان النصوص */
-    --text-dark: #1a1a2e;
-    --text-gray: #6b7280;
+    --primary-soft: linear-gradient(135deg, #FF8F5A, #FFB84D);
+
+    /* Light Theme Backgrounds */
+    --bg-body: #F1F5F9;
+    --bg-sidebar: #FFFFFF;
+    --bg-card: #FFFFFF;
+    --bg-header: #FFFFFF;
+    --bg-hover: #F8FAFC;
+
+    /* Text Colors */
+    --text-dark: #1E293B;
+    --text-gray: #64748B;
+    --text-muted: #94A3B8;
     --text-light: #ffffff;
-    
-    /* ألوان الحالات (النجاح، الخطأ، التحذير، المعلومات) */
-    --success: #10b981;
-    --danger: #ef4444;
-    --warning: #f59e0b;
-    --info: #17a2b8;
-    
-    /* خطوط وظلال */
-    --border-color: #e5e7eb;
-    --shadow-sm: 0 1px 3px rgba(0,0,0,0.12);
-    --shadow-md: 0 4px 20px rgba(0,0,0,0.15);
-    --shadow-lg: 0 10px 40px rgba(0,0,0,0.2);
+
+    /* Border & Shadow */
+    --border-color: #E2E8F0;
+    --border-light: #F1F5F9;
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.07), 0 4px 6px -2px rgba(0, 0, 0, 0.03);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.07), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
+    --shadow-orange: 0 4px 14px rgba(255, 107, 0, 0.25);
+
+    /* Status Colors */
+    --success: #10B981;
+    --success-light: #D1FAE5;
+    --success-text: #065F46;
+    --danger: #EF4444;
+    --danger-light: #FEE2E2;
+    --danger-text: #991B1B;
+    --warning: #F59E0B;
+    --warning-light: #FEF3C7;
+    --warning-text: #92400E;
+    --info: #3B82F6;
+    --info-light: #DBEAFE;
+    --info-text: #1E40AF;
+
+    /* Transitions */
     --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-fast: all 0.15s ease;
+    --transition-bounce: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+    /* Sidebar */
+    --sidebar-width: 280px;
+    --sidebar-collapsed: 72px;
+    --header-height: 70px;
 }
 
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: 'Segoe UI', 'Cairo', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Segoe UI', 'Cairo', 'Tajawal', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 body {
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    background: var(--bg-body);
     min-height: 100vh;
     display: flex;
     color: var(--text-dark);
-    position: relative;
+    direction: rtl;
     overflow-x: hidden;
-    direction: rtl; /* اتجاه عربي دائماً */
 }
 
-/* تأثيرات الخلفية العصرية */
-body::before {
-    content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: 
-        radial-gradient(circle at 20% 50%, rgba(255, 107, 0, 0.1) 0%, transparent 50%),
-        radial-gradient(circle at 80% 50%, rgba(255, 143, 0, 0.05) 0%, transparent 50%);
-    pointer-events: none;
-    z-index: 0;
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #CBD5E1;
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #94A3B8;
+}
+
+/* Selection */
+::selection {
+    background: rgba(255, 107, 0, 0.2);
+    color: var(--text-dark);
 }

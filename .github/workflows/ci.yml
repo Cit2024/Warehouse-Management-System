@@ -11,10 +11,6 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
-permissions:
-  actions: write   # required to delete stale artifacts before upload
-  contents: read
-
 jobs:
   build:
     strategy:
@@ -23,12 +19,8 @@ jobs:
         include:
           - os: windows-latest
             build_script: build:win
-            artifact_name: ci-windows-installer
-            artifact_path: dist/*.exe
           - os: ubuntu-latest
             build_script: build:linux
-            artifact_name: ci-linux-appimage
-            artifact_path: dist/*.AppImage
 
     runs-on: ${{ matrix.os }}
     name: Build — ${{ matrix.os }}
@@ -58,40 +50,3 @@ jobs:
         run: npm run ${{ matrix.build_script }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      # ——— 6. Prune old CI artifacts to avoid hitting storage quota ———
-      # CI artifacts are prefixed with "ci-" so they never overlap with release artifacts.
-      # Also remove legacy non-prefixed CI artifacts (>2h old) until they expire naturally.
-      - name: Delete previous CI artifacts
-        continue-on-error: true
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        shell: bash
-        run: |
-          # Delete all new ci-prefixed artifacts from previous runs
-          gh api "repos/${{ github.repository }}/actions/artifacts" --paginate \
-            -q ".artifacts[] | select(.name | startswith(\"ci-\")) | .id" | \
-          while read -r id; do
-            [ -n "$id" ] && gh api "repos/${{ github.repository }}/actions/artifacts/${id}" -X DELETE || true
-          done
-
-          # Delete legacy non-prefixed CI artifacts older than 2 hours
-          cutoff=$(date -u -d '2 hours ago' +%Y-%m-%dT%H:%M:%SZ)
-          gh api "repos/${{ github.repository }}/actions/artifacts" --paginate \
-            -q ".artifacts[] | select((.name == \"windows-installer\" or .name == \"linux-appimage\") and .created_at < \"$cutoff\") | .id" | \
-          while read -r id; do
-            [ -n "$id" ] && gh api "repos/${{ github.repository }}/actions/artifacts/${id}" -X DELETE || true
-          done
-
-      # ——— 7. Upload build artifacts ———
-      # Upload is best-effort: if account-level artifact quota is exhausted,
-      # the build still succeeds so CI validation is not blocked.
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        continue-on-error: true
-        with:
-          name: ${{ matrix.artifact_name }}
-          path: ${{ matrix.artifact_path }}
-          if-no-files-found: error
-          overwrite: true
-          retention-days: 1

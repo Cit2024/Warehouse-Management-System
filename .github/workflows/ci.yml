@@ -61,13 +61,23 @@ jobs:
 
       # ——— 6. Prune old CI artifacts to avoid hitting storage quota ———
       # CI artifacts are prefixed with "ci-" so they never overlap with release artifacts.
+      # Also remove legacy non-prefixed CI artifacts (>2h old) until they expire naturally.
       - name: Delete previous CI artifacts
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: bash
         run: |
+          # Delete all new ci-prefixed artifacts from previous runs
           gh api "repos/${{ github.repository }}/actions/artifacts" --paginate \
             -q ".artifacts[] | select(.name | startswith(\"ci-\")) | .id" | \
+          while read -r id; do
+            [ -n "$id" ] && gh api "repos/${{ github.repository }}/actions/artifacts/${id}" -X DELETE || true
+          done
+
+          # Delete legacy non-prefixed CI artifacts older than 2 hours
+          cutoff=$(date -u -d '2 hours ago' +%Y-%m-%dT%H:%M:%SZ)
+          gh api "repos/${{ github.repository }}/actions/artifacts" --paginate \
+            -q ".artifacts[] | select((.name == \"windows-installer\" or .name == \"linux-appimage\") and .created_at < \"$cutoff\") | .id" | \
           while read -r id; do
             [ -n "$id" ] && gh api "repos/${{ github.repository }}/actions/artifacts/${id}" -X DELETE || true
           done

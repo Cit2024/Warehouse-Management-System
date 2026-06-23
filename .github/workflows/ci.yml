@@ -6,6 +6,7 @@ on:
   pull_request:
     branches: [main]
 
+# Cancel redundant runs on the same branch (keeps the latest only)
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
@@ -18,29 +19,48 @@ jobs:
         include:
           - os: windows-latest
             build_script: build:win
+            artifact_name: windows-installer
+            artifact_path: dist/*.exe
           - os: ubuntu-latest
             build_script: build:linux
+            artifact_name: linux-appimage
+            artifact_path: dist/*.AppImage
 
     runs-on: ${{ matrix.os }}
     name: Build — ${{ matrix.os }}
 
     steps:
+      # ——— 1. Checkout source ———
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # ——— 2. Setup Node.js ———
       - name: Setup Node.js 22
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
 
+      # ——— 3. Install dependencies ———
       - name: Install dependencies
         run: npm ci
 
+      # ——— 4. Rebuild native addons for Electron ———
       - name: Rebuild native addons (better-sqlite3)
         run: npx @electron/rebuild
 
+      # ——— 5. Build the application ———
       - name: Build application
         run: npm run ${{ matrix.build_script }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # ——— 6. Upload build artifacts ———
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: ${{ matrix.artifact_path }}
+          if-no-files-found: error
+          overwrite: true
+          retention-days: 1

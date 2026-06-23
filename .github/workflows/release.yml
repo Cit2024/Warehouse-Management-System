@@ -19,6 +19,9 @@ jobs:
           - os: ubuntu-latest
             build_script: build:linux
             artifact_path: dist/*.AppImage
+          - os: ubuntu-latest
+            build_script: build:deb
+            artifact_path: dist/*.deb
 
     runs-on: ${{ matrix.os }}
     name: Build — ${{ matrix.os }}

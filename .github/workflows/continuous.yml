@@ -1,0 +1,96 @@
+name: Continuous — Main Branch Installers
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: continuous-release
+  cancel-in-progress: true
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    name: Prepare continuous release
+
+    steps:
+      - name: Create or update continuous release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if ! gh release view continuous --repo "${{ github.repository }}" > /dev/null 2>&1; then
+            gh release create continuous \
+              --repo "${{ github.repository }}" \
+              --title "Continuous Build" \
+              --notes "Latest installers from the main branch." \
+              --prerelease
+          else
+            gh release edit continuous \
+              --repo "${{ github.repository }}" \
+              --notes "Latest installers from the main branch." \
+              --prerelease
+          fi
+
+  build:
+    needs: create-release
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            build_script: build:win
+            asset_name: windows-installer.exe
+          - os: ubuntu-latest
+            build_script: build:linux
+            asset_name: linux-appimage.AppImage
+          - os: ubuntu-latest
+            build_script: build:deb
+            asset_name: linux-debian.deb
+
+    runs-on: ${{ matrix.os }}
+    name: Build — ${{ matrix.asset_name }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Rebuild native addons (better-sqlite3)
+        run: npx @electron/rebuild
+
+      - name: Build application
+        run: npm run ${{ matrix.build_script }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Stage installer with stable name
+        shell: bash
+        run: |
+          mkdir -p release-assets
+          if [ "${{ matrix.build_script }}" = "build:win" ]; then
+            cp dist/*.exe "release-assets/${{ matrix.asset_name }}"
+          elif [ "${{ matrix.build_script }}" = "build:linux" ]; then
+            cp dist/*.AppImage "release-assets/${{ matrix.asset_name }}"
+          elif [ "${{ matrix.build_script }}" = "build:deb" ]; then
+            cp dist/*.deb "release-assets/${{ matrix.asset_name }}"
+          fi
+
+      - name: Upload to continuous release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload continuous \
+            --repo "${{ github.repository }}" \
+            release-assets/* \
+            --clobber

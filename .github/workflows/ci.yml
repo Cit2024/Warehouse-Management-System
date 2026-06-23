@@ -11,6 +11,9 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: write   # required to upload release assets
+
 jobs:
   build:
     strategy:
@@ -19,22 +22,19 @@ jobs:
         include:
           - os: windows-latest
             build_script: build:win
-            artifact_name: windows-installer
-            artifact_path: dist/*.exe
+            asset_name: windows-installer.exe
             ext: .exe
           - os: ubuntu-latest
             build_script: build:linux
-            artifact_name: linux-appimage
-            artifact_path: dist/*.AppImage
+            asset_name: linux-appimage.AppImage
             ext: .AppImage
           - os: ubuntu-latest
             build_script: build:linux-deb
-            artifact_name: linux-deb
-            artifact_path: dist/*.deb
+            asset_name: linux-debian.deb
             ext: .deb
 
     runs-on: ${{ matrix.os }}
-    name: Build — ${{ matrix.os }} (${{ matrix.artifact_name }})
+    name: Build — ${{ matrix.os }} (${{ matrix.build_script }})
 
     steps:
       # ——— 1. Checkout source ———
@@ -47,7 +47,7 @@ jobs:
         with:
           bun-version: latest
 
-      # ——— 3. Setup Node.js 22 (upgraded from 20) ———
+      # ——— 3. Setup Node.js 22 ———
       - name: Setup Node.js 22
         uses: actions/setup-node@v4
         with:
@@ -74,19 +74,26 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # ——— 8. Stage installer into dist/ for artifact upload ———
-      - name: Copy installer to dist/
+      # ——— 8. Stage installer with stable name ———
+      - name: Stage installer
         shell: bash
         run: |
-          mkdir -p dist
-          cp release/*${{ matrix.ext }} dist/
+          mkdir -p release-assets
+          cp release/*${{ matrix.ext }} "release-assets/${{ matrix.asset_name }}"
 
-      # ——— 9. Upload build artifacts ———
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.artifact_name }}-${{ github.run_number }}-${{ github.sha }}
-          path: ${{ matrix.artifact_path }}
-          if-no-files-found: error
-          overwrite: true          # Allow overwriting to prevent duplicate errors
-          retention-days: 1        # Minimal retention — artifacts auto-deleted after 1 day to avoid storage quota
+      # ——— 9. Publish to continuous release (main branch only) ———
+      - name: Upload to continuous release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release view continuous --repo "${{ github.repository }}" > /dev/null 2>&1 || \
+            gh release create continuous \
+              --repo "${{ github.repository }}" \
+              --title "Continuous Build" \
+              --notes "Latest installers from the main branch." \
+              --prerelease
+          gh release upload continuous \
+            --repo "${{ github.repository }}" \
+            release-assets/* \
+            --clobber

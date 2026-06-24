@@ -836,22 +836,19 @@ tbody tr:last-child td {
 th.sortable {
     cursor: pointer;
     user-select: none;
-    position: relative;
-    padding-left: 20px;
-    transition: color 0.2s;
+    transition: color 0.15s;
 }
 th.sortable:hover {
     color: var(--primary);
     background: var(--primary-light);
 }
 th.sortable .sort-icon {
-    font-size: 12px;
+    font-size: 11px;
     color: var(--text-muted);
     margin-right: 4px;
-    vertical-align: middle;
-}
-th.sortable:hover .sort-icon {
-    color: var(--primary);
+    display: inline-block;
+    width: 14px;
+    text-align: center;
 }
 
 /* ========== Print Report Date ========== */
@@ -860,3 +857,15 @@ th.sortable:hover .sort-icon {
     color: var(--text-gray);
     margin-top: 4px;
 }
+
+/* ========== Stat Card Links ========== */
+.stat-card-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+}
+.stat-card-link:hover .stat-card {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+}
+

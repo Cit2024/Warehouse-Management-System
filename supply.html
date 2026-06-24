@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="assets/css/layout.css">
     <link rel="stylesheet" href="assets/css/components.css">
     <link rel="stylesheet" href="assets/css/print.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body>
 
@@ -15,7 +16,9 @@
     <aside class="sidebar">
         <div class="sidebar-header">
             <div class="sidebar-brand">
-                <div class="sidebar-brand-icon">📦</div>
+                <div class="sidebar-brand-icon">
+                    <img src="assets/images/logo.png" alt="شعار الكلية" onerror="this.style.display='none'; this.parentElement.innerHTML='<span style=\'font-size:20px;\'><i class=\'fas fa-university\'></i></span>';" style="width: 100%; height: 100%; object-fit: contain; border-radius: 12px;">
+                </div>
                 <div class="sidebar-brand-text">
                     <div class="sidebar-brand-title">إدارة المخازن</div>
                     <div class="sidebar-brand-subtitle">كلية التقنية الصناعية</div>
@@ -27,7 +30,7 @@
             <div class="nav-section">
                 <div class="nav-section-title">الرئيسية</div>
                 <a href="dashboard.html" class="menu-item">
-                    <span class="menu-icon">⌂</span>
+                    <span class="menu-icon"><i class="fas fa-home"></i></span>
                     <span class="menu-text">لوحة التحكم</span>
                 </a>
             </div>
@@ -35,11 +38,11 @@
             <div class="nav-section">
                 <div class="nav-section-title">الحركات</div>
                 <a href="supply.html" class="menu-item active">
-                    <span class="menu-icon">⇩</span>
+                    <span class="menu-icon"><i class="fas fa-arrow-down"></i></span>
                     <span class="menu-text">أذونات التوريد</span>
                 </a>
                 <a href="dispense.html" class="menu-item">
-                    <span class="menu-icon">⇧</span>
+                    <span class="menu-icon"><i class="fas fa-arrow-up"></i></span>
                     <span class="menu-text">أذونات الصرف والعهد</span>
                 </a>
             </div>
@@ -47,11 +50,11 @@
             <div class="nav-section">
                 <div class="nav-section-title">البيانات المالية والإدارية</div>
                 <a href="entities.html" class="menu-item">
-                    <span class="menu-icon">♙</span>
+                    <span class="menu-icon"><i class="fas fa-building"></i></span>
                     <span class="menu-text">الموردون والجهات</span>
                 </a>
                 <a href="report.html" class="menu-item">
-                    <span class="menu-icon">▥</span>
+                    <span class="menu-icon"><i class="fas fa-file-alt"></i></span>
                     <span class="menu-text">التقارير</span>
                 </a>
             </div>
@@ -59,7 +62,7 @@
             <div class="nav-section">
                 <div class="nav-section-title">النظام</div>
                 <a href="settings.html" class="menu-item">
-                    <span class="menu-icon">⚙</span>
+                    <span class="menu-icon"><i class="fas fa-cog"></i></span>
                     <span class="menu-text">الإعدادات</span>
                 </a>
             </div>
@@ -74,7 +77,7 @@
                 </div>
             </div>
             <a href="#" class="menu-item" onclick="handleLogout()">
-                <span class="menu-icon">↪</span>
+                <span class="menu-icon"><i class="fas fa-sign-out-alt"></i></span>
                 <span class="menu-text">تسجيل الخروج</span>
             </a>
         </div>
@@ -85,11 +88,11 @@
         <!-- Top Header -->
         <header class="top-header">
             <div class="header-search">
-                <span class="header-search-icon">⌕</span>
+                <span class="header-search-icon"><i class="fas fa-search"></i></span>
                 <input type="text" placeholder="بحث...">
             </div>
             <div class="header-actions">
-                <button class="header-btn" onclick="handleLogout()" title="خروج"><span>🚪</span></button>
+                <button class="header-btn" onclick="handleLogout()" title="خروج"><i class="fas fa-door-open"></i></button>
             </div>
         </header>
 
@@ -156,7 +159,7 @@
                                 <input type="number" id="itemPrice" placeholder="السعر" min="0" step="0.01">
                             </div>
                             <button type="button" class="btn btn-primary" onclick="addRow()">
-                                <span>➕</span>
+                                <span><i class="fas fa-plus"></i></span>
                                 <span>إضافة</span>
                             </button>
                         </div>
@@ -183,7 +186,7 @@
                             </table>
                         </div>
 
-                        <div style="text-align: left; font-size: 18px; font-weight: 700; color: var(--primary); padding: 16px; background: var(--primary-light); border-radius: 12px;">
+                        <div style="text-align: center; font-size: 18px; font-weight: 700; color: var(--primary); padding: 16px; background: var(--primary-light); border-radius: 12px;">
                             إجمالي قيمة الفاتورة: <span id="grandTotal">0.00</span> د.ل
                         </div>
                     </div>
@@ -197,7 +200,7 @@
 
                     <div style="display: flex; gap: 12px; margin-top: 24px;">
                         <button type="button" class="btn btn-success btn-lg" style="flex: 1;" onclick="saveReceipt()">
-                            <span>💾</span>
+                            <span><i class="fas fa-save"></i></span>
                             <span>حفظ إذن التوريد</span>
                         </button>
                     </div>
@@ -209,17 +212,17 @@
     <!-- Print Modal -->
     <div class="modal" id="printModal">
         <div class="modal-content" style="text-align: center; max-width: 420px;">
-            <div style="font-size: 56px; margin-bottom: 16px;">✅</div>
+            <div style="font-size: 56px; margin-bottom: 16px; color: var(--success);"><i class="fas fa-check-circle"></i></div>
             <h3 style="margin-bottom: 8px; color: var(--success); font-size: 18px;" id="successMessage">تم الحفظ بنجاح</h3>
             <p style="margin-bottom: 28px; color: var(--text-gray); font-size: 14px;">كيف تود التعامل مع هذا المستند؟</p>
 
             <div style="display: flex; gap: 10px; justify-content: center;">
                 <button type="button" class="btn btn-primary" onclick="executePrint('direct')">
-                    <span>🖨️</span>
+                    <span><i class="fas fa-print"></i></span>
                     <span>طباعة</span>
                 </button>
                 <button type="button" class="btn btn-secondary" onclick="executePrint('none')">
-                    <span>❌</span>
+                    <span><i class="fas fa-times-circle"></i></span>
                     <span>إغلاق</span>
                 </button>
             </div>
@@ -405,7 +408,7 @@
             })();
             const toast = document.createElement('div');
             toast.className = `toast toast-${type}`;
-            const icons = { success: '✓', error: '✕', warning: '⚠', info: 'ℹ' };
+            const icons = { success: '<i class="fas fa-check-circle"></i>', error: '<i class="fas fa-times-circle"></i>', warning: '<i class="fas fa-exclamation-triangle"></i>', info: '<i class="fas fa-info-circle"></i>' };
             toast.innerHTML = `<span>${icons[type]}</span><span>${message}</span>`;
             container.appendChild(toast);
             setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 4000);

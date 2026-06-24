@@ -1,15 +1,22 @@
+const toastIcons = {
+    success: '<i class="fas fa-check-circle"></i>',
+    error: '<i class="fas fa-times-circle"></i>',
+    warning: '<i class="fas fa-exclamation-triangle"></i>',
+    info: '<i class="fas fa-info-circle"></i>'
+};
+
 function showToast(message, type = 'success') {
     const existingToast = document.querySelector('.toast');
     if (existingToast) existingToast.remove();
-    
+
     const toast = document.createElement('div');
     toast.className = `toast toast-${type}`;
     toast.innerHTML = `
-        <span>${type === 'success' ? '✅' : '❌'}</span>
+        ${toastIcons[type] || toastIcons.info}
         <span>${message}</span>
     `;
     document.body.appendChild(toast);
-    
+
     setTimeout(() => {
         toast.style.opacity = '0';
         toast.style.transition = 'opacity 0.3s ease';
@@ -19,13 +26,13 @@ function showToast(message, type = 'success') {
 
 // 2. دالة التعامل مع النسخ الاحتياطي
 async function handleBackup(event) {
-    if (event) event.preventDefault(); 
+    if (event) event.preventDefault();
     const btn = event.currentTarget;
     const originalText = btn.innerHTML;
-    
-    btn.innerHTML = '⏳ جاري الحفظ...';
-    btn.style.pointerEvents = 'none'; 
-    
+
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...';
+    btn.style.pointerEvents = 'none';
+
     try {
         const result = await window.api.backupDatabase();
         if (result.success) {
@@ -44,22 +51,22 @@ async function handleBackup(event) {
 // 3. دالة التعامل مع استيراد النسخة الاحتياطية
 async function handleRestore(event) {
     if (event) event.preventDefault();
-    
-    const confirmRestore = confirm('⚠️ تحذير هام جداً: استيراد نسخة احتياطية سيقوم بمسح كافة بيانات المخزن الحالية واستبدالها بالنسخة المستوردة.\n\nهل أنت متأكد من رغبتك في المتابعة؟');
+
+    const confirmRestore = confirm('تحذير هام جداً: استيراد نسخة احتياطية سيقوم بمسح كافة بيانات المخزن الحالية واستبدالها بالنسخة المستوردة.\n\nهل أنت متأكد من رغبتك في المتابعة؟');
     if (!confirmRestore) return;
 
     const btn = event.currentTarget;
     const originalText = btn.innerHTML;
-    btn.innerHTML = '⏳ جاري الاستيراد...';
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الاستيراد...';
     btn.style.pointerEvents = 'none';
-    
+
     try {
         const result = await window.api.restoreDatabase();
         if (result && !result.success && result.message !== 'تم إلغاء العملية.') {
-            alert('❌ ' + result.message);
+            alert('خطأ: ' + result.message);
         }
     } catch (error) {
-        alert('❌ حدث خطأ غير متوقع أثناء الاستيراد.');
+        alert('خطأ: حدث خطأ غير متوقع أثناء الاستيراد.');
     } finally {
         btn.innerHTML = originalText;
         btn.style.pointerEvents = 'auto';

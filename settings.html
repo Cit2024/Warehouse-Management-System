@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>إعدادات النظام - منظومة إدارة المخازن | كلية التقنية الصناعية</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="assets/css/main.css">
     <link rel="stylesheet" href="assets/css/layout.css">
     <link rel="stylesheet" href="assets/css/components.css">
@@ -15,7 +16,9 @@
     <aside class="sidebar">
         <div class="sidebar-header">
             <div class="sidebar-brand">
-                <div class="sidebar-brand-icon">📦</div>
+                <div class="sidebar-brand-icon">
+                    <img src="assets/images/logo.png" alt="شعار الكلية" onerror="this.style.display='none'; this.parentElement.innerHTML='<span style=\'font-size:20px;\'><i class=\"fas fa-university\"></i></span>';" style="width: 100%; height: 100%; object-fit: contain; border-radius: 12px;">
+                </div>
                 <div class="sidebar-brand-text">
                     <div class="sidebar-brand-title">إدارة المخازن</div>
                     <div class="sidebar-brand-subtitle">كلية التقنية الصناعية</div>
@@ -27,7 +30,7 @@
             <div class="nav-section">
                 <div class="nav-section-title">الرئيسية</div>
                 <a href="dashboard.html" class="menu-item">
-                    <span class="menu-icon">⌂</span>
+                    <span class="menu-icon"><i class="fas fa-home"></i></span>
                     <span class="menu-text">لوحة التحكم</span>
                 </a>
             </div>
@@ -35,11 +38,11 @@
             <div class="nav-section">
                 <div class="nav-section-title">الحركات</div>
                 <a href="supply.html" class="menu-item">
-                    <span class="menu-icon">⇩</span>
+                    <span class="menu-icon"><i class="fas fa-arrow-down"></i></span>
                     <span class="menu-text">أذونات التوريد</span>
                 </a>
                 <a href="dispense.html" class="menu-item">
-                    <span class="menu-icon">⇧</span>
+                    <span class="menu-icon"><i class="fas fa-arrow-up"></i></span>
                     <span class="menu-text">أذونات الصرف والعهد</span>
                 </a>
             </div>
@@ -47,11 +50,11 @@
             <div class="nav-section">
                 <div class="nav-section-title">البيانات المالية والإدارية</div>
                 <a href="entities.html" class="menu-item">
-                    <span class="menu-icon">♙</span>
+                    <span class="menu-icon"><i class="fas fa-building"></i></span>
                     <span class="menu-text">الموردون والجهات</span>
                 </a>
                 <a href="report.html" class="menu-item">
-                    <span class="menu-icon">▥</span>
+                    <span class="menu-icon"><i class="fas fa-file-alt"></i></span>
                     <span class="menu-text">التقارير</span>
                 </a>
             </div>
@@ -59,7 +62,7 @@
             <div class="nav-section">
                 <div class="nav-section-title">النظام</div>
                 <a href="settings.html" class="menu-item active">
-                    <span class="menu-icon">⚙</span>
+                    <span class="menu-icon"><i class="fas fa-cog"></i></span>
                     <span class="menu-text">الإعدادات</span>
                 </a>
             </div>
@@ -74,7 +77,7 @@
                 </div>
             </div>
             <a href="#" class="menu-item" onclick="handleLogout()">
-                <span class="menu-icon">↪</span>
+                <span class="menu-icon"><i class="fas fa-sign-out-alt"></i></span>
                 <span class="menu-text">تسجيل الخروج</span>
             </a>
         </div>
@@ -85,11 +88,11 @@
         <!-- Top Header -->
         <header class="top-header">
             <div class="header-search">
-                <span class="header-search-icon">⌕</span>
+                <i class="fas fa-search header-search-icon"></i>
                 <input type="text" placeholder="بحث...">
             </div>
             <div class="header-actions">
-                <button class="header-btn" onclick="handleLogout()" title="خروج"><span>🚪</span></button>
+                <button class="header-btn" onclick="handleLogout()" title="خروج"><i class="fas fa-door-open"></i></button>
             </div>
         </header>
 
@@ -102,7 +105,7 @@
         <div class="page-content">
             <!-- Alert Banner -->
             <div class="alert alert-warning" id="alertBanner" style="display: none;">
-                <span>⚠️</span>
+                <span><i class="fas fa-exclamation-triangle"></i></span>
                 <span>النظام غير متصل بالمستودع السحابي حالياً. يرجى إعداد الروابط أدناه لتفادي فقدان بيانات المخزن.</span>
             </div>
 
@@ -110,7 +113,7 @@
             <div class="panel" style="margin-bottom: 20px;">
                 <div class="panel-header">
                     <div>
-                        <div class="panel-title">☁️ إعدادات التخزين السحابي (GitHub Backup)</div>
+                        <div class="panel-title"><i class="fas fa-cloud"></i> إعدادات التخزين السحابي (GitHub Backup)</div>
                         <div class="panel-subtitle">حفظ نسخ احتياطية في مستودع GitHub</div>
                     </div>
                 </div>
@@ -137,7 +140,7 @@
                         </div>
                         <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
                             <button type="submit" class="btn btn-primary" id="saveBtn">
-                                <span>🔗</span>
+                                <span><i class="fas fa-link"></i></span>
                                 <span>فحص الاتصال وحفظ الإعدادات</span>
                             </button>
                         </div>
@@ -149,7 +152,7 @@
             <div class="panel">
                 <div class="panel-header">
                     <div>
-                        <div class="panel-title" style="color: var(--danger);">🔄 الاسترجاع والعودة بالزمن (Restore)</div>
+                        <div class="panel-title" style="color: var(--danger);"><i class="fas fa-sync-alt"></i> الاسترجاع والعودة بالزمن (Restore)</div>
                         <div class="panel-subtitle">استرجاع نسخة سابقة من البيانات</div>
                     </div>
                 </div>
@@ -159,7 +162,7 @@
                     </p>
 
                     <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px; padding: 12px; background: var(--bg-hover); border-radius: 10px;">
-                        <span>🌐 حالة الاتصال:</span>
+                        <span><i class="fas fa-globe"></i> حالة الاتصال:</span>
                         <span id="statusText" class="status-badge status-offline">غير متصل</span>
                     </div>
 
@@ -172,11 +175,11 @@
                         </div>
                         <div class="form-group" style="grid-column: span 2; display: flex; gap: 12px;">
                             <button type="button" class="btn btn-primary" style="flex: 1;" id="syncAndShowBtn">
-                                <span>🔄</span>
+                                <span><i class="fas fa-sync-alt"></i></span>
                                 <span>عرض النسخ السابقة</span>
                             </button>
                             <button type="button" class="btn btn-danger" style="flex: 1;" id="restoreBtn" onclick="restoreDatabase()">
-                                <span>⚠️</span>
+                                <span><i class="fas fa-exclamation-triangle"></i></span>
                                 <span>استرجاع النسخة المحددة</span>
                             </button>
                         </div>
@@ -275,7 +278,7 @@
             select.innerHTML = '<option value="">-- اختر نسخة --</option>';
             backups.forEach(b => {
                 const source = b.source || 'local';
-                const icon = source === 'cloud' ? '☁️' : '💾';
+                const icon = source === 'cloud' ? '<i class="fas fa-cloud"></i>' : '<i class="fas fa-save"></i>';
                 const sText = source === 'cloud' ? 'سحابية' : 'محلية';
                 select.innerHTML += `<option value="${b.fullCommitId || b.commitId}">${icon} [${sText}] ${b.date} - ${b.message}</option>`;
             });
@@ -285,7 +288,7 @@
             const commitId = document.getElementById('cloudBackupsSelect').value;
             if (!commitId) { showToast('يرجى اختيار نسخة أولاً', 'warning'); return; }
 
-            if (confirm('⚠️ استرجاع هذه النسخة سيمسح البيانات الحالية ويستبدلها. هل أنت متأكد؟')) {
+            if (confirm('<i class="fas fa-exclamation-triangle"></i> استرجاع هذه النسخة سيمسح البيانات الحالية ويستبدلها. هل أنت متأكد؟')) {
                 const btn = document.getElementById('restoreBtn');
                 const originalText = btn.innerHTML;
                 btn.innerHTML = '<span class="loading-spinner"></span> جاري الاسترجاع...';
@@ -341,7 +344,7 @@
         function showToast(message, type) {
             const container = document.querySelector('.toast-container') || (() => { const c = document.createElement('div'); c.className = 'toast-container'; document.body.appendChild(c); return c; })();
             const toast = document.createElement('div'); toast.className = `toast toast-${type}`;
-            const icons = { success: '✓', error: '✕', warning: '⚠', info: 'ℹ' };
+            const icons = { success: '<i class="fas fa-check-circle"></i>', error: '<i class="fas fa-times-circle"></i>', warning: '<i class="fas fa-exclamation-triangle"></i>', info: '<i class="fas fa-info-circle"></i>' };
             toast.innerHTML = `<span>${icons[type]}</span><span>${message}</span>`;
             container.appendChild(toast);
             setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 4000);

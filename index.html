@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>تسجيل الدخول - منظومة إدارة المخازن</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         * {
             margin: 0;
@@ -370,14 +371,14 @@
                 <p>أدخل بيانات حسابك، أو اضغط <span class="highlight">«دخول إلى المنظومة»</span> دون بيانات للدخول بصلاحية العرض فقط.</p>
             </div>
 
-            <div class="error-message" id="errorMessage">❌ اسم المستخدم أو كلمة المرور غير صحيحة</div>
+            <div class="error-message" id="errorMessage"><i class="fas fa-times-circle"></i> اسم المستخدم أو كلمة المرور غير صحيحة</div>
 
             <form id="loginForm" onsubmit="return handleLogin(event)">
                 <div class="form-group">
                     <label for="username">اسم المستخدم</label>
                     <div class="input-wrapper">
                         <input type="text" id="username" placeholder="أدخل اسم المستخدم" autocomplete="username">
-                        <span class="input-icon">👤</span>
+                        <span class="input-icon"><i class="fas fa-user"></i></span>
                     </div>
                 </div>
 
@@ -385,7 +386,7 @@
                     <label for="password">كلمة المرور</label>
                     <div class="input-wrapper">
                         <input type="password" id="password" placeholder="أدخل كلمة المرور" autocomplete="current-password">
-                        <span class="input-icon">🔑</span>
+                        <span class="input-icon"><i class="fas fa-key"></i></span>
                     </div>
                 </div>
 
@@ -397,7 +398,7 @@
             <div class="demo-section">
                 <div class="demo-label">حساب أمين المخزن:</div>
                 <button type="button" class="demo-btn" onclick="fillDemoAccount()">
-                    <span>👤</span>
+                    <span><i class="fas fa-user"></i></span>
                     <span>محمد سالم — أمين مخزن</span>
                 </button>
             </div>
@@ -409,8 +410,8 @@
         <div class="branding-content">
             <div class="branding-logo">
                 <div class="logo-img">
-                    <!-- Replace with actual college logo -->
-                    <span class="logo-placeholder">🏫</span>
+                    <img src="assets/images/logo.png" alt="كلية التقنية الصناعية" style="width: 70px; height: 70px; object-fit: contain;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <span class="logo-placeholder" style="display:none; font-size:10px; text-align:center; line-height:1.2; padding:4px;">كلية التقنية الصناعية</span>
                 </div>
                 <div class="branding-title">
                     <h2>كلية التقنية الصناعية</h2>
@@ -425,19 +426,19 @@
 
             <div class="features-list">
                 <div class="feature-item">
-                    <div class="feature-icon">📦</div>
+                    <div class="feature-icon"><i class="fas fa-box"></i></div>
                     <span>إدارة شاملة للأصناف والمخزون</span>
                 </div>
                 <div class="feature-item">
-                    <div class="feature-icon">📊</div>
+                    <div class="feature-icon"><i class="fas fa-chart-bar"></i></div>
                     <span>تقارير فورية وإحصائيات دقيقة</span>
                 </div>
                 <div class="feature-item">
-                    <div class="feature-icon">🔄</div>
+                    <div class="feature-icon"><i class="fas fa-sync-alt"></i></div>
                     <span>متابعة حركات التوريد والصرف</span>
                 </div>
                 <div class="feature-item">
-                    <div class="feature-icon">🔔</div>
+                    <div class="feature-icon"><i class="fas fa-bell"></i></div>
                     <span>تنبيهات الرصيد المنخفض</span>
                 </div>
             </div>
@@ -483,7 +484,7 @@
                     localStorage.setItem('userSession', JSON.stringify(sessionData));
                     window.location.href = 'dashboard.html';
                 } else {
-                    errorMessage.textContent = '❌ ' + result.message;
+                    errorMessage.innerHTML = '<i class="fas fa-times-circle"></i> ' + result.message;
                     errorMessage.style.display = 'block';
                     loginButton.innerHTML = originalText;
                     loginButton.disabled = false;

@@ -836,19 +836,33 @@ tbody tr:last-child td {
 th.sortable {
     cursor: pointer;
     user-select: none;
-    transition: color 0.15s;
+    transition: all 0.2s;
+    position: relative;
+    padding-left: 24px !important;
+    font-size: 13px;
 }
 th.sortable:hover {
     color: var(--primary);
     background: var(--primary-light);
 }
 th.sortable .sort-icon {
-    font-size: 11px;
+    font-size: 14px;
     color: var(--text-muted);
     margin-right: 4px;
     display: inline-block;
-    width: 14px;
+    min-width: 18px;
     text-align: center;
+    vertical-align: middle;
+}
+th.sortable:hover .sort-icon {
+    color: var(--primary);
+    font-weight: 700;
+}
+
+/* ========== Count report inputs ========== */
+#reportTable input[type="number"] {
+    min-width: 80px;
+    max-width: 120px;
 }
 
 /* ========== Print Report Date ========== */

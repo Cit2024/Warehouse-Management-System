@@ -3,33 +3,39 @@
  * Handles form submission, demo account fill, and API fallback.
  */
 
-async function handleLogin(event) {
-    event.preventDefault();
+function getLoginElements() {
+    return {
+        username: document.getElementById('username'),
+        password: document.getElementById('password'),
+        errorMessage: document.getElementById('errorMessage'),
+        loginButton: document.getElementById('loginButton')
+    };
+}
 
-    const username = document.getElementById('username').value.trim();
-    const password = document.getElementById('password').value;
-    const errorMessage = document.getElementById('errorMessage');
-    const loginButton = document.getElementById('loginButton');
+async function handleLogin(event) {
+    if (event) event.preventDefault();
+
+    const { username, password, errorMessage, loginButton } = getLoginElements();
+    const originalText = loginButton.innerHTML;
 
     errorMessage.style.display = 'none';
 
-    const originalText = loginButton.innerHTML;
-    loginButton.innerHTML = '<span class="loading-spinner"></span> جاري التحقق...';
-    loginButton.disabled = true;
+    // Disable controls during login
+    setLoadingState(true, loginButton, username, password);
 
     try {
         // If no credentials provided, login as viewer
-        if (!username && !password) {
+        if (!username.value.trim() && !password.value) {
             loginAsViewer();
             return;
         }
 
-        const result = await window.api.login({ username, password });
+        const result = await window.api.login({ username: username.value.trim(), password: password.value });
         if (result.success) {
             setSessionAndRedirect(result.user);
         } else {
             showError(result.message || 'اسم المستخدم أو كلمة المرور غير صحيحة');
-            resetButton(loginButton, originalText);
+            resetLoginState(originalText, loginButton, username, password);
         }
     } catch (error) {
         // If API not available (preview mode), allow viewer access
@@ -37,6 +43,24 @@ async function handleLogin(event) {
     }
 
     return false;
+}
+
+function setLoadingState(isLoading, loginButton, username, password) {
+    loginButton.disabled = isLoading;
+    username.disabled = isLoading;
+    password.disabled = isLoading;
+
+    if (isLoading) {
+        loginButton.innerHTML = '<span class="loading-spinner"></span> جاري التحقق...';
+    }
+}
+
+function resetLoginState(buttonText, loginButton, username, password) {
+    loginButton.innerHTML = buttonText;
+    loginButton.disabled = false;
+    username.disabled = false;
+    password.disabled = false;
+    username.focus();
 }
 
 function loginAsViewer() {
@@ -64,13 +88,9 @@ function showError(message) {
     errorMessage.style.display = 'block';
 }
 
-function resetButton(button, text) {
-    button.innerHTML = text;
-    button.disabled = false;
-}
-
 function fillDemoAccount() {
-    document.getElementById('username').value = 'mohamed';
-    document.getElementById('password').value = 'password123';
-    document.getElementById('username').focus();
+    const { username, password } = getLoginElements();
+    username.value = 'mohamed';
+    password.value = 'password123';
+    username.focus();
 }

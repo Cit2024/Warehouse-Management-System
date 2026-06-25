@@ -79,6 +79,14 @@ function setSessionAndRedirect(user) {
         rememberMe: false
     };
     localStorage.setItem('userSession', JSON.stringify(sessionData));
+
+    // Re-enable fields before leaving so the browser/Electron does not
+    // restore a disabled state if the user returns to this page.
+    const { username, password, loginButton } = getLoginElements();
+    if (username) username.disabled = false;
+    if (password) password.disabled = false;
+    if (loginButton) loginButton.disabled = false;
+
     window.location.href = 'dashboard.html';
 }
 
@@ -94,3 +102,12 @@ function fillDemoAccount() {
     password.value = 'password123';
     username.focus();
 }
+
+// Ensure fields are always enabled when the login page loads
+// (prevents browsers/Electron from restoring a disabled state after logout)
+document.addEventListener('DOMContentLoaded', () => {
+    const { username, password, loginButton } = getLoginElements();
+    if (username) username.disabled = false;
+    if (password) password.disabled = false;
+    if (loginButton) loginButton.disabled = false;
+});

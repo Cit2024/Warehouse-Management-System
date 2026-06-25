@@ -5,18 +5,19 @@
 /* Print-only elements hidden on screen */
 .print-header,
 .print-summary-bar,
+.print-grand-total,
 .print-signatures,
-.print-grand-total {
+.signatures {
     display: none;
 }
 
 @media print {
     @page {
-        size: A4;
+        size: A4 portrait;
         margin: 15mm 12mm;
     }
 
-    /* Reset layout */
+    /* Preserve exact colors / backgrounds when printing */
     * {
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
@@ -29,7 +30,7 @@
         direction: rtl;
     }
 
-    /* Hide non-print chrome */
+    /* Hide all screen-only chrome */
     .sidebar,
     .top-header,
     .header-title-section,
@@ -51,15 +52,22 @@
     #dateFromGroup,
     #dateToGroup,
     #itemSelectGroup,
-    .table-toolbar,
+    #receiptNumberGroup,
     .table-title,
-    .table-meta {
+    .table-meta,
+    .empty-state,
+    .form-actions,
+    .receipt-toolbar,
+    .stock-badge,
+    .add-item-row,
+    .signature-section {
         display: none !important;
     }
 
-    /* Main content full width */
+    /* Main content full width, no padding */
     .content {
         margin-right: 0 !important;
+        margin-left: 0 !important;
         padding: 0 !important;
     }
 
@@ -74,6 +82,7 @@
         margin-bottom: 16px;
         padding-bottom: 16px;
         border-bottom: 2px solid #1E293B;
+        page-break-inside: avoid;
     }
 
     .print-header-top {
@@ -125,6 +134,13 @@
         font-weight: 700;
         color: #1E293B;
         margin: 6px 0 4px;
+    }
+
+    .print-header h2 {
+        font-size: 14pt;
+        font-weight: 700;
+        color: #1E293B;
+        margin: 4px 0;
     }
 
     #printReportDate {
@@ -221,7 +237,7 @@
         display: none !important;
     }
 
-    /* Show editable count inputs when printing */
+    /* Count report inputs visible when printing */
     #reportTable input[type="number"],
     #reportTable .actual-qty {
         display: inline-block !important;
@@ -327,7 +343,7 @@
         border-top: 1px solid #E2E8F0 !important;
     }
 
-    /* ===== Avoid page breaks ===== */
+    /* ===== Page break control ===== */
     tr {
         page-break-inside: avoid;
     }
@@ -340,11 +356,12 @@
     .print-header,
     .print-summary-bar,
     .print-grand-total,
+    .signatures,
     .print-signatures {
         page-break-inside: avoid;
     }
 
-    /* Force show all content */
+    /* Force show all tab content */
     .tab-content {
         display: block !important;
     }

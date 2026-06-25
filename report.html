@@ -12,12 +12,43 @@
 </head>
 <body>
 
+    <!-- Professional Print Header (hidden on screen, shown when printing) -->
+    <div class="print-header">
+        <div class="print-header-top">
+            <div class="print-logo">
+                <img src="assets/images/logo.png" alt="شعار الكلية" onerror="this.style.display='none'; this.parentElement.innerHTML='<span style=\'font-size:36px;\'><i class=\'fas fa-university\'></i></span>';">
+            </div>
+            <div class="print-header-titles">
+                <div class="print-college">كلية التقنية الصناعية - مصراتة</div>
+                <div class="print-system">منظومة إدارة المخازن</div>
+                <h1 id="printReportTitle">تقرير حالة المخزون</h1>
+                <div id="printReportDate"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Print Summary Bar (hidden on screen, shown when printing) -->
+    <div class="print-summary-bar">
+        <div class="print-summary-item">
+            <span class="print-summary-label">اسم التقرير</span>
+            <span class="print-summary-value" id="printReportName">-</span>
+        </div>
+        <div class="print-summary-item">
+            <span class="print-summary-label">عدد السجلات</span>
+            <span class="print-summary-value" id="printRecordCount">0</span>
+        </div>
+        <div class="print-summary-item">
+            <span class="print-summary-label">الإجمالي</span>
+            <span class="print-summary-value" id="printTotalValue">0 د.ل</span>
+        </div>
+    </div>
+
     <!-- Sidebar -->
     <aside class="sidebar">
         <div class="sidebar-header">
             <div class="sidebar-brand">
-                <div class="sidebar-brand-icon">
-                    <img src="assets/images/logo.png" alt="شعار الكلية" onerror="this.style.display='none'; this.parentElement.innerHTML='<span style=\'font-size:20px;\'><i class=\"fas fa-university\"></i></span>';" style="width: 100%; height: 100%; object-fit: contain; border-radius: 12px;">
+                <div class="sidebar-brand-icon" id="sidebarLogo">
+                    <i class="fas fa-warehouse"></i>
                 </div>
                 <div class="sidebar-brand-text">
                     <div class="sidebar-brand-title">إدارة المخازن</div>
@@ -133,7 +164,7 @@
                         </div>
                         <button class="btn btn-primary" onclick="printReport()">
                             <i class="fas fa-print"></i>
-                            <span>طباعة التقرير</span>
+                            <span>Print Report</span>
                         </button>
                     </div>
                 </div>
@@ -189,39 +220,15 @@
                     </table>
                 </div>
             </div>
+
+            <!-- Signatures -->
+            <div class="signatures">
+                <div class="signature-box">المستلم</div>
+                <div class="signature-box">أمين المخزن</div>
+                <div class="signature-box">مدير الإدارة</div>
+            </div>
         </div>
     </main>
-
-    <!-- Print Header (hidden, shown only when printing) -->
-    <div class="print-header">
-        <div class="print-header-top">
-            <div class="print-logo">
-                <img src="assets/images/logo.png" alt="شعار الكلية" onerror="this.style.display='none'; this.parentElement.innerHTML='<span style=\'font-size:36px;\'><i class=\'fas fa-university\'></i></span>';">
-            </div>
-            <div class="print-header-titles">
-                <div class="print-college">كلية التقنية الصناعية - مصراتة</div>
-                <div class="print-system">منظومة إدارة المخازن</div>
-                <h1 id="printReportTitle">تقرير حالة المخزون</h1>
-                <div id="printReportDate"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Print Summary Bar (hidden, shown only when printing) -->
-    <div class="print-summary-bar">
-        <div class="print-summary-item">
-            <span class="print-summary-label">اسم التقرير</span>
-            <span class="print-summary-value" id="printReportName">-</span>
-        </div>
-        <div class="print-summary-item">
-            <span class="print-summary-label">عدد السجلات</span>
-            <span class="print-summary-value" id="printRecordCount">0</span>
-        </div>
-        <div class="print-summary-item">
-            <span class="print-summary-label">الإجمالي</span>
-            <span class="print-summary-value" id="printTotalValue">0 د.ل</span>
-        </div>
-    </div>
 
     <script>
         let allItems = [];
@@ -276,8 +283,16 @@
                 const reportName = document.getElementById('reportName').textContent || '-';
                 const recordCount = document.getElementById('recordCount').textContent || '0';
                 const totalValue = document.getElementById('totalValue').textContent || '0 د.ل';
-
-                document.getElementById('printReportDate').textContent = 'تاريخ الطباعة: ' + new Date().toLocaleDateString('ar-LY');
+                const dateFrom = document.getElementById('dateFrom').value;
+                const dateTo = document.getElementById('dateTo').value;
+                const reportType = document.getElementById('reportType').value;
+                const needsPeriod = ['movements_log', 'item_card'].includes(reportType);
+                let periodText = '';
+                if (needsPeriod && dateFrom && dateTo) {
+                    periodText = 'الفترة: ' + dateFrom + ' إلى ' + dateTo;
+                }
+                const printDateText = 'تاريخ الطباعة: ' + new Date().toLocaleDateString('ar-LY');
+                document.getElementById('printReportDate').textContent = (periodText ? periodText + ' | ' : '') + printDateText;
                 document.getElementById('printReportName').textContent = reportName;
                 document.getElementById('printRecordCount').textContent = recordCount;
                 document.getElementById('printTotalValue').textContent = totalValue;
@@ -819,5 +834,21 @@
         });
     </script>
     <script src="assets/js/common.js"></script>
+    <script>
+    (function() {
+        var logoPath = 'assets/images/logo.png';
+        var img = new Image();
+        img.onload = function() {
+            var el = document.getElementById('sidebarLogo');
+            if (el) {
+                el.innerHTML = '<img src="' + logoPath + '" alt="شعار الكلية" style="width:100%;height:100%;object-fit:contain;padding:4px;border-radius:10px;">';
+            }
+        };
+        img.onerror = function() {
+            console.log('Logo not found, using default icon');
+        };
+        img.src = logoPath;
+    })();
+    </script>
 </body>
 </html>

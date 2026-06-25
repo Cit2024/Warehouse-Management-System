@@ -16,8 +16,8 @@
     <aside class="sidebar">
         <div class="sidebar-header">
             <div class="sidebar-brand">
-                <div class="sidebar-brand-icon">
-                    <img src="assets/images/logo.png" alt="شعار الكلية" onerror="this.style.display='none'; this.parentElement.textContent='📦';">
+                <div class="sidebar-brand-icon" id="sidebarLogo">
+                    <i class="fas fa-warehouse"></i>
                 </div>
                 <div class="sidebar-brand-text">
                     <div class="sidebar-brand-title">إدارة المخازن</div>
@@ -351,5 +351,21 @@
         }
     </script>
     <script src="assets/js/common.js"></script>
+    <script>
+    (function() {
+        var logoPath = 'assets/images/logo.png';
+        var img = new Image();
+        img.onload = function() {
+            var el = document.getElementById('sidebarLogo');
+            if (el) {
+                el.innerHTML = '<img src="' + logoPath + '" alt="شعار الكلية" style="width:100%;height:100%;object-fit:contain;padding:4px;border-radius:10px;">';
+            }
+        };
+        img.onerror = function() {
+            console.log('Logo not found, using default icon');
+        };
+        img.src = logoPath;
+    })();
+    </script>
 </body>
 </html>

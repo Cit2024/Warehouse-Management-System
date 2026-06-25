@@ -1,403 +1,422 @@
-/* ============================================
-   PRINT STYLES - Professional Reports & Receipts
-   ============================================ */
-
-/* Screen-only / print-only helpers */
-.print-only,
-.print-header,
-.print-summary,
-.print-summary-bar,
-.print-grand-total,
-.print-signatures,
-.signatures {
-    display: none;
-}
+/* ============================================================ */
+/* AGGRESSIVE PRINT STYLES - Hide everything except report data */
+/* ============================================================ */
 
 @media print {
+
+    /* --- Page Setup --- */
     @page {
-        size: A4 portrait;
+        size: A4;
         margin: 15mm 12mm;
     }
 
-    /* Preserve exact colors / backgrounds when printing */
+    /* --- Force RTL and clean background --- */
     * {
-        -webkit-print-color-adjust: exact !important;
-        print-color-adjust: exact !important;
+        direction: rtl !important;
+        text-align: right !important;
     }
 
-    body {
-        background: #ffffff !important;
-        color: #1E293B !important;
-        font-size: 12pt !important;
-        direction: rtl;
+    html, body {
+        background: white !important;
+        color: black !important;
+        font-family: 'Segoe UI', 'Cairo', Tahoma, sans-serif !important;
+        font-size: 11pt !important;
+        line-height: 1.4 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: visible !important;
     }
 
-    /* ===== Aggressive UI suppression ===== */
+    /* --- AGGRESSIVELY HIDE ALL UI ELEMENTS --- */
     .sidebar,
+    aside.sidebar,
     .top-header,
-    .page-header,
-    .header-title-section,
-    .toolbar,
-    .table-toolbar,
-    .panel-header,
     .header-actions,
     .header-search,
-    .btn,
-    button,
-    .row-actions,
-    .modal,
-    .toast-container,
-    .quick-actions,
+    .header-btn,
+    .header-title-section,
+    .header-title-section h1,
+    .header-title-section .subtitle,
+    .header-title-section #roleBadgeContainer,
     .stats-grid,
-    .content-grid,
-    .demo-section,
-    .branding-side,
+    .stats-grid *,
+    .panel-header,
+    .panel-header *,
+    .panel-subtitle,
+    .table-toolbar,
+    .table-toolbar *,
+    .toolbar-search,
+    .toolbar-search *,
     .filter-select,
+    select.filter-select,
+    input[type="date"],
+    input[type="text"],
+    .btn,
+    button.btn,
+    button,
+    .btn-primary,
+    .btn-secondary,
+    .btn-success,
+    .btn-danger,
     .search-box,
-    .action-bar,
-    .form-actions,
-    .receipt-toolbar,
-    .receipt-actions,
-    .items-toolbar,
-    .stock-badge,
-    .add-item-row,
-    .signature-section,
-    .empty-state,
-    .tabs,
-    .tab-btn,
-    .mobile-nav,
-    .fab,
+    .modal,
+    .modal-overlay,
+    .modal-content,
+    .toast,
+    .toast-container,
     .user-card,
     .sidebar-footer,
-    nav,
-    aside,
-    #dateFromGroup,
-    #dateToGroup,
-    #itemSelectGroup,
-    #receiptNumberGroup,
-    .table-title,
-    .table-meta,
-    .form-group,
+    .sidebar-nav,
+    .nav-section,
+    .nav-section-title,
+    .sidebar-header,
+    .sidebar-brand,
+    .sidebar-brand-icon,
+    .sidebar-brand-text,
+    .sidebar-brand-title,
+    .sidebar-brand-subtitle,
+    .menu-item,
+    .menu-icon,
+    .menu-text,
+    .menu-badge,
+    .user-avatar,
+    .user-name,
+    .user-role,
+    .logout-btn,
+    .quick-actions,
+    .quick-action-btn,
+    .quick-action-icon,
+    .quick-action-label,
+    .activity-list,
+    .activity-item,
+    .activity-icon,
+    .activity-content,
+    .activity-title,
+    .activity-meta,
+    .activity-value,
+    .alert-list,
+    .alert-item,
+    .alert-item-icon,
+    .alert-item-content,
+    .alert-item-name,
+    .alert-item-detail,
+    .alert-item-status,
+    .empty-state,
+    .empty-state-icon,
+    .chart-container,
+    canvas,
+    #inventoryChart,
+    #globalSearch,
+    #searchInput,
+    #statusFilter,
+    .row-actions,
+    .row-action-btn,
+    .modal-close,
+    .modal-header,
+    .modal-title,
+    .modal-body,
+    .modal-footer,
     .form-group label,
-    input,
-    select,
-    textarea {
+    .error-message,
+    #addModal,
+    #itemsSection .panel-header,
+    .content-grid,
+    .content-grid *,
+    .panel:has(.quick-actions),
+    .panel:has(.chart-container),
+    .panel:has(.alert-list),
+    .panel:has(.activity-list) {
         display: none !important;
         visibility: hidden !important;
         opacity: 0 !important;
+        position: absolute !important;
         width: 0 !important;
         height: 0 !important;
-        position: absolute !important;
         overflow: hidden !important;
     }
 
-    /* ===== Reset print-only blocks ===== */
-    .print-only,
-    .print-header,
-    .print-summary,
-    .print-summary-bar,
-    .print-grand-total,
-    .print-signatures,
-    .signatures {
+    /* --- Show ONLY the main content area --- */
+    body {
+        display: block !important;
+    }
+
+    main.content,
+    .content,
+    .page-content {
         display: block !important;
         visibility: visible !important;
         opacity: 1 !important;
-        width: auto !important;
-        height: auto !important;
         position: static !important;
+        width: 100% !important;
+        height: auto !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        flex: none !important;
         overflow: visible !important;
     }
 
+    /* --- Show print-specific elements --- */
+    .print-header,
+    .print-only,
     .print-summary,
     .print-summary-bar,
-    .print-signatures,
-    .signatures {
-        display: flex !important;
+    .print-signatures {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        position: static !important;
+        width: 100% !important;
+        height: auto !important;
     }
 
-    /* ===== Layout reset ===== */
-    .content {
-        margin-right: 0 !important;
-        margin-left: 0 !important;
-        padding: 0 !important;
-    }
-
-    .page-content {
-        padding: 0 !important;
-    }
-
-    /* ===== Professional Print Header ===== */
+    /* --- Print Header Styling --- */
     .print-header {
-        text-align: center;
-        margin-bottom: 16px;
-        padding-bottom: 16px;
-        border-bottom: 2px solid #1E293B;
-        page-break-inside: avoid;
+        text-align: center !important;
+        border-bottom: 2pt solid #333 !important;
+        padding-bottom: 12pt !important;
+        margin-bottom: 12pt !important;
     }
 
     .print-header-top {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 16px;
-        margin-bottom: 12px;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        gap: 16pt !important;
     }
 
     .print-logo {
-        width: 60px;
-        height: 60px;
-        flex-shrink: 0;
-        background: #ffffff;
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        overflow: hidden;
+        width: 60px !important;
+        height: 60px !important;
+        flex-shrink: 0 !important;
     }
 
     .print-logo img {
-        width: 100%;
-        height: 100%;
-        object-fit: contain;
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: contain !important;
     }
 
     .print-header-titles {
-        text-align: center;
+        flex: 1 !important;
+        text-align: center !important;
     }
 
     .print-college {
-        font-size: 16pt;
-        font-weight: 700;
-        color: #1E293B;
-        margin-bottom: 2px;
+        font-size: 14pt !important;
+        font-weight: bold !important;
+        color: #000 !important;
     }
 
     .print-system {
-        font-size: 13pt;
-        font-weight: 600;
-        color: #FF6B00;
-        margin-bottom: 6px;
+        font-size: 11pt !important;
+        color: #FF6B00 !important;
+        font-weight: 600 !important;
+        margin: 4pt 0 !important;
     }
 
-    .print-header h1 {
-        font-size: 15pt;
-        font-weight: 700;
-        color: #1E293B;
-        margin: 6px 0 4px;
+    #printTitle {
+        font-size: 16pt !important;
+        font-weight: bold !important;
+        margin: 8pt 0 4pt 0 !important;
+        color: #000 !important;
     }
 
-    .print-header h2 {
-        font-size: 14pt;
-        font-weight: 700;
-        color: #1E293B;
-        margin: 4px 0;
+    #printDate {
+        font-size: 9pt !important;
+        color: #666 !important;
     }
 
-    #printDate,
-    #printReportDate,
-    #printReceiptDate,
-    #printPeriod {
-        font-size: 11pt;
-        color: #64748B;
-        margin-top: 4px;
-    }
-
-    /* ===== Print Summary Bar ===== */
+    /* --- Print Summary Bar --- */
     .print-summary,
     .print-summary-bar {
-        justify-content: space-between;
-        gap: 12px;
-        background: #F8FAFC !important;
-        border: 1px solid #E2E8F0;
-        border-radius: 8px;
-        padding: 12px 16px;
-        margin-bottom: 16px;
-        page-break-inside: avoid;
+        display: flex !important;
+        justify-content: space-between !important;
+        background: #f5f5f5 !important;
+        border: 0.5pt solid #ccc !important;
+        padding: 8pt 12pt !important;
+        margin-bottom: 12pt !important;
+        page-break-inside: avoid !important;
     }
 
     .print-summary-item {
-        flex: 1;
-        text-align: center;
-        border-left: 1px solid #E2E8F0;
-    }
-
-    .print-summary-item:last-child {
-        border-left: none;
+        text-align: center !important;
+        flex: 1 !important;
     }
 
     .print-summary-label {
-        display: block;
-        font-size: 10pt;
-        color: #64748B;
-        margin-bottom: 2px;
+        display: block !important;
+        font-size: 8pt !important;
+        color: #666 !important;
+        margin-bottom: 2pt !important;
     }
 
     .print-summary-value {
-        display: block;
-        font-size: 12pt;
-        font-weight: 700;
-        color: #1E293B;
+        display: block !important;
+        font-size: 10pt !important;
+        font-weight: bold !important;
+        color: #000 !important;
     }
 
-    /* ===== Panels ===== */
-    .panel {
+    /* --- Table Container - Only show the table itself --- */
+    .table-container {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        position: static !important;
+        width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
         box-shadow: none !important;
         border: none !important;
-        margin-bottom: 0 !important;
+        background: white !important;
     }
 
-    .panel-body {
-        padding: 0 !important;
-    }
-
-    /* ===== Tables ===== */
-    .table-container {
-        box-shadow: none !important;
-        border: 1px solid #CBD5E1 !important;
-        border-radius: 0 !important;
-        overflow: visible !important;
-    }
-
-    table {
-        border-collapse: collapse !important;
-        width: 100% !important;
-    }
-
-    thead th {
-        background: #F1F5F9 !important;
-        color: #1E293B !important;
-        border: 1px solid #CBD5E1 !important;
-        padding: 8px 10px !important;
-        font-size: 11pt;
-        font-weight: 700;
-    }
-
-    tbody td {
-        border: 1px solid #E2E8F0 !important;
-        padding: 8px 10px !important;
-        font-size: 11pt;
-    }
-
-    tbody tr:nth-child(even) td {
-        background: #F8FAFC !important;
-    }
-
-    tbody tr:hover td {
-        background: transparent !important;
-    }
-
-    th.sortable .sort-icon {
+    .table-container .table-toolbar,
+    .table-container .table-title,
+    .table-container .table-meta {
         display: none !important;
     }
 
-    /* ===== Grand Total Bar ===== */
-    .print-grand-total {
-        justify-content: space-between;
-        align-items: center;
-        background: #FFF7ED !important;
-        border: 1px solid #FF6B00;
-        border-radius: 8px;
-        padding: 12px 16px;
-        margin-top: 16px;
-        font-size: 13pt;
-        font-weight: 700;
-        color: #1E293B;
-        page-break-inside: avoid;
-    }
-
-    .print-grand-total .total-value {
-        color: #FF6B00;
-        font-size: 14pt;
-    }
-
-    /* ===== Signatures ===== */
-    .print-signatures,
-    .signatures {
-        justify-content: space-around;
-        margin-top: 60px;
-        page-break-inside: avoid;
-    }
-
-    .signature-box,
-    .print-signature-box {
-        width: 160px;
-        text-align: center;
-        padding-top: 50px;
-        border-top: 1px solid #1E293B;
-        font-weight: 600;
-        font-size: 11pt;
-    }
-
-    /* ===== Badges ===== */
-    .badge {
-        border: 1px solid currentColor !important;
-        padding: 2px 8px !important;
-        border-radius: 20px !important;
-        font-size: 10pt !important;
-    }
-
-    .badge-available {
-        background: #D1FAE5 !important;
-        color: #065F46 !important;
-    }
-
-    .badge-low {
-        background: #FEF3C7 !important;
-        color: #92400E !important;
-    }
-
-    .badge-out {
-        background: #FEE2E2 !important;
-        color: #991B1B !important;
-    }
-
-    .badge-supply {
-        background: #DBEAFE !important;
-        color: #1E40AF !important;
-    }
-
-    .badge-dispense {
-        background: #FEE2E2 !important;
-        color: #991B1B !important;
-    }
-
-    .badge-supplier {
-        background: #EDE9FE !important;
-        color: #5B21B6 !important;
-    }
-
-    .badge-dept {
-        background: #FCE7F3 !important;
-        color: #9D174D !important;
-    }
-
-    /* ===== Receipt Card ===== */
-    .receipt-card {
-        box-shadow: none !important;
-        border: 1px solid #CBD5E1 !important;
-    }
-
-    /* ===== Page break control ===== */
-    tr {
-        page-break-inside: avoid;
+    /* --- Table Styling --- */
+    table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+        margin-top: 8pt !important;
+        font-size: 9pt !important;
     }
 
     thead {
-        display: table-header-group;
+        display: table-header-group !important;
     }
 
-    .panel,
-    .print-header,
-    .print-summary,
-    .print-summary-bar,
-    .print-grand-total,
-    .print-signatures,
-    .signatures {
-        page-break-inside: avoid;
+    thead th {
+        background-color: #e8e8e8 !important;
+        border: 0.5pt solid #888 !important;
+        padding: 6pt 4pt !important;
+        font-weight: bold !important;
+        font-size: 9pt !important;
+        text-align: right !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+        color-adjust: exact !important;
     }
 
-    /* Force show all tab content */
-    .tab-content {
-        display: block !important;
+    tbody td {
+        border: 0.5pt solid #aaa !important;
+        padding: 5pt 4pt !important;
+        text-align: right !important;
+        vertical-align: middle !important;
     }
+
+    tbody tr {
+        page-break-inside: avoid !important;
+    }
+
+    tbody tr:nth-child(even) {
+        background-color: #fafafa !important;
+        -webkit-print-color-adjust: exact !important;
+    }
+
+    /* --- Badges in print --- */
+    .badge {
+        font-size: 8pt !important;
+        padding: 2pt 5pt !important;
+    }
+
+    .badge-available {
+        background: #d1fae5 !important;
+        color: #065f46 !important;
+    }
+
+    .badge-low {
+        background: #fee2e2 !important;
+        color: #991b1b !important;
+    }
+
+    /* --- Item IDs --- */
+    .item-id {
+        font-family: monospace !important;
+        font-size: 8pt !important;
+        color: #555 !important;
+    }
+
+    /* --- Print Signatures --- */
+    .print-signatures {
+        display: flex !important;
+        justify-content: space-between !important;
+        margin-top: 40pt !important;
+        page-break-inside: avoid !important;
+    }
+
+    .print-signature-box {
+        width: 30% !important;
+        text-align: center !important;
+        border-top: 0.5pt solid #000 !important;
+        padding-top: 8pt !important;
+        font-size: 10pt !important;
+        font-weight: 600 !important;
+    }
+
+    /* --- Grand Total Row --- */
+    .print-grand-total {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        background: #f0f0f0 !important;
+        border: 0.5pt solid #888 !important;
+        padding: 8pt 12pt !important;
+        margin-top: 8pt !important;
+        font-weight: bold !important;
+        font-size: 10pt !important;
+        page-break-inside: avoid !important;
+    }
+
+    .print-grand-total .total-value {
+        font-size: 12pt !important;
+        color: #FF6B00 !important;
+    }
+
+    /* --- Receipt info block --- */
+    .receipt-info-block {
+        background: #f9f9f9 !important;
+        border: 0.5pt solid #ccc !important;
+        padding: 8pt !important;
+        margin-bottom: 8pt !important;
+        font-size: 9pt !important;
+        page-break-inside: avoid !important;
+    }
+
+    .receipt-info-block strong {
+        color: #333 !important;
+    }
+
+    /* --- Links should show as text --- */
+    a {
+        text-decoration: none !important;
+        color: black !important;
+    }
+
+    /* --- Page breaks --- */
+    .page-break {
+        page-break-before: always !important;
+    }
+
+    /* --- Inputs in print (receipt details) --- */
+    input[type="number"].actual-qty {
+        border: 0.5pt solid #aaa !important;
+        padding: 2pt 4pt !important;
+        width: 60pt !important;
+        font-size: 9pt !important;
+    }
+}
+
+/* --- Screen: hide print-only elements --- */
+.print-header,
+.print-only,
+.print-summary,
+.print-summary-bar,
+.print-signatures,
+.print-grand-total,
+.receipt-info-block {
+    display: none;
 }

@@ -99,10 +99,10 @@ async function handlePdfExport() {
 // 5. تسجيل الخروج
 function handleLogout() {
     if (confirm('هل أنت متأكد من تسجيل الخروج؟')) {
-        if (window.electronAPI) {
+        localStorage.removeItem('userSession');
+        if (window.electronAPI && window.electronAPI.logout) {
             window.electronAPI.logout();
-        } else {
-            window.location.href = 'index.html';
         }
+        window.location.href = 'index.html';
     }
 }

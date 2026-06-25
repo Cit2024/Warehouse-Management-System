@@ -6,6 +6,24 @@
     <title>منظومة إدارة المخازن - كلية التقنية الصناعية</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="assets/css/login.css">
+    <style>
+        /* ===== Loading state — NEVER uses disabled attribute ===== */
+        .login-btn.loading {
+            opacity: 0.7;
+            cursor: wait;
+            pointer-events: none;
+        }
+
+        /* Ensure inputs are NEVER disabled by any external code */
+        #username, #password {
+            pointer-events: auto !important;
+            opacity: 1 !important;
+        }
+
+        #username:read-only, #password:read-only {
+            background: white !important;
+        }
+    </style>
 </head>
 <body>
     <!-- Router check: redirect authenticated users to dashboard -->
@@ -30,16 +48,14 @@
                 <p>أدخل بيانات حسابك، أو اضغط <span class="highlight">«دخول إلى المنظومة»</span> دون بيانات للدخول بصلاحية العرض فقط.</p>
             </div>
 
-            <div class="error-message" id="errorMessage">
-                <i class="fas fa-times-circle"></i> اسم المستخدم أو كلمة المرور غير صحيحة
-            </div>
+            <form id="loginForm" onsubmit="return handleLogin(event)" autocomplete="on">
+                <div class="error-message" id="errorMessage">❌ اسم المستخدم أو كلمة المرور غير صحيحة</div>
 
-            <form id="loginForm" onsubmit="return handleLogin(event)">
                 <div class="form-group">
                     <label for="username">اسم المستخدم</label>
                     <div class="input-wrapper">
                         <input type="text" id="username" placeholder="أدخل اسم المستخدم" autocomplete="username">
-                        <span class="input-icon"><i class="fas fa-user"></i></span>
+                        <span class="input-icon">👤</span>
                     </div>
                 </div>
 
@@ -47,7 +63,7 @@
                     <label for="password">كلمة المرور</label>
                     <div class="input-wrapper">
                         <input type="password" id="password" placeholder="أدخل كلمة المرور" autocomplete="current-password">
-                        <span class="input-icon"><i class="fas fa-key"></i></span>
+                        <span class="input-icon">🔑</span>
                     </div>
                 </div>
 
@@ -106,6 +122,126 @@
     </div>
 
     <script src="assets/js/common.js"></script>
-    <script src="assets/js/login.js"></script>
+    <script>
+    // ===== LOGIN LOGIC — NEVER disables inputs, uses CSS states only =====
+
+    (function() {
+        'use strict';
+
+        var isSubmitting = false;
+
+        function setLoading(loading) {
+            var btn = document.getElementById('loginButton');
+            isSubmitting = loading;
+            if (btn) {
+                if (loading) {
+                    btn.innerHTML = '<span class="loading-spinner"></span> جاري التحقق...';
+                    btn.classList.add('loading');
+                } else {
+                    btn.innerHTML = 'دخول إلى المنظومة';
+                    btn.classList.remove('loading');
+                }
+            }
+        }
+
+        function showError(msg) {
+            var err = document.getElementById('errorMessage');
+            if (err) {
+                err.textContent = msg || '❌ خطأ في تسجيل الدخول';
+                err.style.display = 'block';
+            }
+        }
+
+        function hideError() {
+            var err = document.getElementById('errorMessage');
+            if (err) err.style.display = 'none';
+        }
+
+        window.handleLogin = function(event) {
+            event.preventDefault();
+            if (isSubmitting) return false;
+
+            var username = document.getElementById('username').value.trim();
+            var password = document.getElementById('password').value;
+
+            hideError();
+            setLoading(true);
+
+            // Helper: always called at the end
+            function done(success, redirectUrl) {
+                setLoading(false);
+                if (success && redirectUrl) {
+                    window.location.href = redirectUrl;
+                }
+            }
+
+            // No credentials = viewer mode
+            if (!username && !password) {
+                localStorage.setItem('userSession', JSON.stringify({
+                    userId: 0,
+                    username: 'مستعرض النظام',
+                    role: 'viewer',
+                    rememberMe: false
+                }));
+                done(true, 'dashboard.html');
+                return false;
+            }
+
+            // Try API
+            if (typeof window.api !== 'undefined' && window.api.login) {
+                window.api.login({ username: username, password: password })
+                    .then(function(result) {
+                        if (result && result.success) {
+                            localStorage.setItem('userSession', JSON.stringify({
+                                userId: result.user.user_id,
+                                username: result.user.full_name,
+                                role: result.user.role,
+                                rememberMe: false
+                            }));
+                            done(true, 'dashboard.html');
+                        } else {
+                            showError(result && result.message ? '❌ ' + result.message : '❌ خطأ في تسجيل الدخول');
+                            done(false);
+                        }
+                    })
+                    .catch(function(error) {
+                        console.error('Login error:', error);
+                        showError('⚠️ تعذر الاتصال بالنظام، جاري الدخول كمستعرض...');
+                        setTimeout(function() {
+                            localStorage.setItem('userSession', JSON.stringify({
+                                userId: 0,
+                                username: 'مستعرض النظام',
+                                role: 'viewer',
+                                rememberMe: false
+                            }));
+                            done(true, 'dashboard.html');
+                        }, 800);
+                    });
+            } else {
+                // No API available — auto login as viewer
+                showError('⚠️ تعذر الاتصال، جاري الدخول كمستعرض...');
+                setTimeout(function() {
+                    localStorage.setItem('userSession', JSON.stringify({
+                        userId: 0,
+                        username: 'مستعرض النظام',
+                        role: 'viewer',
+                        rememberMe: false
+                    }));
+                    done(true, 'dashboard.html');
+                }, 800);
+            }
+
+            return false;
+        };
+
+        window.fillDemoAccount = function() {
+            var user = document.getElementById('username');
+            var pass = document.getElementById('password');
+            if (user) { user.value = 'mohamed'; }
+            if (pass) { pass.value = 'password123'; }
+            if (user) user.focus();
+        };
+    })();
+    </script>
 </body>
 </html>

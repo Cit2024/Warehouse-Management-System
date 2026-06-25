@@ -445,67 +445,154 @@
     </div>
 
     <script>
+        // ========== FIX: Ensure all fields are enabled on page load ==========
+        function resetLoginForm() {
+            var btn = document.getElementById('loginButton');
+            var user = document.getElementById('username');
+            var pass = document.getElementById('password');
+            var err = document.getElementById('errorMessage');
+
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = 'دخول إلى المنظومة';
+            }
+            if (user) user.disabled = false;
+            if (pass) pass.disabled = false;
+            if (err) err.style.display = 'none';
+        }
+
+        // Run on every page load
+        window.addEventListener('DOMContentLoaded', resetLoginForm);
+
+        // Also run when page is restored from back-forward cache (after logout)
+        window.addEventListener('pageshow', function(event) {
+            if (event.persisted) {
+                // Page was restored from cache — reset form
+                resetLoginForm();
+            }
+        });
+
+        // Clear any stale session data on login page load
+        (function() {
+            var s = localStorage.getItem('userSession');
+            if (s) {
+                try {
+                    var session = JSON.parse(s);
+                    // If we came from logout, session exists but we're on login page
+                    // Keep it (viewer mode can use it) but ensure form is usable
+                } catch(e) {}
+            }
+        })();
+
         async function handleLogin(event) {
             event.preventDefault();
-            const username = document.getElementById('username').value.trim();
-            const password = document.getElementById('password').value;
-            const errorMessage = document.getElementById('errorMessage');
-            const loginButton = document.getElementById('loginButton');
 
-            errorMessage.style.display = 'none';
+            var username = document.getElementById('username').value.trim();
+            var password = document.getElementById('password').value;
+            var errorMessage = document.getElementById('errorMessage');
+            var loginButton = document.getElementById('loginButton');
+            var usernameInput = document.getElementById('username');
+            var passwordInput = document.getElementById('password');
 
-            const originalText = loginButton.innerHTML;
-            loginButton.innerHTML = '<span class="loading-spinner"></span> جاري التحقق...';
-            loginButton.disabled = true;
+            // Hide any previous error
+            if (errorMessage) errorMessage.style.display = 'none';
+
+            // Disable form during processing
+            if (loginButton) {
+                loginButton.disabled = true;
+                loginButton.innerHTML = '<span class="loading-spinner"></span> جاري التحقق...';
+            }
+            if (usernameInput) usernameInput.disabled = true;
+            if (passwordInput) passwordInput.disabled = true;
+
+            // Helper: re-enable form
+            function enableForm() {
+                if (loginButton) {
+                    loginButton.disabled = false;
+                    loginButton.innerHTML = 'دخول إلى المنظومة';
+                }
+                if (usernameInput) usernameInput.disabled = false;
+                if (passwordInput) passwordInput.disabled = false;
+            }
 
             try {
                 // If no credentials provided, login as viewer
                 if (!username && !password) {
-                    const sessionData = {
+                    var sessionData = {
                         userId: 0,
                         username: 'مستعرض النظام',
                         role: 'viewer',
                         rememberMe: false
                     };
                     localStorage.setItem('userSession', JSON.stringify(sessionData));
+                    enableForm(); // Re-enable before leaving
                     window.location.href = 'dashboard.html';
-                    return;
+                    return false;
                 }
 
-                const result = await window.api.login({ username, password });
-                if (result.success) {
-                    const sessionData = {
-                        userId: result.user.user_id,
-                        username: result.user.full_name,
-                        role: result.user.role,
+                // Try API login
+                if (typeof window.api !== 'undefined' && window.api.login) {
+                    var result = await window.api.login({ username: username, password: password });
+                    if (result.success) {
+                        var sessionData = {
+                            userId: result.user.user_id,
+                            username: result.user.full_name,
+                            role: result.user.role,
+                            rememberMe: false
+                        };
+                        localStorage.setItem('userSession', JSON.stringify(sessionData));
+                        enableForm(); // Re-enable before leaving
+                        window.location.href = 'dashboard.html';
+                    } else {
+                        // Show error
+                        if (errorMessage) {
+                            errorMessage.textContent = '❌ ' + (result.message || 'خطأ في تسجيل الدخول');
+                            errorMessage.style.display = 'block';
+                        }
+                        enableForm(); // CRITICAL: re-enable on error
+                    }
+                } else {
+                    // API not available — fallback to viewer mode
+                    var sessionData = {
+                        userId: 0,
+                        username: 'مستعرض النظام',
+                        role: 'viewer',
                         rememberMe: false
                     };
                     localStorage.setItem('userSession', JSON.stringify(sessionData));
+                    enableForm(); // CRITICAL: re-enable before redirect
                     window.location.href = 'dashboard.html';
-                } else {
-                    errorMessage.textContent = '❌ ' + result.message;
-                    errorMessage.style.display = 'block';
-                    loginButton.innerHTML = originalText;
-                    loginButton.disabled = false;
                 }
             } catch (error) {
-                // If API not available (preview mode), allow viewer access
-                const sessionData = {
-                    userId: 0,
-                    username: 'مستعرض النظام',
-                    role: 'viewer',
-                    rememberMe: false
-                };
-                localStorage.setItem('userSession', JSON.stringify(sessionData));
-                window.location.href = 'dashboard.html';
+                // Any error — show message and re-enable form
+                console.error('Login error:', error);
+                if (errorMessage) {
+                    errorMessage.textContent = '⚠️ ' + (error.message || 'تعذر الاتصال بالنظام، جاري الدخول كمستعرض...');
+                    errorMessage.style.display = 'block';
+                }
+                // Fallback to viewer after short delay
+                setTimeout(function() {
+                    var sessionData = {
+                        userId: 0,
+                        username: 'مستعرض النظام',
+                        role: 'viewer',
+                        rememberMe: false
+                    };
+                    localStorage.setItem('userSession', JSON.stringify(sessionData));
+                    enableForm();
+                    window.location.href = 'dashboard.html';
+                }, 1500);
             }
+
             return false;
         }
 
         function fillDemoAccount() {
-            document.getElementById('username').value = 'mohamed';
-            document.getElementById('password').value = 'password123';
-            document.getElementById('username').focus();
+            var user = document.getElementById('username');
+            var pass = document.getElementById('password');
+            if (user) { user.value = 'mohamed'; user.disabled = false; }
+            if (pass) { pass.value = 'password123'; pass.disabled = false; }
+            if (user) user.focus();
         }
     </script>
     <script src="assets/js/common.js"></script>

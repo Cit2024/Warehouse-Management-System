@@ -103,6 +103,7 @@ function handleLogout() {
         if (window.electronAPI && window.electronAPI.logout) {
             window.electronAPI.logout();
         }
-        window.location.href = 'index.html';
+        // استخدم replace بدلاً من href لتجنب bfcache
+        window.location.replace('index.html');
     }
 }

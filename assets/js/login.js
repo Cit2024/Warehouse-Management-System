@@ -1,40 +1,74 @@
 /**
- * Login logic for index.html
- * NEVER uses the disabled attribute — uses CSS loading states only.
+ * Login logic — index.html
  */
-
 (function() {
     'use strict';
 
     var isSubmitting = false;
 
-    function getElements() {
-        return {
-            username: document.getElementById('username'),
-            password: document.getElementById('password'),
-            errorMessage: document.getElementById('errorMessage'),
-            loginButton: document.getElementById('loginButton')
-        };
+    // ===== CRITICAL FIX: Full reset on every page load =====
+    function fullReset() {
+        var user = document.getElementById('username');
+        var pass = document.getElementById('password');
+        var btn = document.getElementById('loginButton');
+        var err = document.getElementById('errorMessage');
+
+        // Clear any browser-autofilled or cached disabled state
+        if (user) {
+            user.removeAttribute('disabled');
+            user.removeAttribute('readonly');
+            user.style.pointerEvents = 'auto';
+            user.style.opacity = '1';
+            user.style.backgroundColor = 'white';
+            user.value = '';
+        }
+        if (pass) {
+            pass.removeAttribute('disabled');
+            pass.removeAttribute('readonly');
+            pass.style.pointerEvents = 'auto';
+            pass.style.opacity = '1';
+            pass.style.backgroundColor = 'white';
+            pass.value = '';
+        }
+        if (btn) {
+            btn.removeAttribute('disabled');
+            btn.classList.remove('loading');
+            btn.innerHTML = 'دخول إلى المنظومة';
+            btn.style.pointerEvents = 'auto';
+        }
+        if (err) err.style.display = 'none';
+
+        isSubmitting = false;
     }
+
+    // Execute immediately + on DOM ready + on pageshow (bfcache)
+    fullReset();
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', fullReset);
+    }
+    window.addEventListener('pageshow', function(e) {
+        fullReset();
+    });
 
     function setLoading(loading) {
         var btn = document.getElementById('loginButton');
         isSubmitting = loading;
-        if (btn) {
-            if (loading) {
-                btn.innerHTML = '<span class="loading-spinner"></span> جاري التحقق...';
-                btn.classList.add('loading');
-            } else {
-                btn.innerHTML = 'دخول إلى المنظومة';
-                btn.classList.remove('loading');
-            }
+        if (!btn) return;
+        if (loading) {
+            btn.innerHTML = '<span class="loading-spinner"></span> جاري التحقق...';
+            btn.classList.add('loading');
+            btn.style.pointerEvents = 'none';
+        } else {
+            btn.innerHTML = 'دخول إلى المنظومة';
+            btn.classList.remove('loading');
+            btn.style.pointerEvents = 'auto';
         }
     }
 
     function showError(msg) {
         var err = document.getElementById('errorMessage');
         if (err) {
-            err.innerHTML = '<i class="fas fa-times-circle"></i> ' + (msg || 'خطأ في تسجيل الدخول');
+            err.innerHTML = '<i class="fas fa-times-circle"></i> ' + msg;
             err.style.display = 'block';
         }
     }
@@ -44,17 +78,15 @@
         if (err) err.style.display = 'none';
     }
 
-    function redirectToDashboard() {
-        window.location.href = 'dashboard.html';
-    }
-
+    // ===== handleLogin =====
     window.handleLogin = function(event) {
         event.preventDefault();
         if (isSubmitting) return false;
 
-        var { username, password } = getElements();
-        var userValue = username ? username.value.trim() : '';
-        var passValue = password ? password.value : '';
+        var userEl = document.getElementById('username');
+        var passEl = document.getElementById('password');
+        var userValue = userEl ? userEl.value.trim() : '';
+        var passValue = passEl ? passEl.value : '';
 
         hideError();
         setLoading(true);
@@ -62,23 +94,20 @@
         function done(success, redirect) {
             setLoading(false);
             if (success && redirect) {
-                redirectToDashboard();
+                window.location.href = 'dashboard.html';
             }
         }
 
-        // No credentials = viewer mode
+        // Viewer mode (no credentials)
         if (!userValue && !passValue) {
             localStorage.setItem('userSession', JSON.stringify({
-                userId: 0,
-                username: 'مستعرض النظام',
-                role: 'viewer',
-                rememberMe: false
+                userId: 0, username: 'مستعرض النظام', role: 'viewer', rememberMe: false
             }));
             done(true, true);
             return false;
         }
 
-        // Try API login
+        // API login
         if (typeof window.api !== 'undefined' && window.api.login) {
             window.api.login({ username: userValue, password: passValue })
                 .then(function(result) {
@@ -97,38 +126,31 @@
                 })
                 .catch(function(error) {
                     console.error('Login error:', error);
-                    showError('تعذر الاتصال بالنظام، جاري الدخول كمستعرض...');
+                    showError('تعذر الاتصال، جاري الدخول كمستعرض...');
                     setTimeout(function() {
                         localStorage.setItem('userSession', JSON.stringify({
-                            userId: 0,
-                            username: 'مستعرض النظام',
-                            role: 'viewer',
-                            rememberMe: false
+                            userId: 0, username: 'مستعرض النظام', role: 'viewer', rememberMe: false
                         }));
                         done(true, true);
-                    }, 800);
+                    }, 1000);
                 });
         } else {
-            // No API available — auto login as viewer
-            showError('تعذر الاتصال بالنظام، جاري الدخول كمستعرض...');
+            // No API
+            showError('تعذر الاتصال، جاري الدخول كمستعرض...');
             setTimeout(function() {
                 localStorage.setItem('userSession', JSON.stringify({
-                    userId: 0,
-                    username: 'مستعرض النظام',
-                    role: 'viewer',
-                    rememberMe: false
+                    userId: 0, username: 'مستعرض النظام', role: 'viewer', rememberMe: false
                 }));
                 done(true, true);
-            }, 800);
+            }, 1000);
         }
-
         return false;
     };
 
     window.fillDemoAccount = function() {
-        var { username, password } = getElements();
-        if (username) { username.value = 'mohamed'; }
-        if (password) { password.value = 'password123'; }
-        if (username) username.focus();
+        var user = document.getElementById('username');
+        var pass = document.getElementById('password');
+        if (user) { user.value = 'mohamed'; user.focus(); }
+        if (pass) { pass.value = 'password123'; }
     };
 })();

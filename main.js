@@ -22,7 +22,7 @@ const createWindow = () => {
     }
   });
 
-  // win.removeMenu();
+  win.removeMenu();  // إزالة شريط القوائم العلوي
   win.loadFile('index.html'); // يبدأ بصفحة تسجيل الدخول
   return win;
 };

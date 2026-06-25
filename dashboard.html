@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>لوحة التحكم - منظومة إدارة المخازن | كلية التقنية الصناعية</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="assets/css/main.css">
     <link rel="stylesheet" href="assets/css/layout.css">
     <link rel="stylesheet" href="assets/css/components.css">
@@ -16,7 +17,9 @@
     <aside class="sidebar">
         <div class="sidebar-header">
             <div class="sidebar-brand">
-                <div class="sidebar-brand-icon">📦</div>
+                <div class="sidebar-brand-icon">
+                    <img src="assets/images/logo.png" alt="شعار الكلية" onerror="this.style.display='none'; this.parentElement.textContent='📦';">
+                </div>
                 <div class="sidebar-brand-text">
                     <div class="sidebar-brand-title">إدارة المخازن</div>
                     <div class="sidebar-brand-subtitle">كلية التقنية الصناعية</div>
@@ -28,7 +31,7 @@
             <div class="nav-section">
                 <div class="nav-section-title">الرئيسية</div>
                 <a href="dashboard.html" class="menu-item active">
-                    <span class="menu-icon">⌂</span>
+                    <span class="menu-icon"><i class="fas fa-home"></i></span>
                     <span class="menu-text">لوحة التحكم</span>
                 </a>
             </div>
@@ -36,7 +39,7 @@
             <div class="nav-section">
                 <div class="nav-section-title">إدارة المخزون</div>
                 <a href="dashboard.html" class="menu-item active">
-                    <span class="menu-icon">▦</span>
+                    <span class="menu-icon"><i class="fas fa-th-large"></i></span>
                     <span class="menu-text">الأصناف والمخزون</span>
                     <span class="menu-badge" id="sidebarItemCount">0</span>
                 </a>
@@ -45,11 +48,11 @@
             <div class="nav-section">
                 <div class="nav-section-title">الحركات</div>
                 <a href="supply.html" class="menu-item">
-                    <span class="menu-icon">⇩</span>
+                    <span class="menu-icon"><i class="fas fa-arrow-down"></i></span>
                     <span class="menu-text">أذونات التوريد</span>
                 </a>
                 <a href="dispense.html" class="menu-item">
-                    <span class="menu-icon">⇧</span>
+                    <span class="menu-icon"><i class="fas fa-arrow-up"></i></span>
                     <span class="menu-text">أذونات الصرف والعهد</span>
                 </a>
             </div>
@@ -57,11 +60,11 @@
             <div class="nav-section">
                 <div class="nav-section-title">البيانات المالية والإدارية</div>
                 <a href="entities.html" class="menu-item">
-                    <span class="menu-icon">♙</span>
+                    <span class="menu-icon"><i class="fas fa-building"></i></span>
                     <span class="menu-text">الموردون والجهات</span>
                 </a>
                 <a href="report.html" class="menu-item">
-                    <span class="menu-icon">▥</span>
+                    <span class="menu-icon"><i class="fas fa-file-alt"></i></span>
                     <span class="menu-text">التقارير</span>
                 </a>
             </div>
@@ -69,7 +72,7 @@
             <div class="nav-section">
                 <div class="nav-section-title">النظام</div>
                 <a href="settings.html" class="menu-item">
-                    <span class="menu-icon">⚙</span>
+                    <span class="menu-icon"><i class="fas fa-cog"></i></span>
                     <span class="menu-text">الإعدادات</span>
                 </a>
             </div>
@@ -84,7 +87,7 @@
                 </div>
             </div>
             <a href="#" class="menu-item" onclick="handleLogout()">
-                <span class="menu-icon">↪</span>
+                <span class="menu-icon"><i class="fas fa-sign-out-alt"></i></span>
                 <span class="menu-text">تسجيل الخروج</span>
             </a>
         </div>
@@ -95,15 +98,15 @@
         <!-- Top Header -->
         <header class="top-header">
             <div class="header-search">
-                <span class="header-search-icon">⌕</span>
+                <span class="header-search-icon"><i class="fas fa-search"></i></span>
                 <input type="text" id="globalSearch" placeholder="بحث سريع عن صنف أو جهة..." oninput="handleGlobalSearch()">
             </div>
             <div class="header-actions">
                 <button class="header-btn" onclick="loadDashboardData()" title="تحديث">
-                    <span>↻</span>
+                    <span><i class="fas fa-sync-alt"></i></span>
                 </button>
                 <button class="header-btn" onclick="handleLogout()" title="خروج">
-                    <span>🚪</span>
+                    <span><i class="fas fa-door-open"></i></span>
                 </button>
             </div>
         </header>
@@ -119,38 +122,46 @@
         <div class="page-content">
             <!-- Stats Cards -->
             <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-icon orange">▦</div>
-                    <div class="stat-content">
-                        <div class="stat-label">إجمالي الأصناف</div>
-                        <div class="stat-value" id="statTotalItems">0</div>
-                        <div class="stat-desc" id="statTotalUnits">0 وحدة مخزنة</div>
+                <a class="stat-card-link" href="#itemsSection">
+                    <div class="stat-card">
+                        <div class="stat-icon orange"><i class="fas fa-th-large"></i></div>
+                        <div class="stat-content">
+                            <div class="stat-label">إجمالي الأصناف</div>
+                            <div class="stat-value" id="statTotalItems">0</div>
+                            <div class="stat-desc" id="statTotalUnits">0 وحدة مخزنة</div>
+                        </div>
                     </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon green">ل.د</div>
-                    <div class="stat-content">
-                        <div class="stat-label">قيمة المخزون التقديرية</div>
-                        <div class="stat-value" id="statInventoryValue">0</div>
-                        <div class="stat-desc">حسب آخر سعر مسجل</div>
+                </a>
+                <a class="stat-card-link" href="#itemsSection">
+                    <div class="stat-card">
+                        <div class="stat-icon green">ل.د</div>
+                        <div class="stat-content">
+                            <div class="stat-label">قيمة المخزون التقديرية</div>
+                            <div class="stat-value" id="statInventoryValue">0</div>
+                            <div class="stat-desc">حسب آخر سعر مسجل</div>
+                        </div>
                     </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon red">!</div>
-                    <div class="stat-content">
-                        <div class="stat-label">أصناف تحتاج متابعة</div>
-                        <div class="stat-value" id="statLowStock">0</div>
-                        <div class="stat-desc">عند أو تحت الحد الأدنى</div>
+                </a>
+                <a class="stat-card-link" href="report.html?type=lowstock">
+                    <div class="stat-card">
+                        <div class="stat-icon red"><i class="fas fa-exclamation-circle"></i></div>
+                        <div class="stat-content">
+                            <div class="stat-label">أصناف تحتاج متابعة</div>
+                            <div class="stat-value" id="statLowStock">0</div>
+                            <div class="stat-desc">عند أو تحت الحد الأدنى</div>
+                        </div>
                     </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon blue">↕</div>
-                    <div class="stat-content">
-                        <div class="stat-label">حركات الشهر الحالي</div>
-                        <div class="stat-value" id="statMonthlyMovements">0</div>
-                        <div class="stat-desc">توريد وصرف</div>
+                </a>
+                <a class="stat-card-link" href="#movementsPanel">
+                    <div class="stat-card">
+                        <div class="stat-icon blue"><i class="fas fa-exchange-alt"></i></div>
+                        <div class="stat-content">
+                            <div class="stat-label">حركات الشهر الحالي</div>
+                            <div class="stat-value" id="statMonthlyMovements">0</div>
+                            <div class="stat-desc">توريد وصرف</div>
+                        </div>
                     </div>
-                </div>
+                </a>
             </div>
 
             <!-- Content Grid -->
@@ -166,15 +177,15 @@
                     <div class="panel-body">
                         <div class="quick-actions">
                             <a href="report.html" class="quick-action-btn">
-                                <div class="quick-action-icon">▥</div>
+                                <div class="quick-action-icon"><i class="fas fa-file-alt"></i></div>
                                 <div class="quick-action-label">إعداد تقرير</div>
                             </a>
                             <a href="supply.html" class="quick-action-btn">
-                                <div class="quick-action-icon" style="background: #DBEAFE; color: #3B82F6;">⇩</div>
+                                <div class="quick-action-icon" style="background: #DBEAFE; color: #3B82F6;"><i class="fas fa-arrow-down"></i></div>
                                 <div class="quick-action-label">توريد جديد</div>
                             </a>
                             <a href="dispense.html" class="quick-action-btn">
-                                <div class="quick-action-icon" style="background: #FEE2E2; color: #EF4444;">⇧</div>
+                                <div class="quick-action-icon" style="background: #FEE2E2; color: #EF4444;"><i class="fas fa-arrow-up"></i></div>
                                 <div class="quick-action-label">صرف جديد</div>
                             </a>
                         </div>
@@ -211,7 +222,7 @@
                     <div class="panel-body">
                         <div class="alert-list" id="lowStockList">
                             <div class="empty-state">
-                                <div class="empty-state-icon">✓</div>
+                                <div class="empty-state-icon"><i class="fas fa-check-circle"></i></div>
                                 <p>لا توجد أصناف منخفضة</p>
                             </div>
                         </div>
@@ -219,7 +230,7 @@
                 </div>
 
                 <!-- Recent Movements -->
-                <div class="panel">
+                <div class="panel" id="movementsPanel">
                     <div class="panel-header">
                         <div>
                             <div class="panel-title">آخر الحركات</div>
@@ -229,7 +240,7 @@
                     <div class="panel-body">
                         <div class="activity-list" id="recentMovements">
                             <div class="empty-state">
-                                <div class="empty-state-icon">📋</div>
+                                <div class="empty-state-icon"><i class="fas fa-clipboard-list"></i></div>
                                 <p>لا توجد حركات مسجلة</p>
                             </div>
                         </div>
@@ -238,7 +249,7 @@
             </div>
 
             <!-- Items Table Section -->
-            <div class="panel" style="margin-top: 20px;">
+            <div class="panel" id="itemsSection" style="margin-top: 20px;">
                 <div class="panel-header">
                     <div>
                         <div class="panel-title">الأصناف والمخزون</div>
@@ -250,7 +261,7 @@
                     <div class="table-toolbar">
                         <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
                             <div class="toolbar-search">
-                                <span class="toolbar-search-icon">⌕</span>
+                                <span class="toolbar-search-icon"><i class="fas fa-search"></i></span>
                                 <input type="text" id="searchInput" placeholder="بحث برقم أو اسم أو تصنيف الصنف..." oninput="filterItems()">
                             </div>
                             <select class="filter-select" id="statusFilter" onchange="filterItems()">
@@ -260,24 +271,24 @@
                             </select>
                         </div>
                         <button class="btn btn-primary" onclick="openModal()">
-                            <span>＋</span>
+                            <span><i class="fas fa-plus"></i></span>
                             <span>إضافة صنف</span>
                         </button>
                     </div>
 
                     <!-- Table -->
                     <div style="overflow-x: auto;">
-                        <table>
+                        <table id="itemsTable">
                             <thead>
                                 <tr>
-                                    <th>الصنف</th>
-                                    <th>التصنيف</th>
-                                    <th>الوحدة</th>
-                                    <th>الرصيد</th>
-                                    <th>الحد الأدنى</th>
-                                    <th>سعر الوحدة</th>
-                                    <th>القيمة</th>
-                                    <th>الحالة</th>
+                                    <th class="sortable" onclick="sortTable('itemsTable', 0)">الصنف <span class="sort-icon">↕</span></th>
+                                    <th class="sortable" onclick="sortTable('itemsTable', 1)">التصنيف <span class="sort-icon">↕</span></th>
+                                    <th class="sortable" onclick="sortTable('itemsTable', 2)">الوحدة <span class="sort-icon">↕</span></th>
+                                    <th class="sortable" onclick="sortTable('itemsTable', 3)">الرصيد <span class="sort-icon">↕</span></th>
+                                    <th class="sortable" onclick="sortTable('itemsTable', 4)">الحد الأدنى <span class="sort-icon">↕</span></th>
+                                    <th class="sortable" onclick="sortTable('itemsTable', 5)">سعر الوحدة <span class="sort-icon">↕</span></th>
+                                    <th class="sortable" onclick="sortTable('itemsTable', 6)">القيمة <span class="sort-icon">↕</span></th>
+                                    <th class="sortable" onclick="sortTable('itemsTable', 7)">الحالة <span class="sort-icon">↕</span></th>
                                     <th>الإجراءات</th>
                                 </tr>
                             </thead>
@@ -285,7 +296,7 @@
                                 <tr>
                                     <td colspan="9">
                                         <div class="empty-state">
-                                            <div class="empty-state-icon">⏳</div>
+                                            <div class="empty-state-icon"><i class="fas fa-spinner fa-spin"></i></div>
                                             <h3>جاري تحميل البيانات...</h3>
                                         </div>
                                     </td>
@@ -303,7 +314,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <div class="modal-title">إضافة صنف جديد</div>
-                <button class="modal-close" onclick="closeModal()">✕</button>
+                <button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button>
             </div>
             <div class="modal-body">
                 <form id="addItemForm" novalidate>
@@ -350,7 +361,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" onclick="closeModal()">إلغاء</button>
-                <button type="button" class="btn btn-primary" onclick="submitAddItem()">✅ حفظ الصنف</button>
+                <button type="button" class="btn btn-primary" onclick="submitAddItem()"><i class="fas fa-check-circle"></i> حفظ الصنف</button>
             </div>
         </div>
     </div>
@@ -358,6 +369,56 @@
     <script>
         let allItems = [];
         let inventoryChart = null;
+
+        // ========== Shared Sortable Table ==========
+        function parseArabicNumber(text) {
+            // Handles Arabic-Libya (ar-LY) format: dot = thousands, comma = decimal
+            const cleaned = text.replace(/[^\d.,-]/g, '').replace(/\./g, '').replace(',', '.');
+            return parseFloat(cleaned);
+        }
+
+        function sortTable(tableId, colIndex) {
+            const table = document.getElementById(tableId);
+            if (!table) return;
+            const tbody = table.querySelector('tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            const headers = table.querySelectorAll('thead th');
+            const header = headers[colIndex];
+            if (!header || !header.classList.contains('sortable')) return;
+
+            let dir = header.getAttribute('data-sort') === 'asc' ? 'desc' : 'asc';
+
+            headers.forEach(h => {
+                h.setAttribute('data-sort', '');
+                const icon = h.querySelector('.sort-icon');
+                if (icon) icon.textContent = '↕';
+            });
+
+            header.setAttribute('data-sort', dir);
+            const icon = header.querySelector('.sort-icon');
+            if (icon) icon.textContent = dir === 'asc' ? '↑' : '↓';
+
+            rows.sort((a, b) => {
+                const aCell = a.children[colIndex];
+                const bCell = b.children[colIndex];
+                if (!aCell || !bCell) return 0;
+                let aText = aCell.textContent.trim();
+                let bText = bCell.textContent.trim();
+
+                const aNum = parseArabicNumber(aText);
+                const bNum = parseArabicNumber(bText);
+
+                if (!isNaN(aNum) && !isNaN(bNum) && aText !== '' && bText !== '') {
+                    return dir === 'asc' ? aNum - bNum : bNum - aNum;
+                }
+
+                return dir === 'asc'
+                    ? aText.localeCompare(bText, 'ar')
+                    : bText.localeCompare(aText, 'ar');
+            });
+
+            rows.forEach(row => tbody.appendChild(row));
+        }
 
         // ========== Session Management ==========
         function checkSession() {
@@ -392,7 +453,7 @@
             if (isViewer) {
                 badgeContainer.innerHTML = `
                     <div class="role-badge viewer">
-                        <span>👁</span>
+                        <span><i class="fas fa-eye"></i></span>
                         <span>أنت مسجل الدخول بصلاحية <strong>عرض فقط</strong>؛ يمكنك مشاهدة البيانات والبحث وتوليد التقارير وطباعتها، ولا يمكنك الإضافة أو التعديل أو الحذف.</span>
                     </div>
                 `;
@@ -540,7 +601,7 @@
             if (lowItems.length === 0) {
                 container.innerHTML = `
                     <div class="empty-state" style="padding: 24px;">
-                        <div class="empty-state-icon">✓</div>
+                        <div class="empty-state-icon"><i class="fas fa-check-circle"></i></div>
                         <p>لا توجد أصناف منخفضة</p>
                     </div>
                 `;
@@ -549,10 +610,10 @@
 
             container.innerHTML = lowItems.map(item => `
                 <div class="alert-item">
-                    <div class="alert-item-icon">${item.item_name.charAt(0)}</div>
+                    <div class="alert-item-icon">${(item.item_name || 'غير معروف').charAt(0)}</div>
                     <div class="alert-item-content">
-                        <div class="alert-item-name">${item.item_name}</div>
-                        <div class="alert-item-detail">${item.current_quantity} من حد أدنى ${item.min_order_qty}</div>
+                        <div class="alert-item-name">${item.item_name || 'غير معروف'}</div>
+                        <div class="alert-item-detail">${(item.current_quantity || 0)} ${(item.unit || '')} من حد أدنى ${(item.min_order_qty || 0)}</div>
                     </div>
                     <div class="alert-item-status">منخفض</div>
                 </div>
@@ -571,7 +632,7 @@
             container.innerHTML = movements.map(m => `
                 <div class="activity-item">
                     <div class="activity-icon ${m.type}">
-                        ${m.type === 'supply' ? '⇩' : '⇧'}
+                        <i class="fas fa-arrow-${m.type === 'supply' ? 'down' : 'up'}"></i>
                     </div>
                     <div class="activity-content">
                         <div class="activity-title">${m.id}</div>
@@ -591,7 +652,7 @@
                     <tr>
                         <td colspan="9">
                             <div class="empty-state">
-                                <div class="empty-state-icon">📭</div>
+                                <div class="empty-state-icon"><i class="fas fa-inbox"></i></div>
                                 <h3>لا توجد أصناف حالياً</h3>
                                 <p>قم بإضافة صنف جديد للبدء</p>
                             </div>
@@ -630,9 +691,9 @@
                         <td><span class="badge ${statusClass}">${statusText}</span></td>
                         <td>
                             <div class="row-actions">
-                                <button class="row-action-btn view" title="عرض" onclick="viewItem(${item.item_id})">◉</button>
-                                <button class="row-action-btn edit" title="تعديل" onclick="editItem(${item.item_id})">✎</button>
-                                <button class="row-action-btn delete" title="حذف" onclick="deleteItem(${item.item_id}, '${item.item_name}')">×</button>
+                                <button class="row-action-btn view" title="عرض" onclick="viewItem(${item.item_id})"><i class="fas fa-eye"></i></button>
+                                <button class="row-action-btn edit" title="تعديل" onclick="editItem(${item.item_id})"><i class="fas fa-edit"></i></button>
+                                <button class="row-action-btn delete" title="حذف" onclick="deleteItem(${item.item_id}, '${item.item_name}')"><i class="fas fa-times"></i></button>
                             </div>
                         </td>
                     </tr>
@@ -766,8 +827,13 @@
             const container = document.querySelector('.toast-container') || createToastContainer();
             const toast = document.createElement('div');
             toast.className = `toast toast-${type}`;
-            const icons = { success: '✓', error: '✕', warning: '⚠', info: 'ℹ' };
-            toast.innerHTML = `<span>${icons[type] || 'ℹ'}</span><span>${message}</span>`;
+            const icons = {
+                success: '<i class="fas fa-check-circle"></i>',
+                error: '<i class="fas fa-times-circle"></i>',
+                warning: '<i class="fas fa-exclamation-triangle"></i>',
+                info: '<i class="fas fa-info-circle"></i>'
+            };
+            toast.innerHTML = `<span>${icons[type] || icons.info}</span><span>${message}</span>`;
             container.appendChild(toast);
             setTimeout(() => {
                 toast.style.opacity = '0';

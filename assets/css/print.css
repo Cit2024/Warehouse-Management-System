@@ -1,9 +1,35 @@
 /* ============================================
-   PRINT STYLES - Light Theme
+   PRINT STYLES - Professional Reports
    ============================================ */
 
+/* Print-only elements hidden on screen */
+.print-header,
+.print-summary-bar,
+.print-signatures,
+.print-grand-total {
+    display: none;
+}
+
 @media print {
-    /* Hide non-print elements */
+    @page {
+        size: A4;
+        margin: 15mm 12mm;
+    }
+
+    /* Reset layout */
+    * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    body {
+        background: white !important;
+        color: #1E293B !important;
+        font-size: 12pt;
+        direction: rtl;
+    }
+
+    /* Hide non-print chrome */
     .sidebar,
     .top-header,
     .header-title-section,
@@ -20,38 +46,18 @@
     .stats-grid,
     .content-grid,
     .demo-section,
-    .branding-side {
+    .branding-side,
+    .filter-select,
+    #dateFromGroup,
+    #dateToGroup,
+    #itemSelectGroup,
+    .table-toolbar,
+    .table-title,
+    .table-meta {
         display: none !important;
     }
 
-    /* Show print header */
-    .print-header {
-        display: block !important;
-        text-align: center;
-        margin-bottom: 30px;
-        padding-bottom: 20px;
-        border-bottom: 2px solid #1E293B;
-    }
-
-    .print-header h1 {
-        font-size: 22px;
-        font-weight: 700;
-        color: #1E293B;
-        margin-bottom: 8px;
-    }
-
-    .print-header h2 {
-        font-size: 16px;
-        color: #64748B;
-        font-weight: 500;
-    }
-
-    /* Body adjustments */
-    body {
-        background: white !important;
-        direction: rtl;
-    }
-
+    /* Main content full width */
     .content {
         margin-right: 0 !important;
         padding: 0 !important;
@@ -61,21 +67,126 @@
         padding: 0 !important;
     }
 
-    /* Panel adjustments */
+    /* ===== Professional Print Header ===== */
+    .print-header {
+        display: block !important;
+        text-align: center;
+        margin-bottom: 16px;
+        padding-bottom: 16px;
+        border-bottom: 2px solid #1E293B;
+    }
+
+    .print-header-top {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+        margin-bottom: 12px;
+    }
+
+    .print-logo {
+        width: 60px;
+        height: 60px;
+        flex-shrink: 0;
+        background: white;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+
+    .print-logo img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+
+    .print-header-titles {
+        text-align: center;
+    }
+
+    .print-college {
+        font-size: 16pt;
+        font-weight: 700;
+        color: #1E293B;
+        margin-bottom: 2px;
+    }
+
+    .print-system {
+        font-size: 13pt;
+        font-weight: 600;
+        color: #FF6B00;
+        margin-bottom: 6px;
+    }
+
+    .print-header h1 {
+        font-size: 15pt;
+        font-weight: 700;
+        color: #1E293B;
+        margin: 6px 0 4px;
+    }
+
+    #printReportDate {
+        font-size: 11pt;
+        color: #64748B;
+        margin-top: 4px;
+    }
+
+    /* ===== Print Summary Bar ===== */
+    .print-summary-bar {
+        display: flex !important;
+        justify-content: space-between;
+        gap: 12px;
+        background: #F8FAFC !important;
+        border: 1px solid #E2E8F0;
+        border-radius: 8px;
+        padding: 12px 16px;
+        margin-bottom: 16px;
+        page-break-inside: avoid;
+    }
+
+    .print-summary-item {
+        flex: 1;
+        text-align: center;
+        border-left: 1px solid #E2E8F0;
+    }
+
+    .print-summary-item:last-child {
+        border-left: none;
+    }
+
+    .print-summary-label {
+        display: block;
+        font-size: 10pt;
+        color: #64748B;
+        margin-bottom: 2px;
+    }
+
+    .print-summary-value {
+        display: block;
+        font-size: 12pt;
+        font-weight: 700;
+        color: #1E293B;
+    }
+
+    /* ===== Panels ===== */
     .panel {
         box-shadow: none !important;
-        border: 1px solid #E2E8F0 !important;
-        margin-bottom: 20px !important;
+        border: none !important;
+        margin-bottom: 0 !important;
     }
 
     .panel-body {
-        padding: 20px !important;
+        padding: 0 !important;
     }
 
-    /* Table print styles */
+    /* ===== Tables ===== */
     .table-container {
         box-shadow: none !important;
-        border: 1px solid #E2E8F0 !important;
+        border: 1px solid #CBD5E1 !important;
+        border-radius: 0 !important;
+        overflow: visible !important;
     }
 
     table {
@@ -84,56 +195,90 @@
     }
 
     thead th {
-        background: #F8FAFC !important;
+        background: #F1F5F9 !important;
         color: #1E293B !important;
-        border: 1px solid #E2E8F0 !important;
-        padding: 10px 12px !important;
-        font-size: 12px !important;
+        border: 1px solid #CBD5E1 !important;
+        padding: 8px 10px !important;
+        font-size: 11pt;
+        font-weight: 700;
     }
 
     tbody td {
         border: 1px solid #E2E8F0 !important;
-        padding: 10px 12px !important;
-        font-size: 12px !important;
+        padding: 8px 10px !important;
+        font-size: 11pt;
+    }
+
+    tbody tr:nth-child(even) td {
+        background: #F8FAFC !important;
     }
 
     tbody tr:hover td {
         background: transparent !important;
     }
 
-    /* Signatures */
-    .signatures {
+    th.sortable .sort-icon {
+        display: none !important;
+    }
+
+    /* Show editable count inputs when printing */
+    #reportTable input[type="number"],
+    #reportTable .actual-qty {
+        display: inline-block !important;
+        border: 1px solid #CBD5E1 !important;
+        background: white !important;
+        padding: 4px 8px !important;
+        font-size: 11pt !important;
+        min-width: 60px !important;
+        max-width: 100px !important;
+    }
+
+    /* ===== Grand Total Bar ===== */
+    .print-grand-total {
         display: flex !important;
-        justify-content: space-around !important;
-        margin-top: 60px !important;
+        justify-content: space-between;
+        align-items: center;
+        background: #FFF7ED !important;
+        border: 1px solid #FF6B00;
+        border-radius: 8px;
+        padding: 12px 16px;
+        margin-top: 16px;
+        font-size: 13pt;
+        font-weight: 700;
+        color: #1E293B;
         page-break-inside: avoid;
     }
 
-    .signature-box {
-        width: 150px;
+    .print-grand-total .total-value {
+        color: #FF6B00;
+        font-size: 14pt;
+    }
+
+    /* ===== Signatures ===== */
+    .signatures,
+    .print-signatures {
+        display: flex !important;
+        justify-content: space-around;
+        margin-top: 60px;
+        page-break-inside: avoid;
+    }
+
+    .signature-box,
+    .print-signature-box {
+        width: 160px;
         text-align: center;
         padding-top: 50px;
         border-top: 1px solid #1E293B;
         font-weight: 600;
-        font-size: 13px;
+        font-size: 11pt;
     }
 
-    /* Receipt card */
-    .receipt-card {
-        box-shadow: none !important;
-        border: 1px solid #E2E8F0 !important;
-    }
-
-    /* Items section */
-    .items-section {
-        border-top: 1px solid #E2E8F0 !important;
-    }
-
-    /* Badges */
+    /* ===== Badges ===== */
     .badge {
         border: 1px solid currentColor !important;
-        print-color-adjust: exact;
-        -webkit-print-color-adjust: exact;
+        padding: 2px 8px !important;
+        border-radius: 20px !important;
+        font-size: 10pt !important;
     }
 
     .badge-available {
@@ -146,6 +291,21 @@
         color: #92400E !important;
     }
 
+    .badge-out {
+        background: #FEE2E2 !important;
+        color: #991B1B !important;
+    }
+
+    .badge-supply {
+        background: #DBEAFE !important;
+        color: #1E40AF !important;
+    }
+
+    .badge-dispense {
+        background: #FEE2E2 !important;
+        color: #991B1B !important;
+    }
+
     .badge-supplier {
         background: #EDE9FE !important;
         color: #5B21B6 !important;
@@ -156,17 +316,36 @@
         color: #9D174D !important;
     }
 
-    /* Force show all content */
-    .tab-content {
-        display: block !important;
+    /* ===== Receipt Card ===== */
+    .receipt-card {
+        box-shadow: none !important;
+        border: 1px solid #CBD5E1 !important;
     }
 
-    /* Avoid page breaks inside important elements */
+    /* ===== Items Section ===== */
+    .items-section {
+        border-top: 1px solid #E2E8F0 !important;
+    }
+
+    /* ===== Avoid page breaks ===== */
     tr {
         page-break-inside: avoid;
     }
 
-    .panel {
+    thead {
+        display: table-header-group;
+    }
+
+    .panel,
+    .print-header,
+    .print-summary-bar,
+    .print-grand-total,
+    .print-signatures {
         page-break-inside: avoid;
+    }
+
+    /* Force show all content */
+    .tab-content {
+        display: block !important;
     }
 }

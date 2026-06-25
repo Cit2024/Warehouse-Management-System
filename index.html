@@ -3,365 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تسجيل الدخول - منظومة إدارة المخازن</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', 'Cairo', 'Tajawal', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        body {
-            min-height: 100vh;
-            display: flex;
-            background: #F8FAFC;
-            direction: rtl;
-        }
-
-        /* Left Side - Login Form */
-        .login-side {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 40px 60px;
-            background: #F8FAFC;
-        }
-
-        .login-container {
-            width: 100%;
-            max-width: 420px;
-        }
-
-        .login-header {
-            margin-bottom: 32px;
-        }
-
-        .login-header h1 {
-            font-size: 26px;
-            font-weight: 700;
-            color: #1E293B;
-            margin-bottom: 8px;
-        }
-
-        .login-header p {
-            font-size: 14px;
-            color: #64748B;
-            line-height: 1.6;
-        }
-
-        .login-header .highlight {
-            color: #FF6B00;
-            font-weight: 600;
-        }
-
-        /* Form Styles */
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-group label {
-            display: block;
-            font-size: 13px;
-            font-weight: 600;
-            color: #1E293B;
-            margin-bottom: 8px;
-        }
-
-        .input-wrapper {
-            position: relative;
-        }
-
-        .input-wrapper input {
-            width: 100%;
-            padding: 14px 16px 14px 48px;
-            border: 1.5px solid #E2E8F0;
-            border-radius: 12px;
-            font-size: 15px;
-            color: #1E293B;
-            background: white;
-            transition: all 0.2s ease;
-            text-align: right;
-        }
-
-        .input-wrapper input:focus {
-            outline: none;
-            border-color: #FF6B00;
-            box-shadow: 0 0 0 4px rgba(255, 107, 0, 0.1);
-        }
-
-        .input-wrapper input::placeholder {
-            color: #94A3B8;
-        }
-
-        .input-icon {
-            position: absolute;
-            left: 16px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #94A3B8;
-            font-size: 18px;
-            pointer-events: none;
-            transition: color 0.2s;
-        }
-
-        .input-wrapper input:focus ~ .input-icon {
-            color: #FF6B00;
-        }
-
-        /* Login Button */
-        .login-btn {
-            width: 100%;
-            padding: 16px;
-            background: linear-gradient(135deg, #FF6B00, #FF8F00);
-            color: white;
-            border: none;
-            border-radius: 12px;
-            font-size: 16px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 14px rgba(255, 107, 0, 0.3);
-            margin-top: 8px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .login-btn:hover {
-            box-shadow: 0 6px 20px rgba(255, 107, 0, 0.4);
-            transform: translateY(-1px);
-        }
-
-        .login-btn:active {
-            transform: scale(0.98);
-        }
-
-        .login-btn:disabled {
-            opacity: 0.7;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        /* Demo Account */
-        .demo-section {
-            margin-top: 24px;
-            padding-top: 20px;
-            border-top: 1px solid #E2E8F0;
-        }
-
-        .demo-label {
-            font-size: 12px;
-            color: #94A3B8;
-            margin-bottom: 10px;
-            text-align: center;
-        }
-
-        .demo-btn {
-            width: 100%;
-            padding: 12px;
-            background: white;
-            border: 1.5px solid #E2E8F0;
-            border-radius: 10px;
-            font-size: 13px;
-            font-weight: 600;
-            color: #64748B;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-
-        .demo-btn:hover {
-            border-color: #FF6B00;
-            color: #FF6B00;
-            background: #FFF0E5;
-        }
-
-        /* Error Message */
-        .error-message {
-            background: #FEF2F2;
-            border: 1px solid #FECACA;
-            color: #DC2626;
-            padding: 12px 16px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            font-size: 13px;
-            font-weight: 500;
-            display: none;
-            animation: shake 0.4s ease;
-        }
-
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-5px); }
-            75% { transform: translateX(5px); }
-        }
-
-        /* Loading Spinner */
-        .loading-spinner {
-            display: inline-block;
-            width: 18px;
-            height: 18px;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            border-top-color: white;
-            animation: spin 0.8s linear infinite;
-            margin-left: 8px;
-            vertical-align: middle;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        /* Right Side - Branded Panel */
-        .branding-side {
-            flex: 1;
-            background: linear-gradient(135deg, #FF6B00 0%, #FF8533 50%, #FF8F00 100%);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 60px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        /* Decorative circles */
-        .branding-side::before {
-            content: '';
-            position: absolute;
-            width: 500px;
-            height: 500px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.05);
-            top: -100px;
-            left: -100px;
-        }
-
-        .branding-side::after {
-            content: '';
-            position: absolute;
-            width: 350px;
-            height: 350px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.05);
-            bottom: -80px;
-            right: -80px;
-        }
-
-        .branding-content {
-            position: relative;
-            z-index: 1;
-            text-align: center;
-            color: white;
-            max-width: 420px;
-        }
-
-        /* Logo Area */
-        .branding-logo {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 16px;
-            margin-bottom: 40px;
-        }
-
-        .logo-img {
-            width: 70px;
-            height: 70px;
-            background: white;
-            border-radius: 18px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-            overflow: hidden;
-        }
-
-        .logo-img img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-        }
-
-        .logo-placeholder {
-            font-size: 32px;
-        }
-
-        .branding-title {
-            text-align: right;
-        }
-
-        .branding-title h2 {
-            font-size: 22px;
-            font-weight: 700;
-            margin-bottom: 4px;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
-        .branding-title p {
-            font-size: 14px;
-            opacity: 0.9;
-        }
-
-        .branding-headline {
-            font-size: 32px;
-            font-weight: 700;
-            margin-bottom: 20px;
-            line-height: 1.4;
-            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .branding-desc {
-            font-size: 15px;
-            line-height: 1.8;
-            opacity: 0.9;
-        }
-
-        /* Features List */
-        .features-list {
-            margin-top: 40px;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-            text-align: right;
-        }
-
-        .feature-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-size: 14px;
-        }
-
-        .feature-icon {
-            width: 36px;
-            height: 36px;
-            background: rgba(255, 255, 255, 0.15);
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-            flex-shrink: 0;
-        }
-
-        /* Responsive */
-        @media (max-width: 992px) {
-            .branding-side {
-                display: none;
-            }
-            .login-side {
-                padding: 40px 30px;
-            }
-        }
-    </style>
+    <title>منظومة إدارة المخازن - كلية التقنية الصناعية</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="assets/css/login.css">
 </head>
 <body>
+    <!-- Router check: redirect authenticated users to dashboard -->
+    <script>
+        (function checkSession() {
+            try {
+                const session = JSON.parse(localStorage.getItem('userSession'));
+                if (session && session.userId !== undefined) {
+                    window.location.replace('dashboard.html');
+                }
+            } catch (e) {
+                // Invalid session; stay on login page
+            }
+        })();
+    </script>
+
     <!-- Left Side - Login Form -->
     <div class="login-side">
         <div class="login-container">
@@ -370,14 +30,16 @@
                 <p>أدخل بيانات حسابك، أو اضغط <span class="highlight">«دخول إلى المنظومة»</span> دون بيانات للدخول بصلاحية العرض فقط.</p>
             </div>
 
-            <div class="error-message" id="errorMessage">❌ اسم المستخدم أو كلمة المرور غير صحيحة</div>
+            <div class="error-message" id="errorMessage">
+                <i class="fas fa-times-circle"></i> اسم المستخدم أو كلمة المرور غير صحيحة
+            </div>
 
             <form id="loginForm" onsubmit="return handleLogin(event)">
                 <div class="form-group">
                     <label for="username">اسم المستخدم</label>
                     <div class="input-wrapper">
                         <input type="text" id="username" placeholder="أدخل اسم المستخدم" autocomplete="username">
-                        <span class="input-icon">👤</span>
+                        <span class="input-icon"><i class="fas fa-user"></i></span>
                     </div>
                 </div>
 
@@ -385,7 +47,7 @@
                     <label for="password">كلمة المرور</label>
                     <div class="input-wrapper">
                         <input type="password" id="password" placeholder="أدخل كلمة المرور" autocomplete="current-password">
-                        <span class="input-icon">🔑</span>
+                        <span class="input-icon"><i class="fas fa-key"></i></span>
                     </div>
                 </div>
 
@@ -397,7 +59,7 @@
             <div class="demo-section">
                 <div class="demo-label">حساب أمين المخزن:</div>
                 <button type="button" class="demo-btn" onclick="fillDemoAccount()">
-                    <span>👤</span>
+                    <span><i class="fas fa-user"></i></span>
                     <span>محمد سالم — أمين مخزن</span>
                 </button>
             </div>
@@ -409,8 +71,7 @@
         <div class="branding-content">
             <div class="branding-logo">
                 <div class="logo-img">
-                    <!-- Replace with actual college logo -->
-                    <span class="logo-placeholder">🏫</span>
+                    <img src="assets/images/logo.png" alt="كلية التقنية الصناعية" style="width: 70px; height: 70px; object-fit: contain;" onerror="this.style.display='none'; this.parentElement.innerHTML='<span class=logo-placeholder><i class=\\'fas fa-university\\'></i></span>';">
                 </div>
                 <div class="branding-title">
                     <h2>كلية التقنية الصناعية</h2>
@@ -425,156 +86,26 @@
 
             <div class="features-list">
                 <div class="feature-item">
-                    <div class="feature-icon">📦</div>
+                    <div class="feature-icon"><i class="fas fa-box"></i></div>
                     <span>إدارة شاملة للأصناف والمخزون</span>
                 </div>
                 <div class="feature-item">
-                    <div class="feature-icon">📊</div>
+                    <div class="feature-icon"><i class="fas fa-chart-bar"></i></div>
                     <span>تقارير فورية وإحصائيات دقيقة</span>
                 </div>
                 <div class="feature-item">
-                    <div class="feature-icon">🔄</div>
+                    <div class="feature-icon"><i class="fas fa-sync-alt"></i></div>
                     <span>متابعة حركات التوريد والصرف</span>
                 </div>
                 <div class="feature-item">
-                    <div class="feature-icon">🔔</div>
+                    <div class="feature-icon"><i class="fas fa-bell"></i></div>
                     <span>تنبيهات الرصيد المنخفض</span>
                 </div>
             </div>
         </div>
     </div>
 
-    <script>
-        // ===== CRITICAL FIX: Force-enable all fields on every page load =====
-        function resetLoginForm() {
-            var btn = document.getElementById('loginButton');
-            var user = document.getElementById('username');
-            var pass = document.getElementById('password');
-            var err = document.getElementById('errorMessage');
-
-            if (btn) {
-                btn.disabled = false;
-                btn.innerHTML = 'دخول إلى المنظومة';
-            }
-            if (user) {
-                user.disabled = false;
-                user.value = '';
-            }
-            if (pass) {
-                pass.disabled = false;
-                pass.value = '';
-            }
-            if (err) err.style.display = 'none';
-        }
-
-        // Call immediately (for already-loaded pages)
-        resetLoginForm();
-
-        // Also call on DOMContentLoaded
-        document.addEventListener('DOMContentLoaded', resetLoginForm);
-
-        // Also handle browser back-forward cache (when user clicks Back after logout)
-        window.addEventListener('pageshow', function(event) {
-            resetLoginForm();
-        });
-
-        async function handleLogin(event) {
-            event.preventDefault();
-
-            var username = document.getElementById('username').value.trim();
-            var password = document.getElementById('password').value;
-            var errorMessage = document.getElementById('errorMessage');
-            var loginButton = document.getElementById('loginButton');
-            var usernameInput = document.getElementById('username');
-            var passwordInput = document.getElementById('password');
-
-            // Clear previous error
-            if (errorMessage) errorMessage.style.display = 'none';
-
-            // Disable during processing
-            if (loginButton) {
-                loginButton.disabled = true;
-                loginButton.innerHTML = '<span class="loading-spinner"></span> جاري التحقق...';
-            }
-            if (usernameInput) usernameInput.disabled = true;
-            if (passwordInput) passwordInput.disabled = true;
-
-            try {
-                // No credentials = viewer mode
-                if (!username && !password) {
-                    var sessionData = {
-                        userId: 0,
-                        username: 'مستعرض النظام',
-                        role: 'viewer',
-                        rememberMe: false
-                    };
-                    localStorage.setItem('userSession', JSON.stringify(sessionData));
-                    window.location.href = 'dashboard.html';
-                    return false;
-                }
-
-                // Try API login
-                if (typeof window.api !== 'undefined' && window.api.login) {
-                    var result = await window.api.login({ username: username, password: password });
-                    if (result.success) {
-                        var sessionData = {
-                            userId: result.user.user_id,
-                            username: result.user.full_name,
-                            role: result.user.role,
-                            rememberMe: false
-                        };
-                        localStorage.setItem('userSession', JSON.stringify(sessionData));
-                        window.location.href = 'dashboard.html';
-                    } else {
-                        // Show error AND re-enable
-                        if (errorMessage) {
-                            errorMessage.textContent = '❌ ' + (result.message || 'خطأ في تسجيل الدخول');
-                            errorMessage.style.display = 'block';
-                        }
-                        resetLoginForm();
-                    }
-                } else {
-                    // No API — fallback to viewer
-                    var sessionData = {
-                        userId: 0,
-                        username: 'مستعرض النظام',
-                        role: 'viewer',
-                        rememberMe: false
-                    };
-                    localStorage.setItem('userSession', JSON.stringify(sessionData));
-                    window.location.href = 'dashboard.html';
-                }
-            } catch (error) {
-                console.error('Login error:', error);
-                // Show error briefly
-                if (errorMessage) {
-                    errorMessage.textContent = '⚠️ تعذر الاتصال، جاري الدخول كمستعرض...';
-                    errorMessage.style.display = 'block';
-                }
-                // Redirect as viewer after short delay
-                setTimeout(function() {
-                    var sessionData = {
-                        userId: 0,
-                        username: 'مستعرض النظام',
-                        role: 'viewer',
-                        rememberMe: false
-                    };
-                    localStorage.setItem('userSession', JSON.stringify(sessionData));
-                    window.location.href = 'dashboard.html';
-                }, 1000);
-            }
-
-            return false;
-        }
-
-        function fillDemoAccount() {
-            var user = document.getElementById('username');
-            var pass = document.getElementById('password');
-            if (user) { user.value = 'mohamed'; user.disabled = false; }
-            if (pass) { pass.value = 'password123'; pass.disabled = false; }
-            if (user) user.focus();
-        }
-    </script>
     <script src="assets/js/common.js"></script>
+    <script src="assets/js/login.js"></script>
 </body>
 </html>

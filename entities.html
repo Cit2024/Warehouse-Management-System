@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="assets/css/layout.css">
     <link rel="stylesheet" href="assets/css/components.css">
     <link rel="stylesheet" href="assets/css/print.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body>
 
@@ -15,7 +16,9 @@
     <aside class="sidebar">
         <div class="sidebar-header">
             <div class="sidebar-brand">
-                <div class="sidebar-brand-icon">📦</div>
+                <div class="sidebar-brand-icon">
+                    <img src="assets/images/logo.png" alt="شعار الكلية" onerror="this.style.display='none'; this.parentElement.textContent='📦';">
+                </div>
                 <div class="sidebar-brand-text">
                     <div class="sidebar-brand-title">إدارة المخازن</div>
                     <div class="sidebar-brand-subtitle">كلية التقنية الصناعية</div>
@@ -27,7 +30,7 @@
             <div class="nav-section">
                 <div class="nav-section-title">الرئيسية</div>
                 <a href="dashboard.html" class="menu-item">
-                    <span class="menu-icon">⌂</span>
+                    <span class="menu-icon"><i class="fas fa-home"></i></span>
                     <span class="menu-text">لوحة التحكم</span>
                 </a>
             </div>
@@ -35,11 +38,11 @@
             <div class="nav-section">
                 <div class="nav-section-title">الحركات</div>
                 <a href="supply.html" class="menu-item">
-                    <span class="menu-icon">⇩</span>
+                    <span class="menu-icon"><i class="fas fa-arrow-down"></i></span>
                     <span class="menu-text">أذونات التوريد</span>
                 </a>
                 <a href="dispense.html" class="menu-item">
-                    <span class="menu-icon">⇧</span>
+                    <span class="menu-icon"><i class="fas fa-arrow-up"></i></span>
                     <span class="menu-text">أذونات الصرف والعهد</span>
                 </a>
             </div>
@@ -47,11 +50,11 @@
             <div class="nav-section">
                 <div class="nav-section-title">البيانات المالية والإدارية</div>
                 <a href="entities.html" class="menu-item active">
-                    <span class="menu-icon">♙</span>
+                    <span class="menu-icon"><i class="fas fa-building"></i></span>
                     <span class="menu-text">الموردون والجهات</span>
                 </a>
                 <a href="report.html" class="menu-item">
-                    <span class="menu-icon">▥</span>
+                    <span class="menu-icon"><i class="fas fa-file-alt"></i></span>
                     <span class="menu-text">التقارير</span>
                 </a>
             </div>
@@ -59,7 +62,7 @@
             <div class="nav-section">
                 <div class="nav-section-title">النظام</div>
                 <a href="settings.html" class="menu-item">
-                    <span class="menu-icon">⚙</span>
+                    <span class="menu-icon"><i class="fas fa-cog"></i></span>
                     <span class="menu-text">الإعدادات</span>
                 </a>
             </div>
@@ -74,7 +77,7 @@
                 </div>
             </div>
             <a href="#" class="menu-item" onclick="handleLogout()">
-                <span class="menu-icon">↪</span>
+                <span class="menu-icon"><i class="fas fa-sign-out-alt"></i></span>
                 <span class="menu-text">تسجيل الخروج</span>
             </a>
         </div>
@@ -85,11 +88,11 @@
         <!-- Top Header -->
         <header class="top-header">
             <div class="header-search">
-                <span class="header-search-icon">⌕</span>
-                <input type="text" id="entitySearch" placeholder="بحث عن جهة أو مورد..." oninput="filterEntities()">
+                <span class="header-search-icon"><i class="fas fa-search"></i></span>
+                <input type="text" id="entitySearch" placeholder="بحث بالاسم أو رقم الهاتف..." oninput="filterEntities()">
             </div>
             <div class="header-actions">
-                <button class="header-btn" onclick="handleLogout()" title="خروج"><span>🚪</span></button>
+                <button class="header-btn" onclick="handleLogout()" title="خروج"><span><i class="fas fa-door-open"></i></span></button>
             </div>
         </header>
 
@@ -103,12 +106,12 @@
             <!-- Toolbar -->
             <div class="toolbar">
                 <button class="btn btn-primary" onclick="openModal()">
-                    <span>➕</span>
+                    <span><i class="fas fa-plus"></i></span>
                     <span>إضافة جهة جديدة</span>
                 </button>
                 <div style="display: flex; gap: 10px;">
                     <button class="btn btn-secondary" onclick="handleDirectPrint()">
-                        <span>🖨️</span>
+                        <span><i class="fas fa-print"></i></span>
                         <span>طباعة</span>
                     </button>
                 </div>
@@ -121,13 +124,13 @@
                     <div class="table-meta" id="entitiesCount">0 جهة مسجلة</div>
                 </div>
                 <div style="overflow-x: auto;">
-                    <table>
+                    <table id="entitiesTable">
                         <thead>
                             <tr>
-                                <th>رقم الجهة</th>
-                                <th>اسم الجهة</th>
-                                <th>التصنيف</th>
-                                <th>رقم الهاتف</th>
+                                <th class="sortable" onclick="sortTable('entitiesTable', 0)">رقم الجهة <span class="sort-icon">↕</span></th>
+                                <th class="sortable" onclick="sortTable('entitiesTable', 1)">اسم الجهة <span class="sort-icon">↕</span></th>
+                                <th class="sortable" onclick="sortTable('entitiesTable', 2)">التصنيف <span class="sort-icon">↕</span></th>
+                                <th class="sortable" onclick="sortTable('entitiesTable', 3)">رقم الهاتف <span class="sort-icon">↕</span></th>
                                 <th>الإجراءات</th>
                             </tr>
                         </thead>
@@ -147,7 +150,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <div class="modal-title">إضافة جهة جديدة</div>
-                <button class="modal-close" onclick="closeModal()">✕</button>
+                <button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button>
             </div>
             <div class="modal-body">
                 <form id="addEntityForm">
@@ -178,6 +181,42 @@
 
     <script>
         let allEntities = [];
+
+        let sortDirection = {};
+
+        // ========== Shared Table Sorting ==========
+        function sortTable(tableId, colIndex) {
+            const table = document.getElementById(tableId);
+            if (!table) return;
+            const tbody = table.querySelector('tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr')).filter(r => r.querySelectorAll('td').length > 1);
+            if (rows.length === 0) return;
+
+            const currentDir = sortDirection[tableId + '-' + colIndex] || 'asc';
+            const newDir = currentDir === 'asc' ? 'desc' : 'asc';
+            sortDirection = {};
+            sortDirection[tableId + '-' + colIndex] = newDir;
+
+            table.querySelectorAll('.sort-icon').forEach(span => span.textContent = '↕');
+            const headers = table.querySelectorAll('thead th');
+            if (headers[colIndex]) {
+                const icon = headers[colIndex].querySelector('.sort-icon');
+                if (icon) icon.textContent = newDir === 'asc' ? '↑' : '↓';
+            }
+
+            rows.sort((a, b) => {
+                const aText = a.cells[colIndex] ? a.cells[colIndex].textContent.trim() : '';
+                const bText = b.cells[colIndex] ? b.cells[colIndex].textContent.trim() : '';
+                const aNum = parseFloat(aText.replace(/[^\d.-]/g, ''));
+                const bNum = parseFloat(bText.replace(/[^\d.-]/g, ''));
+                if (!isNaN(aNum) && !isNaN(bNum) && aText !== '' && bText !== '') {
+                    return newDir === 'asc' ? aNum - bNum : bNum - aNum;
+                }
+                return newDir === 'asc' ? aText.localeCompare(bText, 'ar') : bText.localeCompare(aText, 'ar');
+            });
+
+            rows.forEach(r => tbody.appendChild(r));
+        }
 
         // Session
         function checkSession() {
@@ -225,7 +264,7 @@
             document.getElementById('entitiesCount').textContent = entities.length + ' جهة مسجلة';
 
             if (!entities || entities.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px;"><div class="empty-state"><div class="empty-state-icon">👥</div><h3>لا توجد جهات مسجلة بعد</h3></div></td></tr>';
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px;"><div class="empty-state"><div class="empty-state-icon"><i class="fas fa-users"></i></div><h3>لا توجد جهات مسجلة بعد</h3></div></td></tr>';
                 return;
             }
 
@@ -244,7 +283,7 @@
                         <td dir="ltr" style="text-align: right;">${ent.phone || '<span style="color: var(--text-muted);">-</span>'}</td>
                         <td>
                             <div class="row-actions">
-                                <button class="row-action-btn delete" title="حذف" onclick="deleteEntity(${ent.entity_id})">🗑</button>
+                                <button class="row-action-btn delete" title="حذف" onclick="deleteEntity(${ent.entity_id})"><i class="fas fa-trash"></i></button>
                             </div>
                         </td>
                     </tr>
@@ -257,7 +296,8 @@
             if (!term) { renderEntities(allEntities); return; }
             const filtered = allEntities.filter(e =>
                 (e.entity_name || '').toLowerCase().includes(term) ||
-                (e.entity_type || '').toLowerCase().includes(term)
+                (e.entity_type || '').toLowerCase().includes(term) ||
+                (e.phone || '').includes(term)
             );
             renderEntities(filtered);
         }
@@ -306,7 +346,7 @@
         function showToast(message, type) {
             const container = document.querySelector('.toast-container') || (() => { const c = document.createElement('div'); c.className = 'toast-container'; document.body.appendChild(c); return c; })();
             const toast = document.createElement('div'); toast.className = `toast toast-${type}`;
-            const icons = { success: '✓', error: '✕', warning: '⚠', info: 'ℹ' };
+            const icons = { success: '<i class="fas fa-check-circle"></i>', error: '<i class="fas fa-times-circle"></i>', warning: '<i class="fas fa-exclamation-triangle"></i>', info: '<i class="fas fa-info-circle"></i>' };
             toast.innerHTML = `<span>${icons[type]}</span><span>${message}</span>`;
             container.appendChild(toast);
             setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 4000);

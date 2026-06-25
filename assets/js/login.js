@@ -1,113 +1,134 @@
 /**
  * Login logic for index.html
- * Handles form submission, demo account fill, and API fallback.
+ * NEVER uses the disabled attribute — uses CSS loading states only.
  */
 
-function getLoginElements() {
-    return {
-        username: document.getElementById('username'),
-        password: document.getElementById('password'),
-        errorMessage: document.getElementById('errorMessage'),
-        loginButton: document.getElementById('loginButton')
-    };
-}
+(function() {
+    'use strict';
 
-async function handleLogin(event) {
-    if (event) event.preventDefault();
+    var isSubmitting = false;
 
-    const { username, password, errorMessage, loginButton } = getLoginElements();
-    const originalText = loginButton.innerHTML;
+    function getElements() {
+        return {
+            username: document.getElementById('username'),
+            password: document.getElementById('password'),
+            errorMessage: document.getElementById('errorMessage'),
+            loginButton: document.getElementById('loginButton')
+        };
+    }
 
-    errorMessage.style.display = 'none';
+    function setLoading(loading) {
+        var btn = document.getElementById('loginButton');
+        isSubmitting = loading;
+        if (btn) {
+            if (loading) {
+                btn.innerHTML = '<span class="loading-spinner"></span> جاري التحقق...';
+                btn.classList.add('loading');
+            } else {
+                btn.innerHTML = 'دخول إلى المنظومة';
+                btn.classList.remove('loading');
+            }
+        }
+    }
 
-    // Disable controls during login
-    setLoadingState(true, loginButton, username, password);
+    function showError(msg) {
+        var err = document.getElementById('errorMessage');
+        if (err) {
+            err.innerHTML = '<i class="fas fa-times-circle"></i> ' + (msg || 'خطأ في تسجيل الدخول');
+            err.style.display = 'block';
+        }
+    }
 
-    try {
-        // If no credentials provided, login as viewer
-        if (!username.value.trim() && !password.value) {
-            loginAsViewer();
-            return;
+    function hideError() {
+        var err = document.getElementById('errorMessage');
+        if (err) err.style.display = 'none';
+    }
+
+    function redirectToDashboard() {
+        window.location.href = 'dashboard.html';
+    }
+
+    window.handleLogin = function(event) {
+        event.preventDefault();
+        if (isSubmitting) return false;
+
+        var { username, password } = getElements();
+        var userValue = username ? username.value.trim() : '';
+        var passValue = password ? password.value : '';
+
+        hideError();
+        setLoading(true);
+
+        function done(success, redirect) {
+            setLoading(false);
+            if (success && redirect) {
+                redirectToDashboard();
+            }
         }
 
-        const result = await window.api.login({ username: username.value.trim(), password: password.value });
-        if (result.success) {
-            setSessionAndRedirect(result.user);
+        // No credentials = viewer mode
+        if (!userValue && !passValue) {
+            localStorage.setItem('userSession', JSON.stringify({
+                userId: 0,
+                username: 'مستعرض النظام',
+                role: 'viewer',
+                rememberMe: false
+            }));
+            done(true, true);
+            return false;
+        }
+
+        // Try API login
+        if (typeof window.api !== 'undefined' && window.api.login) {
+            window.api.login({ username: userValue, password: passValue })
+                .then(function(result) {
+                    if (result && result.success) {
+                        localStorage.setItem('userSession', JSON.stringify({
+                            userId: result.user.user_id,
+                            username: result.user.full_name,
+                            role: result.user.role,
+                            rememberMe: false
+                        }));
+                        done(true, true);
+                    } else {
+                        showError(result && result.message ? result.message : 'خطأ في تسجيل الدخول');
+                        done(false);
+                    }
+                })
+                .catch(function(error) {
+                    console.error('Login error:', error);
+                    showError('تعذر الاتصال بالنظام، جاري الدخول كمستعرض...');
+                    setTimeout(function() {
+                        localStorage.setItem('userSession', JSON.stringify({
+                            userId: 0,
+                            username: 'مستعرض النظام',
+                            role: 'viewer',
+                            rememberMe: false
+                        }));
+                        done(true, true);
+                    }, 800);
+                });
         } else {
-            showError(result.message || 'اسم المستخدم أو كلمة المرور غير صحيحة');
-            resetLoginState(originalText, loginButton, username, password);
+            // No API available — auto login as viewer
+            showError('تعذر الاتصال بالنظام، جاري الدخول كمستعرض...');
+            setTimeout(function() {
+                localStorage.setItem('userSession', JSON.stringify({
+                    userId: 0,
+                    username: 'مستعرض النظام',
+                    role: 'viewer',
+                    rememberMe: false
+                }));
+                done(true, true);
+            }, 800);
         }
-    } catch (error) {
-        // If API not available (preview mode), allow viewer access
-        loginAsViewer();
-    }
 
-    return false;
-}
-
-function setLoadingState(isLoading, loginButton, username, password) {
-    loginButton.disabled = isLoading;
-    username.disabled = isLoading;
-    password.disabled = isLoading;
-
-    if (isLoading) {
-        loginButton.innerHTML = '<span class="loading-spinner"></span> جاري التحقق...';
-    }
-}
-
-function resetLoginState(buttonText, loginButton, username, password) {
-    loginButton.innerHTML = buttonText;
-    loginButton.disabled = false;
-    username.disabled = false;
-    password.disabled = false;
-    username.focus();
-}
-
-function loginAsViewer() {
-    setSessionAndRedirect({
-        user_id: 0,
-        full_name: 'مستعرض النظام',
-        role: 'viewer'
-    });
-}
-
-function setSessionAndRedirect(user) {
-    const sessionData = {
-        userId: user.user_id || 0,
-        username: user.full_name || user.username || 'مستخدم',
-        role: user.role || 'viewer',
-        rememberMe: false
+        return false;
     };
-    localStorage.setItem('userSession', JSON.stringify(sessionData));
 
-    // Re-enable fields before leaving so the browser/Electron does not
-    // restore a disabled state if the user returns to this page.
-    const { username, password, loginButton } = getLoginElements();
-    if (username) username.disabled = false;
-    if (password) password.disabled = false;
-    if (loginButton) loginButton.disabled = false;
-
-    window.location.href = 'dashboard.html';
-}
-
-function showError(message) {
-    const errorMessage = document.getElementById('errorMessage');
-    errorMessage.innerHTML = '<i class="fas fa-times-circle"></i> ' + message;
-    errorMessage.style.display = 'block';
-}
-
-function fillDemoAccount() {
-    const { username, password } = getLoginElements();
-    username.value = 'mohamed';
-    password.value = 'password123';
-    username.focus();
-}
-
-// Ensure fields are always enabled when the login page loads
-// (prevents browsers/Electron from restoring a disabled state after logout)
-document.addEventListener('DOMContentLoaded', () => {
-    const { username, password, loginButton } = getLoginElements();
-    if (username) username.disabled = false;
-    if (password) password.disabled = false;
-    if (loginButton) loginButton.disabled = false;
-});
+    window.fillDemoAccount = function() {
+        var { username, password } = getElements();
+        if (username) { username.value = 'mohamed'; }
+        if (password) { password.value = 'password123'; }
+        if (username) username.focus();
+    };
+})();

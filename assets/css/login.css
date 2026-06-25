@@ -134,10 +134,20 @@ body {
     transform: scale(0.98);
 }
 
-.login-btn:disabled {
+.login-btn.loading {
     opacity: 0.7;
-    cursor: not-allowed;
-    transform: none;
+    cursor: wait;
+    pointer-events: none;
+}
+
+/* Ensure inputs are NEVER disabled by any external code */
+#username, #password {
+    pointer-events: auto !important;
+    opacity: 1 !important;
+}
+
+#username:read-only, #password:read-only {
+    background: white !important;
 }
 
 /* --- Demo Account --- */

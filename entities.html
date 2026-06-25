@@ -12,7 +12,44 @@
 </head>
 <body>
 
-    <!-- Sidebar -->
+    <!-- ===== PRINT HEADER (hidden on screen, shown when printing) ===== -->
+    <div class="print-header print-only">
+        <div class="print-logo-area">
+            <img src="assets/images/logo.png" alt="شعار الكلية"
+                 onerror="this.style.display='none'; this.parentElement.querySelector('.print-logo-fallback').style.display='flex';">
+            <div class="print-logo-fallback" style="display:none;">
+                <i class="fas fa-university" style="font-size:48px; color:#FF6B00;"></i>
+            </div>
+        </div>
+        <div class="print-title-area">
+            <div class="print-college-name">كلية التقنية الصناعية - مصراتة</div>
+            <div class="print-system-name">منظومة إدارة المخازن</div>
+            <h1 class="print-report-title" id="printTitle">تقرير الموردين والجهات</h1>
+        </div>
+        <div class="print-date-area">
+            <div class="print-gregorian" id="printGregorianDate"></div>
+            <div class="print-hijri-label">الموافق</div>
+            <div class="print-hijri" id="printHijriDate"></div>
+        </div>
+    </div>
+
+    <!-- Print Summary Bar -->
+    <div class="print-summary print-only">
+        <div class="print-summary-item">
+            <span class="print-summary-label">اسم التقرير</span>
+            <span class="print-summary-value" id="printReportName">تقرير الموردين والجهات</span>
+        </div>
+        <div class="print-summary-item">
+            <span class="print-summary-label">عدد الجهات</span>
+            <span class="print-summary-value" id="printRecordCount">0</span>
+        </div>
+        <div class="print-summary-item">
+            <span class="print-summary-label">تاريخ الطباعة</span>
+            <span class="print-summary-value" id="printDateValue">-</span>
+        </div>
+    </div>
+
+    <!-- ===== SIDEBAR (same structure as dashboard.html) ===== -->
     <aside class="sidebar">
         <div class="sidebar-header">
             <div class="sidebar-brand">
@@ -25,7 +62,6 @@
                 </div>
             </div>
         </div>
-
         <nav class="sidebar-nav">
             <div class="nav-section">
                 <div class="nav-section-title">الرئيسية</div>
@@ -34,7 +70,6 @@
                     <span class="menu-text">لوحة التحكم</span>
                 </a>
             </div>
-
             <div class="nav-section">
                 <div class="nav-section-title">الحركات</div>
                 <a href="supply.html" class="menu-item">
@@ -46,7 +81,6 @@
                     <span class="menu-text">أذونات الصرف والعهد</span>
                 </a>
             </div>
-
             <div class="nav-section">
                 <div class="nav-section-title">البيانات المالية والإدارية</div>
                 <a href="entities.html" class="menu-item active">
@@ -58,7 +92,6 @@
                     <span class="menu-text">التقارير</span>
                 </a>
             </div>
-
             <div class="nav-section">
                 <div class="nav-section-title">النظام</div>
                 <a href="settings.html" class="menu-item">
@@ -67,7 +100,6 @@
                 </a>
             </div>
         </nav>
-
         <div class="sidebar-footer">
             <div class="user-card">
                 <div class="user-avatar" id="userAvatar">م</div>
@@ -83,7 +115,7 @@
         </div>
     </aside>
 
-    <!-- Main Content -->
+    <!-- ===== MAIN CONTENT ===== -->
     <main class="content">
         <!-- Top Header -->
         <header class="top-header">
@@ -110,7 +142,8 @@
                     <span>إضافة جهة جديدة</span>
                 </button>
                 <div style="display: flex; gap: 10px;">
-                    <button class="btn btn-secondary" onclick="handleDirectPrint()">
+                    <!-- FIXED: Use printEntities() instead of handleDirectPrint() -->
+                    <button class="btn btn-secondary" onclick="printEntities()">
                         <span><i class="fas fa-print"></i></span>
                         <span>طباعة</span>
                     </button>
@@ -135,13 +168,18 @@
                             </tr>
                         </thead>
                         <tbody id="entitiesTableBody">
-                            <tr>
-                                <td colspan="5" style="text-align: center; padding: 40px;">جاري التحميل...</td>
-                            </tr>
+                            <tr><td colspan="5" style="text-align: center; padding: 40px;">جاري التحميل...</td></tr>
                         </tbody>
                     </table>
                 </div>
             </div>
+        </div>
+
+        <!-- Print Signatures (fixed at page bottom) -->
+        <div class="print-signatures print-only">
+            <div class="print-signature-box">المستلم</div>
+            <div class="print-signature-box">أمين المخزن</div>
+            <div class="print-signature-box">المدير</div>
         </div>
     </main>
 
@@ -181,10 +219,34 @@
 
     <script>
         let allEntities = [];
-
         let sortDirection = {};
 
-        // ========== Shared Table Sorting ==========
+        // ===== PRINT FUNCTION (NEW - replaces handleDirectPrint) =====
+        function printEntities() {
+            // Set dates
+            var now = new Date();
+            var gregorianDate = now.toLocaleDateString('ar-LY', { year: 'numeric', month: 'long', day: 'numeric' });
+            document.getElementById('printGregorianDate').textContent = gregorianDate;
+            document.getElementById('printDateValue').textContent = gregorianDate;
+
+            // Hijri date
+            try {
+                var hijriFormatter = new Intl.DateTimeFormat('ar-SA-u-ca-islamic', {
+                    year: 'numeric', month: 'long', day: 'numeric'
+                });
+                document.getElementById('printHijriDate').textContent = hijriFormatter.format(now);
+            } catch(e) {
+                document.getElementById('printHijriDate').textContent = '';
+            }
+
+            // Set record count
+            document.getElementById('printRecordCount').textContent = allEntities.length;
+
+            // Trigger browser print
+            window.print();
+        }
+
+        // ===== TABLE SORTING =====
         function sortTable(tableId, colIndex) {
             const table = document.getElementById(tableId);
             if (!table) return;
@@ -218,7 +280,7 @@
             rows.forEach(r => tbody.appendChild(r));
         }
 
-        // Session
+        // ===== SESSION =====
         function checkSession() {
             const session = JSON.parse(localStorage.getItem('userSession'));
             if (!session) { window.location.href = 'index.html'; return null; }
@@ -238,7 +300,7 @@
             if (confirm('هل أنت متأكد من تسجيل الخروج؟')) { localStorage.removeItem('userSession'); window.location.href = 'index.html'; }
         }
 
-        // Load Entities
+        // ===== LOAD & RENDER =====
         async function loadEntities() {
             const tbody = document.getElementById('entitiesTableBody');
             tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px;">جاري التحميل...</td></tr>';
@@ -248,7 +310,6 @@
                 allEntities = entities || [];
                 renderEntities(allEntities);
             } catch (error) {
-                // Sample data
                 allEntities = [
                     { entity_id: 1, entity_name: 'شركة المدار للتجهيزات', entity_type: 'Supplier', phone: '051-2345678' },
                     { entity_id: 2, entity_name: 'مكتبة مصراتة الحديثة', entity_type: 'Supplier', phone: '052-3456789' },
@@ -275,19 +336,17 @@
                 else if (ent.entity_type === 'Department') { typeAr = 'قسم'; badgeClass = 'badge-dept'; }
                 else { typeAr = 'موظف'; badgeClass = 'badge-emp'; }
 
-                return `
-                    <tr>
-                        <td><span class="item-id">${ent.entity_id}</span></td>
-                        <td style="font-weight: 600;">${ent.entity_name}</td>
-                        <td><span class="badge ${badgeClass}">${typeAr}</span></td>
-                        <td dir="ltr" style="text-align: right;">${ent.phone || '<span style="color: var(--text-muted);">-</span>'}</td>
-                        <td>
-                            <div class="row-actions">
-                                <button class="row-action-btn delete" title="حذف" onclick="deleteEntity(${ent.entity_id})"><i class="fas fa-trash"></i></button>
-                            </div>
-                        </td>
-                    </tr>
-                `;
+                return '<tr>' +
+                    '<td><span class="item-id">' + ent.entity_id + '</span></td>' +
+                    '<td style="font-weight: 600;">' + ent.entity_name + '</td>' +
+                    '<td><span class="badge ' + badgeClass + '">' + typeAr + '</span></td>' +
+                    '<td dir="ltr" style="text-align: right;">' + (ent.phone || '<span style="color: var(--text-muted);">-</span>') + '</td>' +
+                    '<td>' +
+                        '<div class="row-actions">' +
+                            '<button class="row-action-btn delete" title="حذف" onclick="deleteEntity(' + ent.entity_id + ')"><i class="fas fa-trash"></i></button>' +
+                        '</div>' +
+                    '</td>' +
+                '</tr>';
             }).join('');
         }
 
@@ -345,13 +404,14 @@
 
         function showToast(message, type) {
             const container = document.querySelector('.toast-container') || (() => { const c = document.createElement('div'); c.className = 'toast-container'; document.body.appendChild(c); return c; })();
-            const toast = document.createElement('div'); toast.className = `toast toast-${type}`;
+            const toast = document.createElement('div'); toast.className = 'toast toast-' + type;
             const icons = { success: '<i class="fas fa-check-circle"></i>', error: '<i class="fas fa-times-circle"></i>', warning: '<i class="fas fa-exclamation-triangle"></i>', info: '<i class="fas fa-info-circle"></i>' };
-            toast.innerHTML = `<span>${icons[type]}</span><span>${message}</span>`;
+            toast.innerHTML = '<span>' + (icons[type] || icons.info) + '</span><span>' + message + '</span>';
             container.appendChild(toast);
             setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 4000);
         }
 
+        // ===== INIT =====
         window.addEventListener('DOMContentLoaded', () => {
             const session = checkSession();
             if (session) updateUserInfo(session);
@@ -369,9 +429,7 @@
                 el.innerHTML = '<img src="' + logoPath + '" alt="شعار الكلية" style="width:100%;height:100%;object-fit:contain;padding:4px;border-radius:10px;">';
             }
         };
-        img.onerror = function() {
-            console.log('Logo not found, using default icon');
-        };
+        img.onerror = function() { console.log('Logo not found, using default icon'); };
         img.src = logoPath;
     })();
     </script>

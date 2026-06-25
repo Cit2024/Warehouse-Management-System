@@ -13,7 +13,7 @@
 <body>
 
     <!-- Professional Print Header (hidden on screen, shown when printing) -->
-    <div class="print-header">
+    <div class="print-header print-only">
         <div class="print-header-top">
             <div class="print-logo">
                 <img src="assets/images/logo.png" alt="شعار الكلية" onerror="this.style.display='none'; this.parentElement.innerHTML='<span style=\'font-size:36px;\'><i class=\'fas fa-university\'></i></span>';">
@@ -21,14 +21,14 @@
             <div class="print-header-titles">
                 <div class="print-college">كلية التقنية الصناعية - مصراتة</div>
                 <div class="print-system">منظومة إدارة المخازن</div>
-                <h1 id="printReportTitle">تقرير حالة المخزون</h1>
-                <div id="printReportDate"></div>
+                <h1 id="printTitle">تقرير حالة المخزون</h1>
+                <div id="printDate"></div>
             </div>
         </div>
     </div>
 
     <!-- Print Summary Bar (hidden on screen, shown when printing) -->
-    <div class="print-summary-bar">
+    <div class="print-summary print-only">
         <div class="print-summary-item">
             <span class="print-summary-label">اسم التقرير</span>
             <span class="print-summary-value" id="printReportName">-</span>
@@ -40,6 +40,10 @@
         <div class="print-summary-item">
             <span class="print-summary-label">الإجمالي</span>
             <span class="print-summary-value" id="printTotalValue">0 د.ل</span>
+        </div>
+        <div class="print-summary-item">
+            <span class="print-summary-label">الفترة</span>
+            <span class="print-summary-value" id="printPeriod">-</span>
         </div>
     </div>
 
@@ -164,7 +168,7 @@
                         </div>
                         <button class="btn btn-primary" onclick="printReport()">
                             <i class="fas fa-print"></i>
-                            <span>Print Report</span>
+                            <span>طباعة التقرير</span>
                         </button>
                     </div>
                 </div>
@@ -221,11 +225,11 @@
                 </div>
             </div>
 
-            <!-- Signatures -->
-            <div class="signatures">
-                <div class="signature-box">المستلم</div>
-                <div class="signature-box">أمين المخزن</div>
-                <div class="signature-box">مدير الإدارة</div>
+            <!-- Print Signatures -->
+            <div class="print-signatures print-only">
+                <div class="print-signature-box">المستلم</div>
+                <div class="print-signature-box">أمين المخزن</div>
+                <div class="print-signature-box">المدير</div>
             </div>
         </div>
     </main>
@@ -287,15 +291,17 @@
                 const dateTo = document.getElementById('dateTo').value;
                 const reportType = document.getElementById('reportType').value;
                 const needsPeriod = ['movements_log', 'item_card'].includes(reportType);
-                let periodText = '';
+                let periodText = '-';
                 if (needsPeriod && dateFrom && dateTo) {
-                    periodText = 'الفترة: ' + dateFrom + ' إلى ' + dateTo;
+                    periodText = dateFrom + ' إلى ' + dateTo;
                 }
                 const printDateText = 'تاريخ الطباعة: ' + new Date().toLocaleDateString('ar-LY');
-                document.getElementById('printReportDate').textContent = (periodText ? periodText + ' | ' : '') + printDateText;
+                document.getElementById('printTitle').textContent = reportName;
+                document.getElementById('printDate').textContent = printDateText;
                 document.getElementById('printReportName').textContent = reportName;
                 document.getElementById('printRecordCount').textContent = recordCount;
                 document.getElementById('printTotalValue').textContent = totalValue;
+                document.getElementById('printPeriod').textContent = periodText;
                 window.print();
             }, 300);
         }
@@ -772,7 +778,7 @@
         // ========== Helpers ==========
         function setReportMeta(name, desc) {
             document.getElementById('reportName').textContent = name;
-            document.getElementById('printReportTitle').textContent = name;
+            document.getElementById('printTitle').textContent = name;
             document.getElementById('reportTableTitle').textContent = name;
             document.getElementById('reportTableMeta').textContent = desc;
         }

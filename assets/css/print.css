@@ -1,9 +1,11 @@
 /* ============================================
-   PRINT STYLES - Professional Reports
+   PRINT STYLES - Professional Reports & Receipts
    ============================================ */
 
-/* Print-only elements hidden on screen */
+/* Screen-only / print-only helpers */
+.print-only,
 .print-header,
+.print-summary,
 .print-summary-bar,
 .print-grand-total,
 .print-signatures,
@@ -24,15 +26,16 @@
     }
 
     body {
-        background: white !important;
+        background: #ffffff !important;
         color: #1E293B !important;
-        font-size: 12pt;
+        font-size: 12pt !important;
         direction: rtl;
     }
 
-    /* Hide all screen-only chrome */
+    /* ===== Aggressive UI suppression ===== */
     .sidebar,
     .top-header,
+    .page-header,
     .header-title-section,
     .toolbar,
     .table-toolbar,
@@ -40,6 +43,7 @@
     .header-actions,
     .header-search,
     .btn,
+    button,
     .row-actions,
     .modal,
     .toast-container,
@@ -49,22 +53,69 @@
     .demo-section,
     .branding-side,
     .filter-select,
+    .search-box,
+    .action-bar,
+    .form-actions,
+    .receipt-toolbar,
+    .receipt-actions,
+    .items-toolbar,
+    .stock-badge,
+    .add-item-row,
+    .signature-section,
+    .empty-state,
+    .tabs,
+    .tab-btn,
+    .mobile-nav,
+    .fab,
+    .user-card,
+    .sidebar-footer,
+    nav,
+    aside,
     #dateFromGroup,
     #dateToGroup,
     #itemSelectGroup,
     #receiptNumberGroup,
     .table-title,
     .table-meta,
-    .empty-state,
-    .form-actions,
-    .receipt-toolbar,
-    .stock-badge,
-    .add-item-row,
-    .signature-section {
+    .form-group,
+    .form-group label,
+    input,
+    select,
+    textarea {
         display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        width: 0 !important;
+        height: 0 !important;
+        position: absolute !important;
+        overflow: hidden !important;
     }
 
-    /* Main content full width, no padding */
+    /* ===== Reset print-only blocks ===== */
+    .print-only,
+    .print-header,
+    .print-summary,
+    .print-summary-bar,
+    .print-grand-total,
+    .print-signatures,
+    .signatures {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        width: auto !important;
+        height: auto !important;
+        position: static !important;
+        overflow: visible !important;
+    }
+
+    .print-summary,
+    .print-summary-bar,
+    .print-signatures,
+    .signatures {
+        display: flex !important;
+    }
+
+    /* ===== Layout reset ===== */
     .content {
         margin-right: 0 !important;
         margin-left: 0 !important;
@@ -77,7 +128,6 @@
 
     /* ===== Professional Print Header ===== */
     .print-header {
-        display: block !important;
         text-align: center;
         margin-bottom: 16px;
         padding-bottom: 16px;
@@ -97,7 +147,7 @@
         width: 60px;
         height: 60px;
         flex-shrink: 0;
-        background: white;
+        background: #ffffff;
         border-radius: 10px;
         display: flex;
         align-items: center;
@@ -143,15 +193,18 @@
         margin: 4px 0;
     }
 
-    #printReportDate {
+    #printDate,
+    #printReportDate,
+    #printReceiptDate,
+    #printPeriod {
         font-size: 11pt;
         color: #64748B;
         margin-top: 4px;
     }
 
     /* ===== Print Summary Bar ===== */
+    .print-summary,
     .print-summary-bar {
-        display: flex !important;
         justify-content: space-between;
         gap: 12px;
         background: #F8FAFC !important;
@@ -237,21 +290,8 @@
         display: none !important;
     }
 
-    /* Count report inputs visible when printing */
-    #reportTable input[type="number"],
-    #reportTable .actual-qty {
-        display: inline-block !important;
-        border: 1px solid #CBD5E1 !important;
-        background: white !important;
-        padding: 4px 8px !important;
-        font-size: 11pt !important;
-        min-width: 60px !important;
-        max-width: 100px !important;
-    }
-
     /* ===== Grand Total Bar ===== */
     .print-grand-total {
-        display: flex !important;
         justify-content: space-between;
         align-items: center;
         background: #FFF7ED !important;
@@ -271,9 +311,8 @@
     }
 
     /* ===== Signatures ===== */
-    .signatures,
-    .print-signatures {
-        display: flex !important;
+    .print-signatures,
+    .signatures {
         justify-content: space-around;
         margin-top: 60px;
         page-break-inside: avoid;
@@ -338,11 +377,6 @@
         border: 1px solid #CBD5E1 !important;
     }
 
-    /* ===== Items Section ===== */
-    .items-section {
-        border-top: 1px solid #E2E8F0 !important;
-    }
-
     /* ===== Page break control ===== */
     tr {
         page-break-inside: avoid;
@@ -354,10 +388,11 @@
 
     .panel,
     .print-header,
+    .print-summary,
     .print-summary-bar,
     .print-grand-total,
-    .signatures,
-    .print-signatures {
+    .print-signatures,
+    .signatures {
         page-break-inside: avoid;
     }
 

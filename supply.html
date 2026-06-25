@@ -12,7 +12,7 @@
 </head>
 <body>
 
-    <!-- Print Header (hidden, shown only when printing) -->
+    <!-- Professional Print Header (hidden on screen, shown when printing) -->
     <div class="print-header">
         <div class="print-header-top">
             <div class="print-logo">
@@ -24,6 +24,22 @@
                 <h1 id="printReceiptTitle">إذن توريد <span style="font-size:12pt;font-weight:400;color:#64748B;display:block;margin-top:2px;">Supply Receipt</span></h1>
                 <div id="printReceiptDate"></div>
             </div>
+        </div>
+    </div>
+
+    <!-- Print Summary Bar (hidden on screen, shown when printing) -->
+    <div class="print-summary-bar print-only">
+        <div class="print-summary-item">
+            <span class="print-summary-label">رقم الإذن</span>
+            <span class="print-summary-value" id="printReceiptNumber">-</span>
+        </div>
+        <div class="print-summary-item">
+            <span class="print-summary-label">تاريخ التوريد</span>
+            <span class="print-summary-value" id="printReceiptDateValue">-</span>
+        </div>
+        <div class="print-summary-item">
+            <span class="print-summary-label">عدد الأصناف</span>
+            <span class="print-summary-value" id="printItemCount">0</span>
         </div>
     </div>
 
@@ -210,10 +226,10 @@
             </div>
 
             <!-- Signatures (Print Only) -->
-            <div class="signatures">
-                <div class="signature-box">المستلم</div>
-                <div class="signature-box">أمين المخزن</div>
-                <div class="signature-box">مدير الإدارة</div>
+            <div class="print-signatures print-only">
+                <div class="print-signature-box">المستلم</div>
+                <div class="print-signature-box">أمين المخزن</div>
+                <div class="print-signature-box">المدير</div>
             </div>
         </div>
     </main>
@@ -410,6 +426,16 @@
             if (choice === 'direct') {
                 const dateEl = document.getElementById('printReceiptDate');
                 if (dateEl) dateEl.textContent = 'تاريخ الطباعة: ' + new Date().toLocaleDateString('ar-LY');
+
+                const numberEl = document.getElementById('printReceiptNumber');
+                if (numberEl) numberEl.textContent = document.getElementById('receiptNumber').value || '-';
+
+                const dateValueEl = document.getElementById('printReceiptDateValue');
+                if (dateValueEl) dateValueEl.textContent = document.getElementById('receiptDate').value || '-';
+
+                const countEl = document.getElementById('printItemCount');
+                if (countEl) countEl.textContent = receiptRows.length.toString();
+
                 window.print();
             }
             setTimeout(() => window.location.reload(), 500);

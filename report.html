@@ -12,18 +12,29 @@
 </head>
 <body>
 
-    <!-- Professional Print Header (hidden on screen, shown when printing) -->
+    <!-- Professional Print Header -->
     <div class="print-header print-only">
-        <div class="print-header-top">
-            <div class="print-logo">
-                <img src="assets/images/logo.png" alt="شعار الكلية" onerror="this.style.display='none'; this.parentElement.innerHTML='<span style=\'font-size:36px;\'><i class=\'fas fa-university\'></i></span>';">
+        <!-- Right: College Logo -->
+        <div class="print-logo-area">
+            <img src="assets/images/logo.png" alt="شعار الكلية"
+                 onerror="this.style.display='none'; this.parentElement.querySelector('.print-logo-fallback').style.display='flex';">
+            <div class="print-logo-fallback" style="display:none;">
+                <i class="fas fa-university" style="font-size:48px; color:#FF6B00;"></i>
             </div>
-            <div class="print-header-titles">
-                <div class="print-college">كلية التقنية الصناعية - مصراتة</div>
-                <div class="print-system">منظومة إدارة المخازن</div>
-                <h1 id="printTitle">تقرير حالة المخزون</h1>
-                <div id="printDate"></div>
-            </div>
+        </div>
+
+        <!-- Center: College Name + System Name + Report Title -->
+        <div class="print-title-area">
+            <div class="print-college-name">كلية التقنية الصناعية - مصراتة</div>
+            <div class="print-system-name">منظومة إدارة المخازن</div>
+            <h1 class="print-report-title" id="printTitle">تقرير حالة المخزون</h1>
+        </div>
+
+        <!-- Left: Gregorian Date + Hijri Date -->
+        <div class="print-date-area">
+            <div class="print-gregorian" id="printGregorianDate"></div>
+            <div class="print-hijri-label">الموافق</div>
+            <div class="print-hijri" id="printHijriDate"></div>
         </div>
     </div>
 
@@ -295,13 +306,37 @@
                 if (needsPeriod && dateFrom && dateTo) {
                     periodText = dateFrom + ' إلى ' + dateTo;
                 }
-                const printDateText = 'تاريخ الطباعة: ' + new Date().toLocaleDateString('ar-LY');
+
+                // Set dates
+                const now = new Date();
+                const gregorianDate = now.toLocaleDateString('ar-LY', {
+                    year: 'numeric', month: 'long', day: 'numeric'
+                });
+                document.getElementById('printGregorianDate').textContent = gregorianDate;
+
+                try {
+                    const hijriFormatter = new Intl.DateTimeFormat('ar-SA-u-ca-islamic', {
+                        year: 'numeric', month: 'long', day: 'numeric'
+                    });
+                    document.getElementById('printHijriDate').textContent = hijriFormatter.format(now);
+                } catch(e) {
+                    document.getElementById('printHijriDate').textContent = '';
+                }
+
                 document.getElementById('printTitle').textContent = reportName;
-                document.getElementById('printDate').textContent = printDateText;
                 document.getElementById('printReportName').textContent = reportName;
                 document.getElementById('printRecordCount').textContent = recordCount;
                 document.getElementById('printTotalValue').textContent = totalValue;
                 document.getElementById('printPeriod').textContent = periodText;
+
+                // Auto-detect landscape: if more than 6 columns, use landscape
+                const table = document.getElementById('reportTable');
+                const colCount = table ? table.querySelectorAll('thead th').length : 0;
+                const reportContainer = document.querySelector('.page-content');
+                if (colCount > 6 && reportContainer) {
+                    reportContainer.classList.add('print-landscape');
+                }
+
                 window.print();
             }, 150);
         }

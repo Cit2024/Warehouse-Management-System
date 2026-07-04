@@ -60,6 +60,16 @@
             </div>
 
             <div class="nav-section">
+                <div class="nav-section-title">النسخ الاحتياطي</div>
+                <a href="#" class="menu-item" onclick="handleBackup(event)">
+                    <span class="menu-text">💾 نسخة احتياطية</span>
+                </a>
+                <a href="#" class="menu-item" onclick="handleRestore(event)">
+                    <span class="menu-text">📂 استيراد نسخة سابقة</span>
+                </a>
+            </div>
+
+            <div class="nav-section">
                 <div class="nav-section-title">النظام</div>
                 <a href="settings.html" class="menu-item active">
                     <span class="menu-icon"><i class="fas fa-cog"></i></span>
@@ -68,19 +78,6 @@
             </div>
         </nav>
 
-        <div class="sidebar-footer">
-            <div class="user-card">
-                <div class="user-avatar" id="userAvatar">م</div>
-                <div class="user-info">
-                    <div class="user-name" id="userName">مستعرض النظام</div>
-                    <div class="user-role" id="userRole">مستعرض</div>
-                </div>
-            </div>
-            <a href="#" class="menu-item" onclick="handleLogout()">
-                <span class="menu-icon"><i class="fas fa-sign-out-alt"></i></span>
-                <span class="menu-text">تسجيل الخروج</span>
-            </a>
-        </div>
     </aside>
 
     <!-- Main Content -->
@@ -108,9 +105,16 @@
                 <span><i class="fas fa-exclamation-triangle"></i></span>
                 <span>النظام غير متصل بالمستودع السحابي حالياً. يرجى إعداد الروابط أدناه لتفادي فقدان بيانات المخزن.</span>
             </div>
-
+             <div id="settingsLockedState" style="text-align: center; padding: 20px;">
+                <div style="font-size: 40px; margin-bottom: 10px;">🔒</div>
+                <h4 style="color: var(--success); margin-bottom: 15px;">الإعدادات السحابية محفوظة ومحمية</h4>
+                <p style="color: #666; margin-bottom: 20px; font-size: 14px;">لا يمكن عرض أو تعديل الروابط ورموز الوصول حمايةً للبيانات.</p>
+                <button class="btn btn-warning" onclick="promptForPassword(showSettings)" style="margin: 0 auto;">
+                    🔓 تعديل الإعدادات (يتطلب كلمة المرور)
+                </button>
+            </div>
             <!-- Cloud Settings Panel -->
-            <div class="panel" style="margin-bottom: 20px;">
+            <div id="cloudSettingsForm" class="panel" style="margin-bottom: 20px; display:none;">
                 <div class="panel-header">
                     <div>
                         <div class="panel-title"><i class="fas fa-cloud"></i> إعدادات التخزين السحابي (GitHub Backup)</div>
@@ -199,14 +203,6 @@
             return session;
         }
 
-        function updateUserInfo(session) {
-            const avatar = document.getElementById('userAvatar');
-            const nameEl = document.getElementById('userName');
-            const roleEl = document.getElementById('userRole');
-            if (session.username) { avatar.textContent = session.username.charAt(0); nameEl.textContent = session.username; }
-            const roleNames = { 'admin': 'مدير النظام', 'storekeeper': 'أمين المخزن', 'viewer': 'مستعرض' };
-            roleEl.textContent = roleNames[session.role] || session.role || 'مستعرض';
-        }
 
         function handleLogout() {
             if (confirm('هل أنت متأكد من تسجيل الخروج؟')) { localStorage.removeItem('userSession'); window.location.href = 'index.html'; }
@@ -306,7 +302,6 @@
         // Init
         window.addEventListener('DOMContentLoaded', async () => {
             const session = checkSession();
-            if (session) { updateUserInfo(session); }
 
             try {
                 const settings = await window.api.getSettings();

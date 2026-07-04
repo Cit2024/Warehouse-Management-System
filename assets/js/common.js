@@ -1,22 +1,15 @@
-const toastIcons = {
-    success: '<i class="fas fa-check-circle"></i>',
-    error: '<i class="fas fa-times-circle"></i>',
-    warning: '<i class="fas fa-exclamation-triangle"></i>',
-    info: '<i class="fas fa-info-circle"></i>'
-};
-
 function showToast(message, type = 'success') {
     const existingToast = document.querySelector('.toast');
     if (existingToast) existingToast.remove();
-
+    
     const toast = document.createElement('div');
     toast.className = `toast toast-${type}`;
     toast.innerHTML = `
-        ${toastIcons[type] || toastIcons.info}
+        <span>${type === 'success' ? '✅' : '❌'}</span>
         <span>${message}</span>
     `;
     document.body.appendChild(toast);
-
+    
     setTimeout(() => {
         toast.style.opacity = '0';
         toast.style.transition = 'opacity 0.3s ease';
@@ -27,12 +20,10 @@ function showToast(message, type = 'success') {
 // 2. دالة التعامل مع النسخ الاحتياطي
 async function handleBackup(event) {
     if (event) event.preventDefault();
-    const btn = event.currentTarget;
-    const originalText = btn.innerHTML;
-
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...';
-    btn.style.pointerEvents = 'none';
-
+    promptForPassword(async () => handleBackupInner(event))
+}
+async function handleBackupInner(event) {
+    if (event) event.preventDefault(); 
     try {
         const result = await window.api.backupDatabase();
         if (result.success) {
@@ -42,34 +33,26 @@ async function handleBackup(event) {
         }
     } catch (error) {
         showToast('حدث خطأ غير متوقع أثناء النسخ الاحتياطي.', 'error');
-    } finally {
-        btn.innerHTML = originalText;
-        btn.style.pointerEvents = 'auto';
     }
 }
 
 // 3. دالة التعامل مع استيراد النسخة الاحتياطية
 async function handleRestore(event) {
     if (event) event.preventDefault();
-
-    const confirmRestore = confirm('تحذير هام جداً: استيراد نسخة احتياطية سيقوم بمسح كافة بيانات المخزن الحالية واستبدالها بالنسخة المستوردة.\n\nهل أنت متأكد من رغبتك في المتابعة؟');
+    promptForPassword(async () => handleRestoreInner(event))
+}
+async function handleRestoreInner(event) {
+    
+    const confirmRestore = confirm('⚠️ تحذير هام جداً: استيراد نسخة احتياطية سيقوم بمسح كافة بيانات المخزن الحالية واستبدالها بالنسخة المستوردة.\n\nهل أنت متأكد من رغبتك في المتابعة؟');
     if (!confirmRestore) return;
-
-    const btn = event.currentTarget;
-    const originalText = btn.innerHTML;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الاستيراد...';
-    btn.style.pointerEvents = 'none';
 
     try {
         const result = await window.api.restoreDatabase();
         if (result && !result.success && result.message !== 'تم إلغاء العملية.') {
-            alert('خطأ: ' + result.message);
+            alert('❌ ' + result.message);
         }
     } catch (error) {
-        alert('خطأ: حدث خطأ غير متوقع أثناء الاستيراد.');
-    } finally {
-        btn.innerHTML = originalText;
-        btn.style.pointerEvents = 'auto';
+        alert('❌ حدث خطأ غير متوقع أثناء الاستيراد.');
     }
 }
 
@@ -99,11 +82,114 @@ async function handlePdfExport() {
 // 5. تسجيل الخروج
 function handleLogout() {
     if (confirm('هل أنت متأكد من تسجيل الخروج؟')) {
-        localStorage.removeItem('userSession');
-        if (window.electronAPI && window.electronAPI.logout) {
+        if (window.electronAPI) {
             window.electronAPI.logout();
+        } else {
+            window.location.href = 'index.html';
         }
-        // استخدم replace بدلاً من href لتجنب bfcache
-        window.location.replace('index.html');
     }
 }
+function promptForPassword(actionCallback) {
+    // إنشاء النافذة المنبثقة
+    const modalHtml = `
+        <div class="modal" id="securityModal" style="display: flex;">
+            <div class="modal-content" style="max-width: 400px; text-align: center;">
+                <div style="font-size: 40px; margin-bottom: 10px;">🔐</div>
+                <h3 style="margin-bottom: 10px;">إجراء أمني مطلوب</h3>
+                <p style="color: #666; font-size: 14px; margin-bottom: 20px;">
+                    يرجى إدخال كلمة المرور الخاصة بك لتأكيد هويتك والسماح بهذا الإجراء.
+                </p>
+                <input type="password" id="securityPassword" class="form-control" 
+                       style="width: 100%; padding: 10px; margin-bottom: 15px; border: 2px solid var(--border-color); border-radius: 8px;" 
+                       placeholder="كلمة المرور...">
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn btn-success" style="flex: 1;" id="confirmSecurityBtn">تأكيد</button>
+                    <button class="btn btn-secondary" style="flex: 1;" onclick="document.getElementById('securityModal').remove()">إلغاء</button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    const passwordInput = document.getElementById('securityPassword');
+    passwordInput.focus();
+
+    document.getElementById('confirmSecurityBtn').onclick = async () => {
+        const password = passwordInput.value;
+        if (!password) {
+            showToast('الرجاء إدخال كلمة المرور', 'error');
+            return;
+        }
+        const sessionData = JSON.parse(localStorage.getItem("userSession"));
+        // التحقق من كلمة المرور عبر API (يجب بناء هذه الدالة في Electron)
+        const isAuthorized = await window.api.login({ username:sessionData.username,password });
+        
+        if (isAuthorized.success) {
+            document.getElementById('securityModal').remove();
+            actionCallback(); // تنفيذ الإجراء المطلوب (نسخ احتياطي أو فتح إعدادات)
+        } else {
+            showToast('كلمة المرور غير صحيحة', 'error');
+            passwordInput.value = '';
+        }
+    };
+}
+function showSettings(){
+    const SETTINGS_PAGE_TIME_LIMIT = 10 * 60 * 100 * 8; 
+    const settings = document.getElementById("cloudSettingsForm");
+    const lock = document.getElementById("settingsLockedState");
+    lock.style.display = "none";
+    settings.style.display = "block"; 
+    setTimeout(() => {
+        console.log("fired.");
+        hideSettings();
+    }, SETTINGS_PAGE_TIME_LIMIT);
+}
+function hideSettings(){
+    const settings = document.getElementById("cloudSettingsForm");
+    const lock = document.getElementById("settingsLockedState");
+    lock.style.display = "block";
+    settings.style.display = "none"; 
+}
+window.addEventListener("visibilitychange", () => {
+    hideSettings()
+});
+
+
+ // نظام تسجيل الخروج التلقائي عند الخمول (10 دقائق)
+let idleTimeout;
+const IDLE_TIME_LIMIT = 10 * 60 * 1000; // 10 دقائق بالملي ثانية
+
+function resetIdleTimeout() {
+    clearTimeout(idleTimeout);
+    idleTimeout = setTimeout(() => {
+        // إذا لم يكن المستخدم في صفحة تسجيل الدخول بالفعل
+        if (!window.location.href.includes('index.html')) {
+            localStorage.removeItem('userSession');
+            alert(' تم تسجيل الخروج تلقائياً للحفاظ على أمان المنظومة بسبب عدم النشاط.');
+            window.location.href = 'index.html';
+        }
+    }, IDLE_TIME_LIMIT);
+}
+
+// مراقبة نشاط المستخدم
+['mousemove', 'keydown', 'click', 'scroll'].forEach(event => {
+    document.addEventListener(event, resetIdleTimeout);
+});
+
+// تشغيل العداد عند فتح الصفحة
+resetIdleTimeout();
+//load logo image
+(function() {
+    var logoPath = 'assets/images/logo.png';
+    var img = new Image();
+    img.onload = () => {
+        var el = document.getElementById('sidebarLogo');
+        if (el) {
+            el.innerHTML = '<img src="' + logoPath + '" alt="شعار الكلية" style="width:100%;height:100%;object-fit:contain;padding:4px;border-radius:10px;">';
+        }
+    };
+    img.onerror = () => {
+        console.log('Logo not found, using default icon');
+    };
+    img.src = logoPath;
+})();

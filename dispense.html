@@ -91,6 +91,16 @@
             </div>
 
             <div class="nav-section">
+                <div class="nav-section-title">النسخ الاحتياطي</div>
+                <a href="#" class="menu-item" onclick="handleBackup(event)">
+                    <span class="menu-text">💾 نسخة احتياطية</span>
+                </a>
+                <a href="#" class="menu-item" onclick="handleRestore(event)">
+                    <span class="menu-text">📂 استيراد نسخة سابقة</span>
+                </a>
+            </div>
+
+            <div class="nav-section">
                 <div class="nav-section-title">النظام</div>
                 <a href="settings.html" class="menu-item">
                     <span class="menu-icon"><i class="fas fa-cog"></i></span>
@@ -98,20 +108,6 @@
                 </a>
             </div>
         </nav>
-
-        <div class="sidebar-footer">
-            <div class="user-card">
-                <div class="user-avatar" id="userAvatar">م</div>
-                <div class="user-info">
-                    <div class="user-name" id="userName">مستعرض النظام</div>
-                    <div class="user-role" id="userRole">مستعرض</div>
-                </div>
-            </div>
-            <a href="#" class="menu-item" onclick="handleLogout()">
-                <span class="menu-icon"><i class="fas fa-sign-out-alt"></i></span>
-                <span class="menu-text">تسجيل الخروج</span>
-            </a>
-        </div>
     </aside>
 
     <!-- Main Content -->
@@ -248,56 +244,30 @@
     <script>
         let availableStock = [];
         let receiptRows = [];
-
-        // Session
-        function checkSession() {
-            const session = JSON.parse(localStorage.getItem('userSession'));
-            if (!session) { window.location.href = 'index.html'; return null; }
-            return session;
-        }
-
-        function updateUserInfo(session) {
-            const avatar = document.getElementById('userAvatar');
-            const nameEl = document.getElementById('userName');
-            const roleEl = document.getElementById('userRole');
-            if (session.username) { avatar.textContent = session.username.charAt(0); nameEl.textContent = session.username; }
-            const roleNames = { 'admin': 'مدير النظام', 'storekeeper': 'أمين المخزن', 'viewer': 'مستعرض' };
-            roleEl.textContent = roleNames[session.role] || session.role || 'مستعرض';
-        }
-
-        function handleLogout() {
-            if (confirm('هل أنت متأكد من تسجيل الخروج؟')) { localStorage.removeItem('userSession'); window.location.href = 'index.html'; }
-        }
-
-        // Init
         window.addEventListener('DOMContentLoaded', async () => {
-            const session = checkSession();
-            if (session) {
-                updateUserInfo(session);
-                if (session.role === 'viewer') {
-                    document.querySelectorAll('button, input, select').forEach(el => {
-                        if (!el.closest('.sidebar') && !el.closest('.modal')) el.disabled = true;
-                    });
-                }
-            }
             document.getElementById('receiptDate').valueAsDate = new Date();
-
+            
             try {
                 const stores = await window.api.getStores();
                 const requesters = await window.api.getRequesters();
-                availableStock = await window.api.getStock();
+                availableStock = await window.api.getStock(); // نجلب الأصناف التي لها رصيد فقط
 
                 const storeSelect = document.getElementById('storeSelect');
                 stores.forEach(s => storeSelect.innerHTML += `<option value="${s.store_id}">${s.store_name}</option>`);
 
                 const requesterSelect = document.getElementById('requesterSelect');
-                requesters.forEach(r => requesterSelect.innerHTML += `<option value="${r.entity_id}">${r.entity_name} (${r.entity_type === 'Department' ? 'قسم' : 'موظف'})</option>`);
+                requesters.forEach(req => requesterSelect.innerHTML += `<option value="${req.entity_id}">${req.entity_name} (${req.entity_type === 'Department' ? 'قسم' : 'موظف'})</option>`);
 
                 const itemSelect = document.getElementById('itemSelect');
-                availableStock.forEach(item => itemSelect.innerHTML += `<option value="${item.item_id}">${item.item_name} (${item.unit})</option>`);
-            } catch (error) { console.error(error); }
-        });
+                availableStock.forEach(item => {
+                    itemSelect.innerHTML += `<option value="${item.item_id}">${item.item_name} (${item.unit})</option>`;
+                });
 
+            } catch (error) {
+                console.error(error);
+                alert("حدث خطأ في جلب البيانات.");
+            }
+        });
         function updateStockBadge() {
             const itemId = parseInt(document.getElementById('itemSelect').value);
             const badge = document.getElementById('stockBadge');
@@ -342,9 +312,6 @@
         }
 
         async function saveReceipt() {
-            const session = checkSession();
-            if (session && session.role === 'viewer') { showToast('لا تملك صلاحية الإضافة', 'error'); return; }
-
             const receiptNumber = document.getElementById('receiptNumber').value.trim();
             const receiptDate = document.getElementById('receiptDate').value;
             const requesterId = document.getElementById('requesterSelect').value;
@@ -397,21 +364,5 @@
         }
     </script>
     <script src="assets/js/common.js"></script>
-    <script>
-    (function() {
-        var logoPath = 'assets/images/logo.png';
-        var img = new Image();
-        img.onload = function() {
-            var el = document.getElementById('sidebarLogo');
-            if (el) {
-                el.innerHTML = '<img src="' + logoPath + '" alt="شعار الكلية" style="width:100%;height:100%;object-fit:contain;padding:4px;border-radius:10px;">';
-            }
-        };
-        img.onerror = function() {
-            console.log('Logo not found, using default icon');
-        };
-        img.src = logoPath;
-    })();
-    </script>
 </body>
 </html>

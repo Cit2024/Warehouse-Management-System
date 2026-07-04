@@ -91,6 +91,16 @@
             </div>
 
             <div class="nav-section">
+                <div class="nav-section-title">النسخ الاحتياطي</div>
+                <a href="#" class="menu-item" onclick="handleBackup(event)">
+                    <span class="menu-text">💾 نسخة احتياطية</span>
+                </a>
+                <a href="#" class="menu-item" onclick="handleRestore(event)">
+                    <span class="menu-text">📂 استيراد نسخة سابقة</span>
+                </a>
+            </div>
+
+            <div class="nav-section">
                 <div class="nav-section-title">النظام</div>
                 <a href="settings.html" class="menu-item">
                     <span class="menu-icon"><i class="fas fa-cog"></i></span>
@@ -98,20 +108,6 @@
                 </a>
             </div>
         </nav>
-
-        <div class="sidebar-footer">
-            <div class="user-card">
-                <div class="user-avatar" id="userAvatar">م</div>
-                <div class="user-info">
-                    <div class="user-name" id="userName">مستعرض النظام</div>
-                    <div class="user-role" id="userRole">مستعرض</div>
-                </div>
-            </div>
-            <a href="#" class="menu-item" onclick="handleLogout()">
-                <span class="menu-icon"><i class="fas fa-sign-out-alt"></i></span>
-                <span class="menu-text">تسجيل الخروج</span>
-            </a>
-        </div>
     </aside>
 
     <!-- Main Content -->
@@ -257,65 +253,37 @@
     <script>
         let allItems = [];
         let receiptRows = [];
-
-        // Session
-        function checkSession() {
-            const session = JSON.parse(localStorage.getItem('userSession'));
-            if (!session) {
-                window.location.href = 'index.html';
-                return null;
-            }
-            return session;
-        }
-
-        function updateUserInfo(session) {
-            const avatar = document.getElementById('userAvatar');
-            const nameEl = document.getElementById('userName');
-            const roleEl = document.getElementById('userRole');
-            if (session.username) {
-                avatar.textContent = session.username.charAt(0);
-                nameEl.textContent = session.username;
-            }
-            const roleNames = { 'admin': 'مدير النظام', 'storekeeper': 'أمين المخزن', 'viewer': 'مستعرض' };
-            roleEl.textContent = roleNames[session.role] || session.role || 'مستعرض';
-        }
-
-        function handleLogout() {
-            if (confirm('هل أنت متأكد من تسجيل الخروج؟')) {
-                localStorage.removeItem('userSession');
-                window.location.href = 'index.html';
-            }
-        }
-
-        // Init
         window.addEventListener('DOMContentLoaded', async () => {
-            const session = checkSession();
-            if (session) {
-                updateUserInfo(session);
-                if (session.role === 'viewer') {
-                    document.querySelectorAll('button, input, select').forEach(el => {
-                        if (!el.closest('.sidebar') && !el.closest('.modal')) el.disabled = true;
-                    });
-                }
-            }
-
+            // تعيين تاريخ اليوم كافتراضي
             document.getElementById('receiptDate').valueAsDate = new Date();
-
+            
+            // جلب البيانات من قاعدة البيانات لتعبئة القوائم المنسدلة
             try {
                 const stores = await window.api.getStores();
                 const suppliers = await window.api.getSuppliers();
-                allItems = await window.api.getItems();
+                allItems = await window.api.getItems(); // جلبنا الأصناف المعرفة مسبقاً
 
+                // تعبئة المخازن
                 const storeSelect = document.getElementById('storeSelect');
-                stores.forEach(s => storeSelect.innerHTML += `<option value="${s.store_id}">${s.store_name}</option>`);
+                stores.forEach(s => {
+                    storeSelect.innerHTML += `<option value="${s.store_id}">${s.store_name}</option>`;
+                });
 
+                // تعبئة الموردين
                 const supplierSelect = document.getElementById('supplierSelect');
-                suppliers.forEach(s => supplierSelect.innerHTML += `<option value="${s.entity_id}">${s.entity_name}</option>`);
+                suppliers.forEach(sup => {
+                    supplierSelect.innerHTML += `<option value="${sup.entity_id}">${sup.entity_name}</option>`;
+                });
 
+                // تعبئة الأصناف
                 const itemSelect = document.getElementById('itemSelect');
-                allItems.forEach(item => itemSelect.innerHTML += `<option value="${item.item_id}">${item.item_name} (${item.unit})</option>`);
+                allItems.forEach(item => {
+                    itemSelect.innerHTML += `<option value="${item.item_id}">${item.item_name} (${item.unit})</option>`;
+                });
+
             } catch (error) {
                 console.error("خطأ في التحميل الأولي", error);
+                alert("حدث خطأ في جلب البيانات الأساسية.");
             }
         });
 
@@ -440,35 +408,7 @@
             }
             setTimeout(() => window.location.reload(), 500);
         }
-
-        function showToast(message, type) {
-            const container = document.querySelector('.toast-container') || (() => {
-                const c = document.createElement('div'); c.className = 'toast-container'; document.body.appendChild(c); return c;
-            })();
-            const toast = document.createElement('div');
-            toast.className = `toast toast-${type}`;
-            const icons = { success: '<i class="fas fa-check-circle"></i>', error: '<i class="fas fa-times-circle"></i>', warning: '<i class="fas fa-exclamation-triangle"></i>', info: '<i class="fas fa-info-circle"></i>' };
-            toast.innerHTML = `<span>${icons[type]}</span><span>${message}</span>`;
-            container.appendChild(toast);
-            setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 4000);
-        }
     </script>
     <script src="assets/js/common.js"></script>
-    <script>
-    (function() {
-        var logoPath = 'assets/images/logo.png';
-        var img = new Image();
-        img.onload = function() {
-            var el = document.getElementById('sidebarLogo');
-            if (el) {
-                el.innerHTML = '<img src="' + logoPath + '" alt="شعار الكلية" style="width:100%;height:100%;object-fit:contain;padding:4px;border-radius:10px;">';
-            }
-        };
-        img.onerror = function() {
-            console.log('Logo not found, using default icon');
-        };
-        img.src = logoPath;
-    })();
-    </script>
 </body>
 </html>

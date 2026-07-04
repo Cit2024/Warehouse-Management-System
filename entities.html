@@ -93,6 +93,15 @@
                 </a>
             </div>
             <div class="nav-section">
+                <div class="nav-section-title">النسخ الاحتياطي</div>
+                <a href="#" class="menu-item" onclick="handleBackup(event)">
+                    <span class="menu-text">💾 نسخة احتياطية</span>
+                </a>
+                <a href="#" class="menu-item" onclick="handleRestore(event)">
+                    <span class="menu-text">📂 استيراد نسخة سابقة</span>
+                </a>
+            </div>
+            <div class="nav-section">
                 <div class="nav-section-title">النظام</div>
                 <a href="settings.html" class="menu-item">
                     <span class="menu-icon"><i class="fas fa-cog"></i></span>
@@ -100,19 +109,6 @@
                 </a>
             </div>
         </nav>
-        <div class="sidebar-footer">
-            <div class="user-card">
-                <div class="user-avatar" id="userAvatar">م</div>
-                <div class="user-info">
-                    <div class="user-name" id="userName">مستعرض النظام</div>
-                    <div class="user-role" id="userRole">مستعرض</div>
-                </div>
-            </div>
-            <a href="#" class="menu-item" onclick="handleLogout()">
-                <span class="menu-icon"><i class="fas fa-sign-out-alt"></i></span>
-                <span class="menu-text">تسجيل الخروج</span>
-            </a>
-        </div>
     </aside>
 
     <!-- ===== MAIN CONTENT ===== -->
@@ -286,16 +282,6 @@
             if (!session) { window.location.href = 'index.html'; return null; }
             return session;
         }
-
-        function updateUserInfo(session) {
-            const avatar = document.getElementById('userAvatar');
-            const nameEl = document.getElementById('userName');
-            const roleEl = document.getElementById('userRole');
-            if (session.username) { avatar.textContent = session.username.charAt(0); nameEl.textContent = session.username; }
-            const roleNames = { 'admin': 'مدير النظام', 'storekeeper': 'أمين المخزن', 'viewer': 'مستعرض' };
-            roleEl.textContent = roleNames[session.role] || session.role || 'مستعرض';
-        }
-
         function handleLogout() {
             if (confirm('هل أنت متأكد من تسجيل الخروج؟')) { localStorage.removeItem('userSession'); window.location.href = 'index.html'; }
         }
@@ -413,25 +399,9 @@
 
         // ===== INIT =====
         window.addEventListener('DOMContentLoaded', () => {
-            const session = checkSession();
-            if (session) updateUserInfo(session);
             loadEntities();
         });
     </script>
     <script src="assets/js/common.js"></script>
-    <script>
-    (function() {
-        var logoPath = 'assets/images/logo.png';
-        var img = new Image();
-        img.onload = function() {
-            var el = document.getElementById('sidebarLogo');
-            if (el) {
-                el.innerHTML = '<img src="' + logoPath + '" alt="شعار الكلية" style="width:100%;height:100%;object-fit:contain;padding:4px;border-radius:10px;">';
-            }
-        };
-        img.onerror = function() { console.log('Logo not found, using default icon'); };
-        img.src = logoPath;
-    })();
-    </script>
 </body>
 </html>

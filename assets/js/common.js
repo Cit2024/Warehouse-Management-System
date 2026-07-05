@@ -147,8 +147,10 @@ function showSettings(){
 function hideSettings(){
     const settings = document.getElementById("cloudSettingsForm");
     const lock = document.getElementById("settingsLockedState");
-    lock.style.display = "block";
-    settings.style.display = "none"; 
+    if (settings && lock) {
+        lock.style.display = "block";
+        settings.style.display = "none"; 
+    }
 }
 window.addEventListener("visibilitychange", () => {
     hideSettings()

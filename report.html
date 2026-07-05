@@ -173,6 +173,10 @@
                             <label>رقم الإذن</label>
                             <input type="text" id="receiptNumberInput" class="filter-select" placeholder="أدخل رقم إذن التوريد/الصرف" style="width: 100%;">
                         </div>
+                        <button class="btn btn-secondary" onclick="openColumnsModal()" title="اختيار الأعمدة الظاهرة في التقرير">
+                            <i class="fas fa-columns"></i>
+                            <span>الأعمدة</span>
+                        </button>
                         <button class="btn btn-primary" onclick="printReport()">
                             <i class="fas fa-print"></i>
                             <span>طباعة التقرير</span>
@@ -247,12 +251,9 @@
         let currentReportData = [];
         let sortDirection = {};
 
-        // ========== Session ==========
-        function checkSession() {
-            const session = JSON.parse(localStorage.getItem('userSession'));
-            if (!session) { window.location.href = 'index.html'; return null; }
-            return session;
-        }
+        // ========== Column Visibility (اختيار الأعمدة + الإعدادات المحفوظة) ==========
+        let hiddenColumns = new Set();
+        const COLUMN_PRESETS_KEY = 'reportColumnPresets';
 
         // ========== Date Defaults ==========
         function setDefaultDates() {
@@ -273,57 +274,57 @@
             document.getElementById('receiptNumberGroup').style.display = needsReceipt ? 'block' : 'none';
             document.getElementById('dateFromGroup').style.display = needsDates ? 'block' : 'none';
             document.getElementById('dateToGroup').style.display = needsDates ? 'block' : 'none';
+            hiddenColumns = new Set(); // كل نوع تقرير له أعمدة مختلفة، فنبدأ من جديد بكل الأعمدة ظاهرة
             generateReport();
         }
 
         // ========== MAIN PRINT FUNCTION ==========
         async function printReport() {
             await generateReport();
-            setTimeout(function() {
-                const reportName = document.getElementById('reportName').textContent || '-';
-                const recordCount = document.getElementById('recordCount').textContent || '0';
-                const totalValue = document.getElementById('totalValue').textContent || '0 د.ل';
-                const dateFrom = document.getElementById('dateFrom').value;
-                const dateTo = document.getElementById('dateTo').value;
-                const reportType = document.getElementById('reportType').value;
-                const needsPeriod = ['movements_log', 'item_card'].includes(reportType);
-                let periodText = '-';
-                if (needsPeriod && dateFrom && dateTo) {
-                    periodText = dateFrom + ' إلى ' + dateTo;
-                }
+            const reportName = document.getElementById('reportName').textContent || '-';
+            const recordCount = document.getElementById('recordCount').textContent || '0';
+            const totalValue = document.getElementById('totalValue').textContent || '0 د.ل';
+            const dateFrom = document.getElementById('dateFrom').value;
+            const dateTo = document.getElementById('dateTo').value;
+            const reportType = document.getElementById('reportType').value;
+            const needsPeriod = ['movements_log', 'item_card'].includes(reportType);
+            let periodText = '-';
+            if (needsPeriod && dateFrom && dateTo) {
+                periodText = dateFrom + ' إلى ' + dateTo;
+            }
 
-                // Set dates
-                const now = new Date();
-                const gregorianDate = now.toLocaleDateString('ar-LY', {
+            // Set dates
+            const now = new Date();
+            const gregorianDate = now.toLocaleDateString('ar-LY', {
+                year: 'numeric', month: 'long', day: 'numeric'
+            });
+            document.getElementById('printGregorianDate').textContent = gregorianDate;
+
+            try {
+                const hijriFormatter = new Intl.DateTimeFormat('ar-SA-u-ca-islamic', {
                     year: 'numeric', month: 'long', day: 'numeric'
                 });
-                document.getElementById('printGregorianDate').textContent = gregorianDate;
+                document.getElementById('printHijriDate').textContent = hijriFormatter.format(now);
+            } catch(e) {
+                document.getElementById('printHijriDate').textContent = '';
+            }
 
-                try {
-                    const hijriFormatter = new Intl.DateTimeFormat('ar-SA-u-ca-islamic', {
-                        year: 'numeric', month: 'long', day: 'numeric'
-                    });
-                    document.getElementById('printHijriDate').textContent = hijriFormatter.format(now);
-                } catch(e) {
-                    document.getElementById('printHijriDate').textContent = '';
-                }
+            document.getElementById('printTitle').textContent = reportName;
+            document.getElementById('printReportName').textContent = reportName;
+            document.getElementById('printRecordCount').textContent = recordCount;
+            document.getElementById('printTotalValue').textContent = totalValue;
+            document.getElementById('printPeriod').textContent = periodText;
 
-                document.getElementById('printTitle').textContent = reportName;
-                document.getElementById('printReportName').textContent = reportName;
-                document.getElementById('printRecordCount').textContent = recordCount;
-                document.getElementById('printTotalValue').textContent = totalValue;
-                document.getElementById('printPeriod').textContent = periodText;
+            // Auto-detect landscape: if more than 6 columns, use landscape
+            const table = document.getElementById('reportTable');
+            const colCount = table ? table.querySelectorAll('thead th:not([style*="display: none"])').length : 0;
+            const reportContainer = document.querySelector('.page-content');
+            if (colCount > 6 && reportContainer) {
+                reportContainer.classList.add('print-landscape');
+            }
 
-                // Auto-detect landscape: if more than 6 columns, use landscape
-                const table = document.getElementById('reportTable');
-                const colCount = table ? table.querySelectorAll('thead th').length : 0;
-                const reportContainer = document.querySelector('.page-content');
-                if (colCount > 6 && reportContainer) {
-                    reportContainer.classList.add('print-landscape');
-                }
-
-                window.print();
-            }, 150);
+            window.print();
+            setTimeout(() => window.location.reload(), 5000);
         }
 
         // ========== TABLE SORTING ==========
@@ -383,6 +384,7 @@
                 case 'item_card': await generateItemCardReport(); break;
                 case 'suppliers': await generateSuppliersReport(); break;
             }
+            applyColumnVisibility(); // إعادة تطبيق حالة إخفاء الأعمدة بعد إعادة رسم الجدول
         }
 
         async function generateStockReport() {
@@ -406,13 +408,7 @@
 
         function renderStockTable(items) {
             if (!items || items.length === 0) {
-                items = [
-                    { item_id: 'ITM-001', item_name: 'ورق تصوير A4', unit: 'رزمة', category: 'قرطاسية', min_order_qty: 20, current_quantity: 85, unit_price: 24.50 },
-                    { item_id: 'ITM-002', item_name: 'حبر طابعة اسود HP', unit: 'قطعة', category: 'احبار وطباعة', min_order_qty: 10, current_quantity: 8, unit_price: 145.00 },
-                    { item_id: 'ITM-003', item_name: 'كابل شبكة CAT6', unit: 'لفة', category: 'شبكات', min_order_qty: 5, current_quantity: 12, unit_price: 390.00 },
-                    { item_id: 'ITM-004', item_name: 'قفازات حماية صناعية', unit: 'زوج', category: 'سلامة مهنية', min_order_qty: 30, current_quantity: 120, unit_price: 18.00 },
-                    { item_id: 'ITM-005', item_name: 'مفك كهربائي متعدد', unit: 'قطعة', category: 'عدد وادوات', min_order_qty: 8, current_quantity: 6, unit_price: 72.00 }
-                ];
+                console.log("fail to get items.");
             }
             const tbody = document.getElementById('reportTableBody');
             let totalValue = 0;
@@ -456,13 +452,7 @@
 
         function renderItemsBaseTable(items) {
             if (!items || items.length === 0) {
-                items = [
-                    { item_id: 'ITM-001', item_name: 'ورق تصوير A4', unit: 'رزمة', category: 'قرطاسية', min_order_qty: 20, current_quantity: 85, unit_price: 24.50 },
-                    { item_id: 'ITM-002', item_name: 'حبر طابعة اسود HP', unit: 'قطعة', category: 'احبار وطباعة', min_order_qty: 10, current_quantity: 8, unit_price: 145.00 },
-                    { item_id: 'ITM-003', item_name: 'كابل شبكة CAT6', unit: 'لفة', category: 'شبكات', min_order_qty: 5, current_quantity: 12, unit_price: 390.00 },
-                    { item_id: 'ITM-004', item_name: 'قفازات حماية صناعية', unit: 'زوج', category: 'سلامة مهنية', min_order_qty: 30, current_quantity: 120, unit_price: 18.00 },
-                    { item_id: 'ITM-005', item_name: 'مفك كهربائي متعدد', unit: 'قطعة', category: 'عدد وادوات', min_order_qty: 8, current_quantity: 6, unit_price: 72.00 }
-                ];
+                showToast('fail to get data to display', 'error');
             }
             const tbody = document.getElementById('reportTableBody');
             currentReportData = items;
@@ -497,13 +487,7 @@
 
         function renderInventoryCountTable(items) {
             if (!items || items.length === 0) {
-                items = [
-                    { item_id: 'ITM-001', item_name: 'ورق تصوير A4', unit: 'رزمة', category: 'قرطاسية', min_order_qty: 20, current_quantity: 85, unit_price: 24.50 },
-                    { item_id: 'ITM-002', item_name: 'حبر طابعة اسود HP', unit: 'قطعة', category: 'احبار وطباعة', min_order_qty: 10, current_quantity: 8, unit_price: 145.00 },
-                    { item_id: 'ITM-003', item_name: 'كابل شبكة CAT6', unit: 'لفة', category: 'شبكات', min_order_qty: 5, current_quantity: 12, unit_price: 390.00 },
-                    { item_id: 'ITM-004', item_name: 'قفازات حماية صناعية', unit: 'زوج', category: 'سلامة مهنية', min_order_qty: 30, current_quantity: 120, unit_price: 18.00 },
-                    { item_id: 'ITM-005', item_name: 'مفك كهربائي متعدد', unit: 'قطعة', category: 'عدد وادوات', min_order_qty: 8, current_quantity: 6, unit_price: 72.00 }
-                ];
+                showToast('fail to get data to display', 'error');
             }
             const tbody = document.getElementById('reportTableBody');
             currentReportData = items;
@@ -546,7 +530,10 @@
             try {
                 const receipt = await window.api.getSupplyReceipt(receiptNumber);
                 renderSupplyReceipt(receipt);
-            } catch (e) { renderSupplyReceipt(null, receiptNumber); }
+            } catch (e) {
+                showToast(e, 'error');
+            //renderSupplyReceipt(null, receiptNumber);
+            }
         }
 
         function renderSupplyReceipt(receipt, fallbackNumber) {
@@ -687,13 +674,7 @@
 
         function renderLowStockTable(items) {
             if (!items || items.length === 0) {
-                items = [
-                    { item_id: 'ITM-001', item_name: 'ورق تصوير A4', unit: 'رزمة', category: 'قرطاسية', min_order_qty: 20, current_quantity: 85, unit_price: 24.50 },
-                    { item_id: 'ITM-002', item_name: 'حبر طابعة اسود HP', unit: 'قطعة', category: 'احبار وطباعة', min_order_qty: 10, current_quantity: 8, unit_price: 145.00 },
-                    { item_id: 'ITM-003', item_name: 'كابل شبكة CAT6', unit: 'لفة', category: 'شبكات', min_order_qty: 5, current_quantity: 12, unit_price: 390.00 },
-                    { item_id: 'ITM-004', item_name: 'قفازات حماية صناعية', unit: 'زوج', category: 'سلامة مهنية', min_order_qty: 30, current_quantity: 120, unit_price: 18.00 },
-                    { item_id: 'ITM-005', item_name: 'مفك كهربائي متعدد', unit: 'قطعة', category: 'عدد وادوات', min_order_qty: 8, current_quantity: 6, unit_price: 72.00 }
-                ];
+                showToast('fail to get data to display', 'error');
             }
             const tbody = document.getElementById('reportTableBody');
             currentReportData = items;
@@ -730,12 +711,7 @@
 
         function renderMovementsTable(transactions) {
             if (!transactions || transactions.length === 0) {
-                transactions = [
-                    { receipt_number: 'صرف-2026-002', transaction_type: 'Out', transaction_date: '2026-06-12', entity_name: 'مكتب الشؤون الإدارية', store_name: 'المخزن الرئيسي', total_value: 332.50 },
-                    { receipt_number: 'صرف-2026-001', transaction_type: 'Out', transaction_date: '2026-06-10', entity_name: 'قسم الهندسة الكهربائية', store_name: 'المخزن الرئيسي', total_value: 504.00 },
-                    { receipt_number: 'توريد-2026-002', transaction_type: 'In', transaction_date: '2026-06-07', entity_name: 'مكتبة مصراتة الحديثة', store_name: 'المخزن الرئيسي', total_value: 1575.00 },
-                    { receipt_number: 'توريد-2026-001', transaction_type: 'In', transaction_date: '2026-06-02', entity_name: 'شركة المدار للتجهيزات', store_name: 'المخزن الرئيسي', total_value: 3740.00 }
-                ];
+                showToast('fail to get data to display', 'error');
             }
             const tbody = document.getElementById('reportTableBody');
             let totalValue = 0;
@@ -840,6 +816,178 @@
                 `<th class="sortable" onclick="sortTable('reportTable', ${i})">${h.text} <span class="sort-icon">↕</span></th>`
             ).join('') + '</tr>';
             sortDirection = {};
+        }
+
+        // ========== اختيار أعمدة التقرير + الإعدادات المحفوظة ==========
+
+        // تطبيق حالة hiddenColumns الحالية على رأس وجسم الجدول المعروض فعلياً
+        function applyColumnVisibility() {
+            const table = document.getElementById('reportTable');
+            if (!table) return;
+            const headerCells = table.querySelectorAll('thead th');
+            headerCells.forEach((th, i) => {
+                th.style.display = hiddenColumns.has(i) ? 'none' : '';
+            });
+            table.querySelectorAll('tbody tr').forEach(row => {
+                const cells = row.children;
+                // نتجاهل صفوف الرسائل الخاصة (مثل "لا توجد بيانات") التي تستخدم colspan بعدد أعمدة مختلف
+                if (cells.length === headerCells.length) {
+                    Array.from(cells).forEach((td, i) => {
+                        td.style.display = hiddenColumns.has(i) ? 'none' : '';
+                    });
+                }
+            });
+        }
+
+        function getAllColumnPresets() {
+            try {
+                return JSON.parse(localStorage.getItem(COLUMN_PRESETS_KEY)) || {};
+            } catch (e) { return {}; }
+        }
+
+        function getColumnPresetsForType(reportType) {
+            const all = getAllColumnPresets();
+            return all[reportType] || [];
+        }
+
+        // فتح نافذة اختيار الأعمدة، مبنية على رأس الجدول الحالي المعروض على الشاشة
+        function openColumnsModal() {
+            const thead = document.getElementById('reportTableHead');
+            const ths = thead ? thead.querySelectorAll('th') : [];
+            if (!ths.length) {
+                showToast('لا يوجد تقرير معروض حالياً لاختيار أعمدته', 'error');
+                return;
+            }
+
+            const existing = document.getElementById('columnsModal');
+            if (existing) existing.remove();
+
+            const reportType = document.getElementById('reportType').value;
+
+            const checkboxesHtml = Array.from(ths).map((th, i) => {
+                const label = th.textContent.replace(/[↕↑↓]/g, '').trim();
+                const checked = hiddenColumns.has(i) ? '' : 'checked';
+                return `
+                    <label style="display:flex; align-items:center; gap:10px; padding:8px 4px; border-bottom:1px solid var(--border-color);">
+                        <input type="checkbox" data-col-index="${i}" ${checked} style="width:18px;height:18px;">
+                        <span>${label}</span>
+                    </label>`;
+            }).join('');
+
+            const presets = getColumnPresetsForType(reportType);
+            const presetsOptionsHtml = presets.length
+                ? presets.map(p => `<option value="${p.name}">${p.name}</option>`).join('')
+                : '<option value="">لا توجد إعدادات محفوظة لهذا التقرير</option>';
+
+            const modalHtml = `
+                <div class="modal" id="columnsModal" style="display:flex;">
+                    <div class="modal-content" style="max-width:440px;">
+                        <div class="modal-header">
+                            <div class="modal-title">🧮 اختيار أعمدة التقرير</div>
+                            <button class="modal-close" onclick="document.getElementById('columnsModal').remove()">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <p style="color:#666; font-size:13px; margin-bottom:15px;">
+                                حدد الأعمدة التي تريد ظهورها في الجدول والطباعة.
+                            </p>
+                            <div id="columnsCheckboxList" style="max-height:280px; overflow-y:auto; margin-bottom:16px;">
+                                ${checkboxesHtml}
+                            </div>
+                            <div style="border-top:1px solid var(--border-color); padding-top:12px;">
+                                <label style="font-size:13px; color:#666;">الإعدادات المحفوظة لهذا التقرير</label>
+                                <div style="display:flex; gap:8px; margin-top:8px;">
+                                    <select id="presetSelect" class="filter-select" style="flex:1;">${presetsOptionsHtml}</select>
+                                    <button class="btn btn-secondary" onclick="loadSelectedColumnPreset()" title="تحميل">تحميل</button>
+                                    <button class="btn btn-secondary" onclick="deleteSelectedColumnPreset()" title="حذف الإعداد المحدد">🗑️</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button class="btn btn-secondary" onclick="document.getElementById('columnsModal').remove()">إغلاق</button>
+                            <button class="btn btn-success" onclick="saveColumnsPreset()">حفظ باسم جديد</button>
+                            <button class="btn btn-primary" onclick="applyColumnsFromModal()">تطبيق</button>
+                        </div>
+                    </div>
+                </div>`;
+
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+        }
+
+        // قراءة الاختيارات من المودال وتطبيقها على الجدول المعروض دون حفظ
+        function applyColumnsFromModal() {
+            const checks = document.querySelectorAll('#columnsCheckboxList input[type="checkbox"]');
+            hiddenColumns = new Set();
+            checks.forEach(c => {
+                if (!c.checked) hiddenColumns.add(parseInt(c.dataset.colIndex, 10));
+            });
+            applyColumnVisibility();
+            const modal = document.getElementById('columnsModal');
+            if (modal) modal.remove();
+            showToast('تم تحديث أعمدة التقرير', 'success');
+        }
+
+        // حفظ الاختيار الحالي كإعداد جديد باسم يحدده المستخدم
+        function saveColumnsPreset() {
+            const name = prompt('أدخل اسماً لهذا الإعداد لتتمكن من استرجاعه بسرعة لاحقاً:');
+            if (!name || !name.trim()) return;
+            const trimmedName = name.trim();
+
+            const checks = document.querySelectorAll('#columnsCheckboxList input[type="checkbox"]');
+            const hidden = [];
+            checks.forEach(c => {
+                if (!c.checked) hidden.push(parseInt(c.dataset.colIndex, 10));
+            });
+
+            const reportType = document.getElementById('reportType').value;
+            const all = getAllColumnPresets();
+            if (!all[reportType]) all[reportType] = [];
+            // استبدال أي إعداد سابق بنفس الاسم لهذا نوع التقرير
+            all[reportType] = all[reportType].filter(p => p.name !== trimmedName);
+            all[reportType].push({ name: trimmedName, hidden });
+            localStorage.setItem(COLUMN_PRESETS_KEY, JSON.stringify(all));
+
+            hiddenColumns = new Set(hidden);
+            applyColumnVisibility();
+            const modal = document.getElementById('columnsModal');
+            if (modal) modal.remove();
+            showToast('تم حفظ إعداد الأعمدة باسم "' + trimmedName + '"', 'success');
+        }
+
+        // تحميل إعداد محفوظ وتطبيقه فوراً على الجدول والمودال
+        function loadSelectedColumnPreset() {
+            const select = document.getElementById('presetSelect');
+            const name = select ? select.value : '';
+            if (!name) return;
+
+            const reportType = document.getElementById('reportType').value;
+            const preset = getColumnPresetsForType(reportType).find(p => p.name === name);
+            if (!preset) return;
+
+            hiddenColumns = new Set(preset.hidden);
+            document.querySelectorAll('#columnsCheckboxList input[type="checkbox"]').forEach(c => {
+                c.checked = !hiddenColumns.has(parseInt(c.dataset.colIndex, 10));
+            });
+            applyColumnVisibility();
+            showToast('تم تطبيق إعداد "' + name + '"', 'success');
+        }
+
+        // حذف إعداد محفوظ لهذا نوع التقرير
+        function deleteSelectedColumnPreset() {
+            const select = document.getElementById('presetSelect');
+            const name = select ? select.value : '';
+            if (!name) return;
+            if (!confirm('هل تريد حذف الإعداد "' + name + '"؟')) return;
+
+            const reportType = document.getElementById('reportType').value;
+            const all = getAllColumnPresets();
+            if (all[reportType]) {
+                all[reportType] = all[reportType].filter(p => p.name !== name);
+                localStorage.setItem(COLUMN_PRESETS_KEY, JSON.stringify(all));
+            }
+            showToast('تم حذف الإعداد', 'success');
+            openColumnsModal(); // إعادة فتح المودال لعرض القائمة المحدثة
         }
 
         // ========== Load Data ==========

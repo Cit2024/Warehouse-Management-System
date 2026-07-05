@@ -430,7 +430,6 @@ class GitManager {
                 await this.commitLocalBackup(`استرجاع النظام للنسخة الزمنية: ${commitId.substring(0,7)}`);
             } catch (commitError) {
                 console.warn('⚠️ تحذير: فشل في توثيق عملية الاسترجاع:', commitError);
-                // لا نمنع عملية الاسترجاع بسبب فشل التوثيق
             }
 
             return { success: true, message: 'تم استرجاع قاعدة البيانات بنجاح' };

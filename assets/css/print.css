@@ -282,9 +282,81 @@
     }
 
     /* ===================================================== */
+    /* PRINT HEADER - Receipt pages variant                  */
+    /* (dispense.html / supply.html و ما شابهها)              */
+    /* ===================================================== */
+    /*
+       صفحات الأذون (الصرف/التوريد) تستخدم بنية رأس مختلفة عن
+       report.html: .print-header-top > (.print-logo + .print-header-titles)
+       بدل .print-logo-area / .print-title-area / .print-date-area.
+       هذه الكلاسات لم يكن لها أي تنسيق طباعة، فكانت صورة الشعار
+       تُطبع بحجمها الطبيعي الكامل (بدون تصغير) — وهو سبب ظهورها
+       كبيرة جداً. أضفنا هنا نفس منطق التحجيم المستخدم في report.html.
+    */
+    .print-header-top {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        gap: 12pt !important;
+        width: 100% !important;
+    }
+
+    .print-logo {
+        width: 65px !important;
+        height: 65px !important;
+        flex-shrink: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        overflow: hidden !important;
+    }
+
+    .print-logo img {
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: contain !important;
+    }
+
+    .print-header-titles {
+        flex: 1 !important;
+        text-align: center !important;
+        padding: 0 8pt !important;
+    }
+
+    .print-college {
+        font-size: 13pt !important;
+        font-weight: bold !important;
+        color: #000 !important;
+        margin-bottom: 2pt !important;
+    }
+
+    .print-system {
+        font-size: 10pt !important;
+        color: #FF6B00 !important;
+        font-weight: 600 !important;
+        margin-bottom: 3pt !important;
+    }
+
+    .print-header-titles h1 {
+        font-size: 14pt !important;
+        font-weight: bold !important;
+        color: #000 !important;
+        margin: 0 !important;
+        line-height: 1.3 !important;
+    }
+
+    #printReceiptDate {
+        font-size: 8.5pt !important;
+        color: #555 !important;
+        font-weight: 600 !important;
+        margin-top: 3pt !important;
+    }
+
+    /* ===================================================== */
     /* PRINT SUMMARY BAR                                     */
     /* ===================================================== */
-    .print-summary {
+    .print-summary,
+    .print-summary-bar {
         display: flex !important;
         justify-content: space-around !important;
         background: #f5f5f5 !important;
@@ -398,17 +470,24 @@
     }
 
     /* ===================================================== */
-    /* FOOTER - Fixed at bottom of page                     */
+    /* FOOTER - Signatures (in normal document flow)         */
     /* ===================================================== */
+    /*
+       تنويه على الإصلاح: كانت هذه القاعدة تستخدم position: fixed
+       لتثبيت التوقيعات عند 12mm من أسفل كل صفحة. لكن نفس الكلاس
+       .print-signatures يُستخدم أيضاً كصف داخل الجدول في تقارير
+       إذن التوريد/الصرف. عنصر ثابت الموضع (fixed) بداخل خلية جدول
+       يجعل المتصفح يتعامل معه كطبقة مستقلة عن تدفق الجدول، فيظهر
+       فوق محتوى آخر بدل مكانه الصحيح — وهي المشكلة التي ظهرت في
+       الصورة المرفقة. تم تحويله لعنصر عادي يتبع تدفق الصفحة بدل
+       تثبيته، مع page-break-inside: avoid لمنع تقطيعه بين صفحتين.
+    */
     .print-signatures {
         display: flex !important;
         justify-content: space-between !important;
-        position: fixed !important;
-        bottom: 12mm !important;
-        left: 12mm !important;
-        right: 12mm !important;
+        position: static !important;
+        margin: 16pt 0 0 0 !important;
         page-break-inside: avoid !important;
-        margin: 0 !important;
     }
 
     .print-signature-box {
@@ -429,7 +508,7 @@
         background: #f0f0f0 !important;
         border: 0.5pt solid #888 !important;
         padding: 6pt 10pt !important;
-        margin: 6pt 0 50pt 0 !important;
+        margin: 6pt 0 10pt 0 !important;
         font-weight: bold !important;
         font-size: 9pt !important;
         page-break-inside: avoid !important;

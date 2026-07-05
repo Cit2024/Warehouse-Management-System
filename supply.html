@@ -134,11 +134,11 @@
                 <div class="panel-body">
                     <!-- Document Header -->
                     <div class="form-grid">
-                        <div class="form-group">
+                        <div id="rem1" class="form-group">
                             <label>رقم الإذن / الفاتورة</label>
                             <input type="text" id="receiptNumber" placeholder="أدخل رقم الإذن الورقي..." required>
                         </div>
-                        <div class="form-group">
+                        <div id="rem2" class="form-group">
                             <label>تاريخ التوريد</label>
                             <input type="date" id="receiptDate" required>
                         </div>
@@ -164,7 +164,7 @@
                     <div class="items-section" style="margin-top: 30px; border-top: 2px dashed var(--border-color); padding-top: 20px;">
                         <h3 style="margin-bottom: 20px; color: var(--primary); font-size: 16px;">الأصناف الموردة</h3>
 
-                        <div style="display: flex; gap: 12px; align-items: flex-end; margin-bottom: 20px; flex-wrap: wrap;">
+                        <div id="itemsSel" style="display: flex; gap: 12px; align-items: flex-end; margin-bottom: 20px; flex-wrap: wrap;">
                             <div class="form-group" style="flex: 2; min-width: 200px; margin-bottom: 0;">
                                 <label>الصنف</label>
                                 <select id="itemSelect">
@@ -241,10 +241,6 @@
                 <button type="button" class="btn btn-primary" onclick="executePrint('direct')">
                     <span><i class="fas fa-print"></i></span>
                     <span>طباعة</span>
-                </button>
-                <button type="button" class="btn btn-secondary" onclick="executePrint('none')">
-                    <span><i class="fas fa-times-circle"></i></span>
-                    <span>إغلاق</span>
                 </button>
             </div>
         </div>
@@ -347,12 +343,6 @@
         }
 
         async function saveReceipt() {
-            const session = checkSession();
-            if (session && session.role === 'viewer') {
-                showToast('لا تملك صلاحية الإضافة', 'error');
-                return;
-            }
-
             const receiptNumber = document.getElementById('receiptNumber').value.trim();
             const receiptDate = document.getElementById('receiptDate').value;
             const supplierId = document.getElementById('supplierSelect').value;
@@ -404,9 +394,18 @@
                 const countEl = document.getElementById('printItemCount');
                 if (countEl) countEl.textContent = receiptRows.length.toString();
 
+                const sel = document.getElementById('itemsSel');
+                const sel1 = document.getElementById('rem1');
+                const sel2 = document.getElementById('rem2');
+                sel.style.display  = "none";
+                sel1.style.display = "none";
+                sel2.style.display = "none";
                 window.print();
+                sel.style.display  = "block";
+                sel1.style.display = "block";
+                sel2.style.display = "block";
             }
-            setTimeout(() => window.location.reload(), 500);
+            setTimeout(() => window.location.reload(), 1000);
         }
     </script>
     <script src="assets/js/common.js"></script>

@@ -3,7 +3,7 @@ function showToast(message, type = 'success') {
     if (existingToast) existingToast.remove();
     
     const toast = document.createElement('div');
-    toast.className = `toast toast-${type}`;
+    toast.className = `toast toast-container toast-${type}`;
     toast.innerHTML = `
         <span>${type === 'success' ? '✅' : '❌'}</span>
         <span>${message}</span>

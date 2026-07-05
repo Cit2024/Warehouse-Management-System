@@ -68,7 +68,33 @@ app.on('window-all-closed', () => {
 // 1. جلب الأصناف من الجدول (فقط التي لم يتم حذفها منطقياً)
 ipcMain.handle('get-items', async () => {
   try {
-    const items = db.prepare('SELECT * FROM items WHERE is_deleted = 0 ORDER BY item_id DESC').all();
+    // نجلب أعمدة الصنف الأساسية + الرصيد اللحظي (من view_current_stock) + آخر سعر شراء مسجّل له
+    // (السعر غير مخزّن في جدول items لأنه يتغيّر من فاتورة توريد لأخرى، فنأخذ آخر سعر 'In' مسجّل)
+    const items = db.prepare(`
+      SELECT 
+        i.item_id,
+        i.item_name,
+        i.unit,
+        i.category,
+        i.min_order_qty,
+        i.is_deleted,
+        COALESCE(vcs.current_quantity, 0) AS current_quantity,
+        COALESCE((
+          SELECT td.unit_price
+          FROM transaction_details td
+          JOIN transactions t ON t.transaction_id = td.transaction_id
+          WHERE td.item_id = i.item_id
+            AND t.transaction_type = 'In'
+            AND t.is_deleted = 0
+            AND td.unit_price > 0
+          ORDER BY t.transaction_date DESC, t.transaction_id DESC
+          LIMIT 1
+        ), 0) AS unit_price
+      FROM items i
+      LEFT JOIN view_current_stock vcs ON vcs.item_id = i.item_id
+      WHERE i.is_deleted = 0
+      ORDER BY i.item_id DESC
+    `).all();
     return items;
   } catch (error) {
     console.error('خطأ في جلب الأصناف:', error);
@@ -363,7 +389,12 @@ ipcMain.handle('get-transactions-history', async () => {
   try {
     const query = `
       SELECT t.transaction_id, t.transaction_type, t.transaction_date, t.receipt_number, 
-             e.entity_name, s.store_name
+             e.entity_name, s.store_name,
+             COALESCE((
+               SELECT SUM(td.quantity * td.unit_price)
+               FROM transaction_details td
+               WHERE td.transaction_id = t.transaction_id
+             ), 0) AS total_value
       FROM transactions t
       LEFT JOIN entities e ON t.entity_id = e.entity_id
       LEFT JOIN stores s ON t.store_id = s.store_id

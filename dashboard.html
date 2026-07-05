@@ -430,16 +430,35 @@
                 const items = await window.api.getItems();
                 allItems = items || [];
 
-                updateStats(allItems);
+                // سجل الحركات (توريد/صرف) يُستخدم لحساب عدد حركات الشهر ولعرض آخر الحركات
+                let history = [];
+                try {
+                    history = await window.api.getTransactionsHistory() || [];
+                } catch (historyError) {
+                    console.error('Error loading transactions history:', historyError);
+                }
+
+                updateStats(allItems, countMovementsThisMonth(history));
                 renderItemsTable(allItems);
                 renderLowStockAlerts(allItems);
                 renderChart(allItems);
+                renderRecentMovements(history);
                 updateSidebarBadge(allItems.length);
             } catch (error) {
                 console.error('Error loading dashboard:', error);
                 // Use sample data for preview
                 loadSampleData();
             }
+        }
+
+        // يحسب عدد الحركات (توريد/صرف) التي تاريخها يقع ضمن الشهر والسنة الحاليين
+        function countMovementsThisMonth(history) {
+            const now = new Date();
+            return history.filter(t => {
+                if (!t.transaction_date) return false;
+                const d = new Date(t.transaction_date);
+                return !isNaN(d) && d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+            }).length;
         }
 
         function loadSampleData() {
@@ -455,7 +474,7 @@
                 { item_id: 'ITM-010', item_name: 'وصلة كاميرا', unit: 'قطعة', category: 'شبكات', min_order_qty: 8, current_quantity: 5, unit_price: 68.00 }
             ];
             allItems = sampleItems;
-            updateStats(sampleItems);
+            updateStats(sampleItems, 4); // "4" هنا بيانات تجريبية بديلة فقط (نفس أسلوب sampleItems)، وليست القيمة الفعلية
             renderItemsTable(sampleItems);
             renderLowStockAlerts(sampleItems);
             renderChart(sampleItems);
@@ -463,7 +482,7 @@
             renderSampleMovements();
         }
 
-        function updateStats(items) {
+        function updateStats(items, monthlyMovements = 0) {
             const totalItems = items.length;
             const totalUnits = items.reduce((sum, item) => sum + (item.current_quantity || 0), 0);
             const totalValue = items.reduce((sum, item) => sum + ((item.current_quantity || 0) * (item.unit_price || 0)), 0);
@@ -473,7 +492,7 @@
             document.getElementById('statTotalUnits').textContent = totalUnits.toLocaleString() + ' وحدة مخزنة';
             document.getElementById('statInventoryValue').textContent = totalValue.toLocaleString('ar-LY', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' د.ل';
             document.getElementById('statLowStock').textContent = lowStock;
-            document.getElementById('statMonthlyMovements').textContent = '4'; // Sample
+            document.getElementById('statMonthlyMovements').textContent = monthlyMovements;
         }
 
         function updateSidebarBadge(count) {
@@ -577,6 +596,7 @@
             `).join('');
         }
 
+        // يُستخدم فقط في مسار البيانات التجريبية (عند فشل الاتصال بقاعدة البيانات) لعرض نموذج توضيحي
         function renderSampleMovements() {
             const container = document.getElementById('recentMovements');
             const movements = [
@@ -598,6 +618,54 @@
                     <div class="activity-value">${m.value}</div>
                 </div>
             `).join('');
+        }
+
+        // يعرض آخر الحركات الحقيقية (توريد/صرف) من سجل قاعدة البيانات الفعلي
+        function renderRecentMovements(history) {
+            const container = document.getElementById('recentMovements');
+            if (!container) return;
+
+            const recent = (history || []).slice(0, 6);
+
+            if (recent.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon"><i class="fas fa-clipboard-list"></i></div>
+                        <p>لا توجد حركات مسجلة</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = recent.map(t => {
+                const isDispense = t.transaction_type === 'Out';
+                const type = isDispense ? 'dispense' : 'supply';
+                const title = t.receipt_number || ('#' + t.transaction_id);
+                const entity = t.entity_name || t.store_name || '-';
+                const dateLabel = formatMovementDate(t.transaction_date);
+                const value = (t.total_value || 0).toLocaleString('ar-LY', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' د.ل';
+
+                return `
+                    <div class="activity-item">
+                        <div class="activity-icon ${type}">
+                            <i class="fas fa-arrow-${type === 'supply' ? 'down' : 'up'}"></i>
+                        </div>
+                        <div class="activity-content">
+                            <div class="activity-title">${title}</div>
+                            <div class="activity-meta">${dateLabel} · ${entity}</div>
+                        </div>
+                        <div class="activity-value">${value}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // تنسيق تاريخ الحركة لعرض مختصر وواضح (مثال: 2026-06-12 -> 12-06-2026)
+        function formatMovementDate(dateStr) {
+            if (!dateStr) return '-';
+            const d = new Date(dateStr);
+            if (isNaN(d)) return dateStr;
+            return d.toLocaleDateString('ar-LY', { year: 'numeric', month: '2-digit', day: '2-digit' });
         }
 
         // ========== Items Table ==========

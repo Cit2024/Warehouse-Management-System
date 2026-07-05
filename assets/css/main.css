@@ -53,6 +53,11 @@
     --header-height: 70px;
 }
 
+html {
+    height: 100%;
+    overflow: hidden;
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -62,11 +67,11 @@
 
 body {
     background: var(--bg-body);
-    min-height: 100vh;
+    height: 100%;
     display: flex;
     color: var(--text-dark);
     direction: rtl;
-    overflow-x: hidden;
+    overflow: hidden;
 }
 
 /* Scrollbar Styling */

@@ -1,7 +1,15 @@
 const Database = require('better-sqlite3');
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 const { app } = require('electron');
+
+// توليد هاش لكلمة المرور باستخدام scrypt
+function hashPassword(password) {
+    const salt = crypto.randomBytes(16).toString('hex');
+    const derived = crypto.scryptSync(password, salt, 64).toString('hex');
+    return `scrypt:${salt}:${derived}`;
+}
 
 // تحديد مسار حفظ ملف قاعدة البيانات (في مجلد AppData)
 const dataPath = app.getPath('userData');
@@ -122,10 +130,11 @@ function initializeDatabase() {
         const checkUsers = db.prepare('SELECT COUNT(*) as count FROM users').get();
         if (checkUsers.count === 0) {
             // 1. المستخدمين أولاً (لا يعتمدون على أي جدول آخر)
+            // كلمة المرور الافتراضية 'admin' مخزنة بهاش scrypt
             db.prepare(`
                 INSERT INTO users (full_name, password_hash, role) 
-                VALUES ('admin', 'admin', 'Admin')
-            `).run();
+                VALUES ('admin', ?, 'Admin')
+            `).run(hashPassword('admin'));
 
             // الحصول على الـ user_id الفعلي الذي أُنشئ تلقائياً
             const adminUser = db.prepare('SELECT user_id FROM users WHERE full_name = ?').get('admin');

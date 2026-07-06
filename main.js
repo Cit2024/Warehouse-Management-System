@@ -1,6 +1,7 @@
 const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 const db = require('./database/db');
 const GitManager = require('./gitManager.js');
 const Database = require('better-sqlite3');
@@ -61,6 +62,27 @@ app.whenReady().then(async () => {
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
 });
+
+// ==========================================
+// دوال مساعدة لتجزئة كلمات المرور
+// ==========================================
+function hashPassword(password) {
+  const salt = crypto.randomBytes(16).toString('hex');
+  const derived = crypto.scryptSync(password, salt, 64).toString('hex');
+  return `scrypt:${salt}:${derived}`;
+}
+
+function verifyPassword(password, storedHash) {
+  if (!storedHash) return false;
+  // دعم كلمات المرور القديمة المخزنة كنص عادي
+  if (storedHash === password) return true;
+  if (!storedHash.startsWith('scrypt:')) return false;
+  const parts = storedHash.split(':');
+  if (parts.length !== 3) return false;
+  const [, salt, hash] = parts;
+  const derived = crypto.scryptSync(password, salt, 64).toString('hex');
+  return derived === hash;
+}
 
 // ==========================================
 // العمليات الخلفية (Backend) - الاتصال بقاعدة البيانات
@@ -217,18 +239,33 @@ ipcMain.handle('get-stores', async () => {
 // ==========================================
 ipcMain.handle('login', async (event, credentials) => {
   try {
-    // نبحث عن المستخدم المطابق لاسم المستخدم وكلمة المرور، ويجب أن يكون حسابه نشطاً (is_active = 1)
-    const stmt = db.prepare('SELECT user_id, full_name, role FROM users WHERE full_name = ? AND password_hash = ? AND is_active = 1');
-    const user = stmt.get(credentials.username, credentials.password);
+    // نبحث عن المستخدم النشط حسب الاسم فقط، ثم نتحقق من كلمة المرور
+    const stmt = db.prepare('SELECT user_id, full_name, role, password_hash FROM users WHERE full_name = ? AND is_active = 1');
+    const user = stmt.get(credentials.username);
 
-    if (user) {
-      return { success: true, user: user };
-    } else {
+    if (!user) {
       return { success: false, message: 'اسم المستخدم أو كلمة المرور غير صحيحة' };
     }
+
+    const isValid = verifyPassword(credentials.password, user.password_hash);
+    if (!isValid) {
+      return { success: false, message: 'اسم المستخدم أو كلمة المرور غير صحيحة' };
+    }
+
+    // التوافق مع كلمات المرور القديمة: إعادة التجزئة عند أول تسجيل دخول ناجح
+    if (user.password_hash === credentials.password) {
+      try {
+        const newHash = hashPassword(credentials.password);
+        db.prepare('UPDATE users SET password_hash = ? WHERE user_id = ?').run(newHash, user.user_id);
+      } catch (rehashError) {
+        console.error('خطأ في إعادة تجزئة كلمة المرور القديمة:', rehashError);
+      }
+    }
+
+    return { success: true, user: { user_id: user.user_id, full_name: user.full_name, role: user.role } };
   } catch (error) {
     console.error('خطأ في تسجيل الدخول:', error);
-    return { success: false, message: 'حدث خطأ في قاعدة البيانات' };
+    return { success: false, message: 'حدث خطأ في قاعدة البيانات', error: error.message };
   }
 });
 // حفظ إذن التوريد بالكامل (رأس المستند وسهوره)

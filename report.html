@@ -494,11 +494,16 @@
                 { text: 'الإجمالي', sortable: true }
             ]);
             try {
-                const receipt = await window.api.getSupplyReceipt(receiptNumber);
-                renderSupplyReceipt(receipt);
+                const result = await window.api.getSupplyReceipt(receiptNumber);
+                if (result.success) {
+                    renderSupplyReceipt(result.receipt);
+                } else {
+                    showToast(result.message, 'error');
+                    renderSupplyReceipt(null, receiptNumber);
+                }
             } catch (e) {
-                showToast(e, 'error');
-            //renderSupplyReceipt(null, receiptNumber);
+                showToast(e.message || 'حدث خطأ أثناء جلب إذن التوريد', 'error');
+                renderSupplyReceipt(null, receiptNumber);
             }
         }
 
@@ -566,9 +571,17 @@
                 { text: 'الكمية المصروفة', sortable: true }
             ]);
             try {
-                const receipt = await window.api.getDispenseReceipt(receiptNumber);
-                renderDispenseReceipt(receipt);
-            } catch (e) { renderDispenseReceipt(null, receiptNumber); }
+                const result = await window.api.getDispenseReceipt(receiptNumber);
+                if (result.success) {
+                    renderDispenseReceipt(result.receipt);
+                } else {
+                    showToast(result.message, 'error');
+                    renderDispenseReceipt(null, receiptNumber);
+                }
+            } catch (e) {
+                showToast(e.message || 'حدث خطأ أثناء جلب إذن الصرف', 'error');
+                renderDispenseReceipt(null, receiptNumber);
+            }
         }
 
         function renderDispenseReceipt(receipt, fallbackNumber) {

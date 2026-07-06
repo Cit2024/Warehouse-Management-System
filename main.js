@@ -444,6 +444,66 @@ ipcMain.handle('get-transactions-history', async () => {
     return [];
   }
 });
+
+// جلب تفاصيل إذن توريد محدد
+ipcMain.handle('get-supply-receipt', async (event, receiptNumber) => {
+  try {
+    const header = db.prepare(`
+      SELECT t.transaction_id, t.transaction_date AS date, t.receipt_number, t.notes,
+             e.entity_name AS supplier, s.store_name AS store
+      FROM transactions t
+      LEFT JOIN entities e ON t.entity_id = e.entity_id
+      LEFT JOIN stores s ON t.store_id = s.store_id
+      WHERE t.receipt_number = ? AND t.transaction_type = 'In' AND t.is_deleted = 0
+    `).get(receiptNumber);
+
+    if (!header) {
+      return { success: false, message: 'لم يتم العثور على إذن التوريد' };
+    }
+
+    const items = db.prepare(`
+      SELECT td.item_id, i.item_name, i.unit, td.quantity, td.unit_price AS price
+      FROM transaction_details td
+      JOIN items i ON td.item_id = i.item_id
+      WHERE td.transaction_id = ?
+    `).all(header.transaction_id);
+
+    return { success: true, receipt: { ...header, items } };
+  } catch (error) {
+    console.error('خطأ في جلب إذن التوريد:', error);
+    return { success: false, message: 'حدث خطأ أثناء جلب إذن التوريد', error: error.message };
+  }
+});
+
+// جلب تفاصيل إذن صرف محدد
+ipcMain.handle('get-dispense-receipt', async (event, receiptNumber) => {
+  try {
+    const header = db.prepare(`
+      SELECT t.transaction_id, t.transaction_date AS date, t.receipt_number, t.notes AS reason,
+             e.entity_name AS requester, s.store_name AS store
+      FROM transactions t
+      LEFT JOIN entities e ON t.entity_id = e.entity_id
+      LEFT JOIN stores s ON t.store_id = s.store_id
+      WHERE t.receipt_number = ? AND t.transaction_type = 'Out' AND t.is_deleted = 0
+    `).get(receiptNumber);
+
+    if (!header) {
+      return { success: false, message: 'لم يتم العثور على إذن الصرف' };
+    }
+
+    const items = db.prepare(`
+      SELECT td.item_id, i.item_name, i.unit, td.quantity, td.unit_price AS price
+      FROM transaction_details td
+      JOIN items i ON td.item_id = i.item_id
+      WHERE td.transaction_id = ?
+    `).all(header.transaction_id);
+
+    return { success: true, receipt: { ...header, items } };
+  } catch (error) {
+    console.error('خطأ في جلب إذن الصرف:', error);
+    return { success: false, message: 'حدث خطأ أثناء جلب إذن الصرف', error: error.message };
+  }
+});
 // ==========================================
 // دوال النسخ الاحتياطي (Backup)
 // ==========================================

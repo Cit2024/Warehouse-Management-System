@@ -162,6 +162,14 @@ function initializeDatabase() {
                 VALUES ('لابتوب ديل', 'قطعة', 'أجهزة إلكترونية', 5)
             `).run();
         }
+        // 8. فهارس الأداء
+        db.exec(`
+            CREATE INDEX IF NOT EXISTS idx_items_is_deleted ON items(is_deleted);
+            CREATE INDEX IF NOT EXISTS idx_entities_type_deleted ON entities(entity_type, is_deleted);
+            CREATE INDEX IF NOT EXISTS idx_transactions_type_date_deleted ON transactions(transaction_type, transaction_date, is_deleted);
+            CREATE INDEX IF NOT EXISTS idx_transaction_details_transaction_id ON transaction_details(transaction_id);
+            CREATE INDEX IF NOT EXISTS idx_transaction_details_item_id ON transaction_details(item_id);
+        `);
     });
 
     init();

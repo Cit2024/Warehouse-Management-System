@@ -169,11 +169,11 @@ class GitManager {
             
                 // اختيار أول فرع موجود
                 if (branches.length > 0) {
-                    // تفضيل master أو main
-                    if (branches.includes('master')) {
-                        currentBranch = 'master';
-                    } else if (branches.includes('main')) {
+                    // تفضيل main أو master
+                    if (branches.includes('main')) {
                         currentBranch = 'main';
+                    } else if (branches.includes('master')) {
+                        currentBranch = 'master';
                     } else {
                         currentBranch = branches[0];
                     }
@@ -186,8 +186,8 @@ class GitManager {
                     }
                 } else {
                     // لا توجد فروع، نقوم بإنشاء فرع جديد
-                    console.log('📌 لا توجد فروع، جاري إنشاء فرع master...');
-                    currentBranch = 'master';
+                    console.log('📌 لا توجد فروع، جاري إنشاء فرع main...');
+                    currentBranch = 'main';
                     try {
                         await git.branch({ fs, dir: this.repoDir, ref: currentBranch });
                         await git.checkout({ fs, dir: this.repoDir, ref: currentBranch });
@@ -222,7 +222,7 @@ class GitManager {
             let remoteExists = false;
             let remoteBranch = null;
         
-            for (const branch of ['master', 'main']) {
+            for (const branch of ['main', 'master']) {
                 try {
                     console.log(`🔍 محاولة جلب فرع ${branch} من الـ remote...`);
                     await git.fetch({

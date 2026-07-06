@@ -1004,7 +1004,7 @@ async function performAutoBackup() {
         let fetchSuccess = false;
         let isRemoteEmpty = false;
         let fetchError = null;
-        const branch = 'master';
+        const branch = 'main';
         try {
             console.log(`⏳ جاري جلب التحديثات من فرع ${branch}...`);
             await git.fetch({
@@ -1043,7 +1043,7 @@ async function performAutoBackup() {
                     localCommits = await git.log({ fs, dir: gitManager.repoDir, depth: 1 });
                 }
                 
-                let mainBranch = 'master';
+                let mainBranch = 'main';
                 try {
                     const currentBranch = await git.currentBranch({ fs, dir: gitManager.repoDir });
                     if (currentBranch) {

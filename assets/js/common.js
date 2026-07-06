@@ -82,11 +82,8 @@ async function handlePdfExport() {
 // 5. تسجيل الخروج
 function handleLogout() {
     if (confirm('هل أنت متأكد من تسجيل الخروج؟')) {
-        if (window.electronAPI) {
-            window.electronAPI.logout();
-        } else {
-            window.location.href = 'index.html';
-        }
+        localStorage.removeItem('userSession');
+        window.location.href = 'index.html';
     }
 }
 function promptForPassword(actionCallback) {

@@ -213,9 +213,9 @@
         </div>
     </div>
 
+    <script src="assets/js/common.js"></script>
     <script>
         let allEntities = [];
-        let sortDirection = {};
 
         // ===== PRINT FUNCTION (NEW - replaces handleDirectPrint) =====
         function printEntities() {
@@ -242,49 +242,9 @@
             window.print();
         }
 
-        // ===== TABLE SORTING =====
-        function sortTable(tableId, colIndex) {
-            const table = document.getElementById(tableId);
-            if (!table) return;
-            const tbody = table.querySelector('tbody');
-            const rows = Array.from(tbody.querySelectorAll('tr')).filter(r => r.querySelectorAll('td').length > 1);
-            if (rows.length === 0) return;
+        // Table sorting is provided by common.js
 
-            const currentDir = sortDirection[tableId + '-' + colIndex] || 'asc';
-            const newDir = currentDir === 'asc' ? 'desc' : 'asc';
-            sortDirection = {};
-            sortDirection[tableId + '-' + colIndex] = newDir;
-
-            table.querySelectorAll('.sort-icon').forEach(span => span.textContent = '↕');
-            const headers = table.querySelectorAll('thead th');
-            if (headers[colIndex]) {
-                const icon = headers[colIndex].querySelector('.sort-icon');
-                if (icon) icon.textContent = newDir === 'asc' ? '↑' : '↓';
-            }
-
-            rows.sort((a, b) => {
-                const aText = a.cells[colIndex] ? a.cells[colIndex].textContent.trim() : '';
-                const bText = b.cells[colIndex] ? b.cells[colIndex].textContent.trim() : '';
-                const aNum = parseFloat(aText.replace(/[^\d.-]/g, ''));
-                const bNum = parseFloat(bText.replace(/[^\d.-]/g, ''));
-                if (!isNaN(aNum) && !isNaN(bNum) && aText !== '' && bText !== '') {
-                    return newDir === 'asc' ? aNum - bNum : bNum - aNum;
-                }
-                return newDir === 'asc' ? aText.localeCompare(bText, 'ar') : bText.localeCompare(aText, 'ar');
-            });
-
-            rows.forEach(r => tbody.appendChild(r));
-        }
-
-        // ===== SESSION =====
-        function checkSession() {
-            const session = JSON.parse(localStorage.getItem('userSession'));
-            if (!session) { window.location.href = 'index.html'; return null; }
-            return session;
-        }
-        function handleLogout() {
-            if (confirm('هل أنت متأكد من تسجيل الخروج؟')) { localStorage.removeItem('userSession'); window.location.href = 'index.html'; }
-        }
+        // Session helpers are provided by common.js
 
         // ===== LOAD & RENDER =====
         async function loadEntities() {
@@ -388,20 +348,10 @@
 
         document.getElementById('addModal').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
 
-        function showToast(message, type) {
-            const container = document.querySelector('.toast-container') || (() => { const c = document.createElement('div'); c.className = 'toast-container'; document.body.appendChild(c); return c; })();
-            const toast = document.createElement('div'); toast.className = 'toast toast-' + type;
-            const icons = { success: '<i class="fas fa-check-circle"></i>', error: '<i class="fas fa-times-circle"></i>', warning: '<i class="fas fa-exclamation-triangle"></i>', info: '<i class="fas fa-info-circle"></i>' };
-            toast.innerHTML = '<span>' + (icons[type] || icons.info) + '</span><span>' + message + '</span>';
-            container.appendChild(toast);
-            setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 4000);
-        }
-
         // ===== INIT =====
         window.addEventListener('DOMContentLoaded', () => {
             loadEntities();
         });
     </script>
-    <script src="assets/js/common.js"></script>
 </body>
 </html>

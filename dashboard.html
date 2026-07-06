@@ -352,77 +352,14 @@
         </div>
     </div>
 
+    <script src="assets/js/common.js"></script>
     <script>
         let allItems = [];
         let inventoryChart = null;
 
-        // ========== Shared Sortable Table ==========
-        function parseArabicNumber(text) {
-            // Handles Arabic-Libya (ar-LY) format: dot = thousands, comma = decimal
-            const cleaned = text.replace(/[^\d.,-]/g, '').replace(/\./g, '').replace(',', '.');
-            return parseFloat(cleaned);
-        }
+        // Table sorting helpers (parseArabNumber / sortTable) are provided by common.js
 
-        function sortTable(tableId, colIndex) {
-            const table = document.getElementById(tableId);
-            if (!table) return;
-            const tbody = table.querySelector('tbody');
-            const rows = Array.from(tbody.querySelectorAll('tr'));
-            const headers = table.querySelectorAll('thead th');
-            const header = headers[colIndex];
-            if (!header || !header.classList.contains('sortable')) return;
-
-            let dir = header.getAttribute('data-sort') === 'asc' ? 'desc' : 'asc';
-
-            headers.forEach(h => {
-                h.setAttribute('data-sort', '');
-                const icon = h.querySelector('.sort-icon');
-                if (icon) icon.textContent = '↕';
-            });
-
-            header.setAttribute('data-sort', dir);
-            const icon = header.querySelector('.sort-icon');
-            if (icon) icon.textContent = dir === 'asc' ? '↑' : '↓';
-
-            rows.sort((a, b) => {
-                const aCell = a.children[colIndex];
-                const bCell = b.children[colIndex];
-                if (!aCell || !bCell) return 0;
-                let aText = aCell.textContent.trim();
-                let bText = bCell.textContent.trim();
-
-                const aNum = parseArabicNumber(aText);
-                const bNum = parseArabicNumber(bText);
-
-                if (!isNaN(aNum) && !isNaN(bNum) && aText !== '' && bText !== '') {
-                    return dir === 'asc' ? aNum - bNum : bNum - aNum;
-                }
-
-                return dir === 'asc'
-                    ? aText.localeCompare(bText, 'ar')
-                    : bText.localeCompare(aText, 'ar');
-            });
-
-            rows.forEach(row => tbody.appendChild(row));
-        }
-
-        // ========== Session Management ==========
-        function checkSession() {
-            const session = JSON.parse(localStorage.getItem('userSession'));
-            if (!session) {
-                window.location.href = 'index.html';
-                return null;
-            }
-            return session;
-        }
-
-
-        function handleLogout() {
-            if (confirm('هل أنت متأكد من تسجيل الخروج؟')) {
-                localStorage.removeItem('userSession');
-                window.location.href = 'index.html';
-            }
-        }
+        // Session helpers are provided by common.js
 
         // ========== Dashboard Data ==========
         async function loadDashboardData() {
@@ -847,26 +784,6 @@
             if (e.target === this) closeModal();
         });
 
-        // ========== Toast ==========
-        function showToast(message, type = 'info') {
-            const container = document.querySelector('.toast-container') || createToastContainer();
-            const toast = document.createElement('div');
-            toast.className = `toast toast-${type}`;
-            const icons = {
-                success: '<i class="fas fa-check-circle"></i>',
-                error: '<i class="fas fa-times-circle"></i>',
-                warning: '<i class="fas fa-exclamation-triangle"></i>',
-                info: '<i class="fas fa-info-circle"></i>'
-            };
-            toast.innerHTML = `<span>${icons[type] || icons.info}</span><span>${message}</span>`;
-            container.appendChild(toast);
-            setTimeout(() => {
-                toast.style.opacity = '0';
-                toast.style.transform = 'translateY(-10px)';
-                setTimeout(() => toast.remove(), 300);
-            }, 4000);
-        }
-
         function createToastContainer() {
             const container = document.createElement('div');
             container.className = 'toast-container';
@@ -887,6 +804,5 @@
             }
         });
     </script>
-    <script src="assets/js/common.js"></script>
 </body>
 </html>

@@ -86,6 +86,86 @@ function handleLogout() {
         window.location.href = 'index.html';
     }
 }
+
+// 5.1 التحقق من الجلسة
+function checkSession() {
+    const session = JSON.parse(localStorage.getItem('userSession'));
+    if (!session) {
+        window.location.href = 'index.html';
+        return null;
+    }
+    return session;
+}
+
+// 5.2 فرز الجداول
+let sortDirection = {};
+
+function parseArabicNumber(text) {
+    if (typeof text !== 'string') return NaN;
+    // يتعامل مع تنسيق ar-LY: النقطة فاصل آلاف والفاصلة عشرية
+    const cleaned = text.replace(/[^\d.,-]/g, '').replace(/\./g, '').replace(',', '.');
+    return parseFloat(cleaned);
+}
+
+function sortTable(tableId, colIndex) {
+    const table = document.getElementById(tableId);
+    if (!table) return;
+    const tbody = table.querySelector('tbody');
+    if (!tbody) return;
+    const rows = Array.from(tbody.querySelectorAll('tr')).filter(r => r.querySelectorAll('td').length > 1);
+    if (rows.length === 0) return;
+
+    const headers = table.querySelectorAll('thead th');
+    const header = headers[colIndex];
+    if (header && !header.classList.contains('sortable')) return;
+
+    let dir;
+    // نفضل سمة data-sort إن وُجدت (مثل dashboard)
+    if (header && header.hasAttribute('data-sort')) {
+        dir = header.getAttribute('data-sort') === 'asc' ? 'desc' : 'asc';
+        headers.forEach(h => {
+            h.setAttribute('data-sort', '');
+            const icon = h.querySelector('.sort-icon');
+            if (icon) icon.textContent = '↕';
+        });
+        header.setAttribute('data-sort', dir);
+    } else {
+        const key = tableId + '-' + colIndex;
+        const currentDir = sortDirection[key] || 'asc';
+        dir = currentDir === 'asc' ? 'desc' : 'asc';
+        sortDirection = {};
+        sortDirection[key] = dir;
+    }
+
+    if (header) {
+        const icon = header.querySelector('.sort-icon');
+        if (icon) icon.textContent = dir === 'asc' ? '↑' : '↓';
+    }
+    table.querySelectorAll('.sort-icon').forEach(span => {
+        if (span.closest('th') !== header) span.textContent = '↕';
+    });
+
+    rows.sort((a, b) => {
+        const aCell = a.children[colIndex];
+        const bCell = b.children[colIndex];
+        if (!aCell || !bCell) return 0;
+        const aText = aCell.textContent.trim();
+        const bText = bCell.textContent.trim();
+
+        const aNum = parseArabicNumber(aText);
+        const bNum = parseArabicNumber(bText);
+
+        if (!isNaN(aNum) && !isNaN(bNum) && aText !== '' && bText !== '') {
+            return dir === 'asc' ? aNum - bNum : bNum - aNum;
+        }
+        return dir === 'asc'
+            ? aText.localeCompare(bText, 'ar')
+            : bText.localeCompare(aText, 'ar');
+    });
+
+    rows.forEach(row => tbody.appendChild(row));
+}
+
 function promptForPassword(actionCallback) {
     // إنشاء النافذة المنبثقة
     const modalHtml = `

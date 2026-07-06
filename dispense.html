@@ -246,8 +246,22 @@
             
             try {
                 const stores = await window.api.getStores();
+                if (stores && stores.success === false) {
+                    showToast(stores.message || 'حدث خطأ في جلب المخازن', 'error');
+                    return;
+                }
+
                 const requesters = await window.api.getRequesters();
+                if (requesters && requesters.success === false) {
+                    showToast(requesters.message || 'حدث خطأ في جلب الجهات الطالبة', 'error');
+                    return;
+                }
+
                 availableStock = await window.api.getStock(); // نجلب الأصناف التي لها رصيد فقط
+                if (availableStock && availableStock.success === false) {
+                    showToast(availableStock.message || 'حدث خطأ في جلب الأرصدة', 'error');
+                    return;
+                }
 
                 const storeSelect = document.getElementById('storeSelect');
                 stores.forEach(s => storeSelect.innerHTML += `<option value="${s.store_id}">${s.store_name}</option>`);

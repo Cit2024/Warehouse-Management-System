@@ -119,8 +119,8 @@ ipcMain.handle('get-items', async () => {
     `).all();
     return items;
   } catch (error) {
-    console.error('خطأ في جلب الأصناف:', error);
-    return [];
+    console.error('[get-items] خطأ في جلب الأصناف:', error);
+    return { success: false, message: 'حدث خطأ أثناء جلب الأصناف', error: error.message };
   }
 });
 
@@ -141,8 +141,8 @@ ipcMain.handle('add-item', async (event, newItem) => {
     
     return { success: true, message: 'تمت الإضافة بنجاح', id: info.lastInsertRowid };
   } catch (error) {
-    console.error('خطأ في إضافة الصنف:', error);
-    return { success: false, message: 'حدث خطأ في قاعدة البيانات' };
+    console.error('[add-item] خطأ في إضافة الصنف:', error);
+    return { success: false, message: 'حدث خطأ في قاعدة البيانات', error: error.message };
   }
 });
 
@@ -153,8 +153,8 @@ ipcMain.handle('delete-item', async (event, itemId) => {
     stmt.run(itemId);
     return { success: true, message: 'تم الحذف بنجاح' };
   } catch (error) {
-    console.error('خطأ في الحذف:', error);
-    return { success: false, message: 'لا يمكن حذف هذا الصنف' };
+    console.error('[delete-item] خطأ في الحذف:', error);
+    return { success: false, message: 'لا يمكن حذف هذا الصنف', error: error.message };
   }
 });
 
@@ -220,8 +220,8 @@ ipcMain.handle('get-suppliers', async () => {
   try {
     return db.prepare("SELECT * FROM entities WHERE entity_type = 'Supplier' AND is_deleted = 0").all();
   } catch (error) {
-    console.error('خطأ في جلب الموردين:', error);
-    return [];
+    console.error('[get-suppliers] خطأ في جلب الموردين:', error);
+    return { success: false, message: 'حدث خطأ أثناء جلب الموردين', error: error.message };
   }
 });
 
@@ -230,8 +230,8 @@ ipcMain.handle('get-stores', async () => {
   try {
     return db.prepare("SELECT * FROM stores").all();
   } catch (error) {
-    console.error('خطأ في جلب المخازن:', error);
-    return [];
+    console.error('[get-stores] خطأ في جلب المخازن:', error);
+    return { success: false, message: 'حدث خطأ أثناء جلب المخازن', error: error.message };
   }
 });
 // ==========================================
@@ -319,8 +319,8 @@ ipcMain.handle('get-requesters', async () => {
   try {
     return db.prepare("SELECT * FROM entities WHERE entity_type IN ('Department', 'Employee') AND is_deleted = 0").all();
   } catch (error) {
-    console.error('خطأ في جلب الجهات الطالبة:', error);
-    return [];
+    console.error('[get-requesters] خطأ في جلب الجهات الطالبة:', error);
+    return { success: false, message: 'حدث خطأ أثناء جلب الجهات الطالبة', error: error.message };
   }
 });
 
@@ -330,8 +330,8 @@ ipcMain.handle('get-stock', async () => {
     // نجلب فقط الأصناف التي رصيدها أكبر من 0
     return db.prepare("SELECT * FROM view_current_stock WHERE current_quantity > 0").all();
   } catch (error) {
-    console.error('خطأ في جلب الأرصدة:', error);
-    return [];
+    console.error('[get-stock] خطأ في جلب الأرصدة:', error);
+    return { success: false, message: 'حدث خطأ أثناء جلب الأرصدة', error: error.message };
   }
 });
 
@@ -385,8 +385,8 @@ ipcMain.handle('get-all-entities', async () => {
   try {
     return db.prepare('SELECT * FROM entities WHERE is_deleted = 0 ORDER BY entity_id DESC').all();
   } catch (error) {
-    console.error('خطأ في جلب الجهات:', error);
-    return [];
+    console.error('[get-all-entities] خطأ في جلب الجهات:', error);
+    return { success: false, message: 'حدث خطأ أثناء جلب الجهات', error: error.message };
   }
 });
 
@@ -401,8 +401,8 @@ ipcMain.handle('add-entity', async (event, newEntity) => {
     const info = stmt.run(newEntity.name, newEntity.type, newEntity.phone);
     return { success: true, message: 'تمت إضافة الجهة بنجاح', id: info.lastInsertRowid };
   } catch (error) {
-    console.error('خطأ في إضافة الجهة:', error);
-    return { success: false, message: 'حدث خطأ في قاعدة البيانات' };
+    console.error('[add-entity] خطأ في إضافة الجهة:', error);
+    return { success: false, message: 'حدث خطأ في قاعدة البيانات', error: error.message };
   }
 });
 
@@ -413,8 +413,8 @@ ipcMain.handle('delete-entity', async (event, entityId) => {
     stmt.run(entityId);
     return { success: true, message: 'تم حذف الجهة بنجاح' };
   } catch (error) {
-    console.error('خطأ في الحذف:', error);
-    return { success: false, message: 'لا يمكن حذف هذه الجهة' };
+    console.error('[delete-entity] خطأ في الحذف:', error);
+    return { success: false, message: 'لا يمكن حذف هذه الجهة', error: error.message };
   }
 });
 // ==========================================
@@ -440,8 +440,8 @@ ipcMain.handle('get-transactions-history', async () => {
     `;
     return db.prepare(query).all();
   } catch (error) {
-    console.error('خطأ في جلب سجل الأذونات:', error);
-    return [];
+    console.error('[get-transactions-history] خطأ في جلب سجل الأذونات:', error);
+    return { success: false, message: 'حدث خطأ أثناء جلب سجل الأذونات', error: error.message };
   }
 });
 
@@ -656,10 +656,15 @@ ipcMain.handle('save-settings', async (event, settingsData) => {
 
 // جلب سجل النسخ المحلية (Git Log)
 ipcMain.handle('get-local-backups', async () => {
-    if (gitManager) {
+    try {
+        if (!gitManager) {
+            return [];
+        }
         return await gitManager.getHistory();
+    } catch (error) {
+        console.error('[get-local-backups] خطأ في جلب النسخ المحلية:', error);
+        return { success: false, message: 'حدث خطأ أثناء جلب النسخ المحلية', error: error.message };
     }
-    return [];
 });
 
 // تنفيذ الاسترجاع من Git
@@ -979,8 +984,8 @@ ipcMain.handle('get-merged-backups', async () => {
         return merged;
         
     } catch (error) {
-        console.error('❌ خطأ في دمج النسخ:', error);
-        return [];
+        console.error('[get-merged-backups] خطأ في دمج النسخ:', error);
+        return { success: false, message: 'حدث خطأ أثناء دمج النسخ', error: error.message };
     }
 });
 

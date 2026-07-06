@@ -364,13 +364,21 @@
         // ========== Dashboard Data ==========
         async function loadDashboardData() {
             try {
-                const items = await window.api.getItems();
+                let items = await window.api.getItems();
+                if (items && items.success === false) {
+                    showToast(items.message || 'حدث خطأ في جلب الأصناف', 'error');
+                    items = [];
+                }
                 allItems = items || [];
 
                 // سجل الحركات (توريد/صرف) يُستخدم لحساب عدد حركات الشهر ولعرض آخر الحركات
                 let history = [];
                 try {
-                    history = await window.api.getTransactionsHistory() || [];
+                    history = await window.api.getTransactionsHistory();
+                    if (history && history.success === false) {
+                        showToast(history.message || 'حدث خطأ في جلب سجل الحركات', 'error');
+                        history = [];
+                    }
                 } catch (historyError) {
                     console.error('Error loading transactions history:', historyError);
                 }

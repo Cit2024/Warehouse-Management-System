@@ -223,10 +223,16 @@
             btn.disabled = true;
 
             try {
+                let localBackups = await window.api.getLocalBackups();
+                if (localBackups && localBackups.success === false) {
+                    showToast(localBackups.message || 'حدث خطأ في جلب النسخ المحلية', 'error');
+                    displayBackups([], false);
+                    return;
+                }
+
                 const hasInternet = await checkInternetConnection();
                 if (!hasInternet) {
                     btn.innerHTML = originalText; btn.disabled = false;
-                    const localBackups = await window.api.getLocalBackups();
                     displayBackups(localBackups, false);
                     showToast('لا يوجد اتصال - عرض النسخ المحلية فقط', 'warning');
                     return;
@@ -235,7 +241,6 @@
                 const settings = await window.api.getSettings();
                 if (!settings || !settings.repoUrl || !settings.accessToken) {
                     btn.innerHTML = originalText; btn.disabled = false;
-                    const localBackups = await window.api.getLocalBackups();
                     displayBackups(localBackups, false);
                     showToast('لا توجد إعدادات سحابية', 'warning');
                     return;
@@ -245,11 +250,15 @@
                 const syncResult = await window.api.syncWithCloud();
 
                 if (syncResult.success) {
-                    const allBackups = await window.api.getMergedBackups();
+                    let allBackups = await window.api.getMergedBackups();
+                    if (allBackups && allBackups.success === false) {
+                        showToast(allBackups.message || 'حدث خطأ في جلب النسخ السحابية', 'warning');
+                        displayBackups(localBackups || [], false);
+                        return;
+                    }
                     displayBackups(allBackups, true);
                     showToast('تمت المزامنة بنجاح: ' + allBackups.length + ' نسخة', 'success');
                 } else {
-                    const localBackups = await window.api.getLocalBackups();
                     displayBackups(localBackups, false);
                     showToast('فشلت المزامنة - عرض المحلية فقط', 'warning');
                 }

@@ -683,7 +683,11 @@
                 { text: 'المخزن', sortable: true }, { text: 'القيمة', sortable: true }
             ]);
             try {
-                const transactions = await window.api.getTransactionsHistory();
+                let transactions = await window.api.getTransactionsHistory();
+                if (transactions && transactions.success === false) {
+                    showToast(transactions.message || 'حدث خطأ في جلب سجل الحركات', 'error');
+                    transactions = [];
+                }
                 renderMovementsTable(transactions || []);
             } catch (e) { renderSampleMovements(); }
         }

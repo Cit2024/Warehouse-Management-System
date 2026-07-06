@@ -257,8 +257,23 @@
             // جلب البيانات من قاعدة البيانات لتعبئة القوائم المنسدلة
             try {
                 const stores = await window.api.getStores();
+                if (stores && stores.success === false) {
+                    showToast(stores.message || 'حدث خطأ في جلب المخازن', 'error');
+                    return;
+                }
+
                 const suppliers = await window.api.getSuppliers();
+                if (suppliers && suppliers.success === false) {
+                    showToast(suppliers.message || 'حدث خطأ في جلب الموردين', 'error');
+                    return;
+                }
+
                 allItems = await window.api.getItems(); // جلبنا الأصناف المعرفة مسبقاً
+                if (allItems && allItems.success === false) {
+                    showToast(allItems.message || 'حدث خطأ في جلب الأصناف', 'error');
+                    allItems = [];
+                    return;
+                }
 
                 // تعبئة المخازن
                 const storeSelect = document.getElementById('storeSelect');

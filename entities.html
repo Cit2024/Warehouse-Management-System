@@ -252,7 +252,13 @@
             tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px;">جاري التحميل...</td></tr>';
 
             try {
-                const entities = await window.api.getAllEntities();
+                let entities = await window.api.getAllEntities();
+                if (entities && entities.success === false) {
+                    showToast(entities.message || 'حدث خطأ في جلب الجهات', 'error');
+                    allEntities = [];
+                    renderEntities([]);
+                    return;
+                }
                 allEntities = entities || [];
                 renderEntities(allEntities);
             } catch (error) {

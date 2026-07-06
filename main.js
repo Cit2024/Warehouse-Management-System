@@ -284,7 +284,7 @@ ipcMain.handle('save-supply-receipt', async (event, receiptData) => {
       data.receiptNumber, 
       data.storeId, 
       data.supplierId, 
-      1, 
+      data.createdBy || 1, 
       data.notes
     );
     const newTransactionId = info.lastInsertRowid;
@@ -350,7 +350,7 @@ ipcMain.handle('save-dispense-receipt', async (event, receiptData) => {
       data.receiptNumber, 
       data.storeId, 
       data.requesterId, 
-      1, 
+      data.createdBy || 1, 
       data.notes
     );
     const newTransactionId = info.lastInsertRowid;

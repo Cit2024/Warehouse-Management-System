@@ -360,12 +360,14 @@
             }
 
             try {
+                const session = JSON.parse(localStorage.getItem('userSession'));
                 const result = await window.api.saveSupplyReceipt({
                     receiptNumber,
                     date: receiptDate + ' 00:00:00',
                     supplierId: parseInt(supplierId),
                     storeId: parseInt(storeId),
                     notes,
+                    createdBy: session ? session.userId : 1,
                     items: receiptRows
                 });
 

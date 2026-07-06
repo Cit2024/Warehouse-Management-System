@@ -324,7 +324,11 @@
             }
 
             window.print();
-            setTimeout(() => window.location.reload(), 5000);
+            // إزالة كلاس الطباعة الأفقية بعد الانتهاء بدلاً من إعادة تحميل الصفحة
+            setTimeout(() => {
+                const reportContainer = document.querySelector('.page-content');
+                if (reportContainer) reportContainer.classList.remove('print-landscape');
+            }, 100);
         }
 
         // ========== TABLE SORTING ==========

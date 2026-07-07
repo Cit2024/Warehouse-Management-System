@@ -115,11 +115,7 @@
     <main class="content">
         <!-- Top Header -->
         <header class="top-header">
-            <div class="header-search">
-                <span class="header-search-icon"><i class="fas fa-search"></i></span>
-                <input type="text" id="entitySearch" placeholder="بحث بالاسم أو رقم الهاتف..." oninput="filterEntities()">
-            </div>
-            <div class="header-actions">
+            <div class="header-actions" style="margin-right: auto;">
                 <button class="header-btn" onclick="handleLogout()" title="خروج"><span><i class="fas fa-door-open"></i></span></button>
             </div>
         </header>
@@ -137,6 +133,10 @@
                     <span><i class="fas fa-plus"></i></span>
                     <span>إضافة جهة جديدة</span>
                 </button>
+                <div class="toolbar-search">
+                    <span class="toolbar-search-icon"><i class="fas fa-search"></i></span>
+                    <input type="text" id="entitySearch" placeholder="بحث بالاسم أو رقم الهاتف..." oninput="filterEntities()">
+                </div>
                 <div style="display: flex; gap: 10px;">
                     <!-- FIXED: Use printEntities() instead of handleDirectPrint() -->
                     <button class="btn btn-secondary" onclick="printEntities()">

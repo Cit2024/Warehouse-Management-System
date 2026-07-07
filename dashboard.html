@@ -585,7 +585,7 @@
             container.innerHTML = recent.map(t => {
                 const isDispense = t.transaction_type === 'Out';
                 const type = isDispense ? 'dispense' : 'supply';
-                const title = t.receipt_number || ('#' + t.transaction_id);
+                const title = '#' + t.transaction_id;
                 const entity = t.entity_name || t.store_name || '-';
                 const dateLabel = formatMovementDate(t.transaction_date);
                 const value = (t.total_value || 0).toLocaleString('ar-LY', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' د.ل';

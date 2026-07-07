@@ -276,6 +276,7 @@
     transition: var(--transition-fast);
     color: var(--text-gray);
     font-size: 14px;
+    position: relative;
 }
 
 .header-btn:hover {

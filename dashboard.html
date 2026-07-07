@@ -83,10 +83,6 @@
     <main class="content">
         <!-- Top Header -->
         <header class="top-header">
-            <div class="header-search">
-                <span class="header-search-icon"><i class="fas fa-search"></i></span>
-                <input type="text" id="globalSearch" placeholder="بحث سريع عن صنف أو جهة..." oninput="handleGlobalSearch()">
-            </div>
             <div class="header-actions">
                 <button class="header-btn" onclick="loadDashboardData()" title="تحديث">
                     <span><i class="fas fa-sync-alt"></i></span>
@@ -693,12 +689,6 @@
             }
 
             renderItemsTable(filtered);
-        }
-
-        function handleGlobalSearch() {
-            const term = document.getElementById('globalSearch').value.toLowerCase().trim();
-            document.getElementById('searchInput').value = term;
-            filterItems();
         }
 
         // ========== Item Actions ==========

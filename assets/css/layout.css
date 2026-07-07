@@ -244,67 +244,29 @@
 
 /* --- Top Header --- */
 .top-header {
-    height: 76px;
+    height: 60px;
     background: var(--bg-header);
     border-bottom: 1px solid var(--border-color);
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 0 32px;
+    justify-content: flex-end;
+    padding: 0 24px;
     position: sticky;
     top: 0;
     z-index: 50;
-    gap: 28px;
-}
-
-.header-search {
-    flex: 1;
-    max-width: 420px;
-    position: relative;
-    margin-right: auto;
-}
-
-.header-search input {
-    width: 100%;
-    padding: 10px 16px 10px 44px;
-    border: 1px solid var(--border-color);
-    border-radius: 10px;
-    background: var(--bg-body);
-    font-size: 13px;
-    color: var(--text-dark);
-    transition: var(--transition-fast);
-}
-
-.header-search input:focus {
-    outline: none;
-    border-color: var(--primary);
-    background: white;
-    box-shadow: 0 0 0 3px rgba(255, 107, 0, 0.1);
-}
-
-.header-search input::placeholder {
-    color: var(--text-muted);
-}
-
-.header-search-icon {
-    position: absolute;
-    left: 16px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--text-muted);
-    font-size: 14px;
 }
 
 .header-actions {
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 12px;
+    margin-right: 0;
 }
 
 .header-btn {
-    width: 40px;
-    height: 40px;
-    border-radius: 10px;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
     border: 1px solid var(--border-color);
     background: white;
     display: flex;
@@ -313,8 +275,7 @@
     cursor: pointer;
     transition: var(--transition-fast);
     color: var(--text-gray);
-    font-size: 16px;
-    position: relative;
+    font-size: 14px;
 }
 
 .header-btn:hover {
@@ -336,11 +297,11 @@
 
 /* Header Title Area */
 .header-title-section {
-    padding: 24px 28px 0;
+    padding: 16px 24px 0;
 }
 
 .header-title-section h1 {
-    font-size: 22px;
+    font-size: 20px;
     font-weight: 700;
     color: var(--text-dark);
     margin-bottom: 4px;

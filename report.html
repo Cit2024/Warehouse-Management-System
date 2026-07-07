@@ -161,10 +161,6 @@
                                 <option value="">اختر صنفاً</option>
                             </select>
                         </div>
-                        <div class="form-group" id="receiptNumberGroup" style="flex: 1; min-width: 200px; margin-bottom: 0; display: none;">
-                            <label>رقم الإذن</label>
-                            <input type="text" id="receiptNumberInput" class="filter-select" placeholder="أدخل رقم إذن التوريد/الصرف" style="width: 100%;">
-                        </div>
                         <button class="btn btn-secondary" onclick="openColumnsModal()" title="اختيار الأعمدة الظاهرة في التقرير">
                             <i class="fas fa-columns"></i>
                             <span>الأعمدة</span>
@@ -259,11 +255,9 @@
         function onReportTypeChange() {
             const type = document.getElementById('reportType').value;
             const needsItem = type === 'item_card';
-            const needsReceipt = (type === 'supply_receipt' || type === 'dispense_receipt');
             const needsDates = ['stock', 'items_base', 'lowstock', 'inventory_count', 'movements_log', 'item_card'].includes(type);
 
             document.getElementById('itemSelectGroup').style.display = needsItem ? 'block' : 'none';
-            document.getElementById('receiptNumberGroup').style.display = needsReceipt ? 'block' : 'none';
             document.getElementById('dateFromGroup').style.display = needsDates ? 'block' : 'none';
             document.getElementById('dateToGroup').style.display = needsDates ? 'block' : 'none';
             hiddenColumns = new Set(); // كل نوع تقرير له أعمدة مختلفة، فنبدأ من جديد بكل الأعمدة ظاهرة
@@ -328,15 +322,14 @@
             const type = document.getElementById('reportType').value;
             const dateFrom = document.getElementById('dateFrom').value;
             const dateTo = document.getElementById('dateTo').value;
-            const receiptNumber = (document.getElementById('receiptNumberInput')?.value.trim()) || '';
             switch(type) {
                 case 'stock': await generateStockReport(); break;
                 case 'items_base': await generateItemsBaseReport(); break;
                 case 'lowstock': await generateLowStockReport(); break;
                 case 'inventory_count': await generateInventoryCountReport(); break;
                 case 'movements_log': await generateMovementsReport(dateFrom, dateTo); break;
-                case 'supply_receipt': await generateSupplyReceiptReport(receiptNumber); break;
-                case 'dispense_receipt': await generateDispenseReceiptReport(receiptNumber); break;
+                case 'supply_receipt': await generateSupplyReceiptReport(); break;
+                case 'dispense_receipt': await generateDispenseReceiptReport(); break;
                 case 'item_card': await generateItemCardReport(); break;
                 case 'suppliers': await generateSuppliersReport(); break;
             }
@@ -473,8 +466,8 @@
             else { cell.innerHTML = '<span class="badge badge-low">عجز ' + Math.abs(diff) + '</span>'; }
         }
 
-        async function generateSupplyReceiptReport(receiptNumber) {
-            setReportMeta('إذن توريد', 'عرض تفاصيل إذن التوريد رقم ' + (receiptNumber || '-'));
+        async function generateSupplyReceiptReport() {
+            setReportMeta('إذن توريد', 'عرض تفاصيل إذن توريد نموذجي');
             setTableHeaders([
                 { text: 'رقم الصنف', sortable: true },
                 { text: 'اسم الصنف', sortable: true },
@@ -483,24 +476,13 @@
                 { text: 'سعر الوحدة', sortable: true },
                 { text: 'الإجمالي', sortable: true }
             ]);
-            try {
-                const result = await window.api.getSupplyReceipt(receiptNumber);
-                if (result.success) {
-                    renderSupplyReceipt(result.receipt);
-                } else {
-                    showToast(result.message, 'error');
-                    renderSupplyReceipt(null, receiptNumber);
-                }
-            } catch (e) {
-                showToast(e.message || 'حدث خطأ أثناء جلب إذن التوريد', 'error');
-                renderSupplyReceipt(null, receiptNumber);
-            }
+            renderSupplyReceipt(null);
         }
 
-        function renderSupplyReceipt(receipt, fallbackNumber) {
+        function renderSupplyReceipt(receipt) {
             const tbody = document.getElementById('reportTableBody');
             const sampleReceipt = receipt || {
-                receipt_number: fallbackNumber || 'توريد-2026-001',
+                transaction_id: 1,
                 date: '2026-06-02',
                 supplier: 'شركة المدار للتجهيزات',
                 store: 'المخزن الرئيسي',
@@ -529,7 +511,7 @@
             tbody.innerHTML = `
                 <tr><td colspan="6" style="padding: 16px; background: var(--bg-hover); border-bottom: 1px solid var(--border-color);">
                     <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; font-size: 13px;">
-                        <div><strong>رقم الإذن:</strong> ${sampleReceipt.receipt_number}</div>
+                        <div><strong>رقم الحركة:</strong> إذن-توريد-#${sampleReceipt.transaction_id}</div>
                         <div><strong>التاريخ:</strong> ${sampleReceipt.date}</div>
                         <div><strong>المورد:</strong> ${sampleReceipt.supplier}</div>
                         <div><strong>المخزن:</strong> ${sampleReceipt.store}</div>
@@ -552,32 +534,21 @@
             updateStats(sampleReceipt.items.length, totalValue.toLocaleString('ar-LY', {minimumFractionDigits: 2}) + ' د.ل');
         }
 
-        async function generateDispenseReceiptReport(receiptNumber) {
-            setReportMeta('إذن صرف مخزني', 'عرض تفاصيل إذن الصرف رقم ' + (receiptNumber || '-'));
+        async function generateDispenseReceiptReport() {
+            setReportMeta('إذن صرف مخزني', 'عرض تفاصيل إذن صرف نموذجي');
             setTableHeaders([
                 { text: 'رقم الصنف', sortable: true },
                 { text: 'اسم الصنف', sortable: true },
                 { text: 'الوحدة', sortable: true },
                 { text: 'الكمية المصروفة', sortable: true }
             ]);
-            try {
-                const result = await window.api.getDispenseReceipt(receiptNumber);
-                if (result.success) {
-                    renderDispenseReceipt(result.receipt);
-                } else {
-                    showToast(result.message, 'error');
-                    renderDispenseReceipt(null, receiptNumber);
-                }
-            } catch (e) {
-                showToast(e.message || 'حدث خطأ أثناء جلب إذن الصرف', 'error');
-                renderDispenseReceipt(null, receiptNumber);
-            }
+            renderDispenseReceipt(null);
         }
 
-        function renderDispenseReceipt(receipt, fallbackNumber) {
+        function renderDispenseReceipt(receipt) {
             const tbody = document.getElementById('reportTableBody');
             const sampleReceipt = receipt || {
-                receipt_number: fallbackNumber || 'صرف-2026-001',
+                transaction_id: 1,
                 date: '2026-06-10',
                 requester: 'قسم الهندسة الكهربائية',
                 store: 'المخزن الرئيسي',
@@ -600,7 +571,7 @@
             tbody.innerHTML = `
                 <tr><td colspan="4" style="padding: 16px; background: var(--bg-hover); border-bottom: 1px solid var(--border-color);">
                     <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; font-size: 13px;">
-                        <div><strong>رقم الإذن:</strong> ${sampleReceipt.receipt_number}</div>
+                        <div><strong>رقم الحركة:</strong> إذن-صرف-#${sampleReceipt.transaction_id}</div>
                         <div><strong>التاريخ:</strong> ${sampleReceipt.date}</div>
                         <div><strong>الجهة الطالبة:</strong> ${sampleReceipt.requester}</div>
                         <div><strong>المخزن:</strong> ${sampleReceipt.store}</div>
@@ -620,7 +591,7 @@
                     </div>
                 </td></tr>
             `;
-            updateStats(sampleReceipt.items.length, '1 مستند');
+            updateStats(sampleReceipt.items.length, sampleReceipt.items.length + ' صنف');
         }
 
         async function generateLowStockReport() {
@@ -668,7 +639,7 @@
         async function generateMovementsReport(dateFrom, dateTo) {
             setReportMeta('حركات التوريد والصرف', `الفترة: ${dateFrom} إلى ${dateTo}`);
             setTableHeaders([
-                { text: 'رقم الإذن', sortable: true }, { text: 'النوع', sortable: true },
+                { text: 'رقم الحركة', sortable: true }, { text: 'النوع', sortable: true },
                 { text: 'التاريخ', sortable: true }, { text: 'الجهة / المورد', sortable: true },
                 { text: 'المخزن', sortable: true }, { text: 'القيمة', sortable: true }
             ]);
@@ -695,7 +666,7 @@
                 const dateStr = new Date(t.transaction_date).toLocaleDateString('ar-LY');
                 const val = t.total_value || 0; totalValue += val;
                 return `<tr>
-                    <td style="font-weight: 600; font-family: monospace;">${t.receipt_number || '-'}</td>
+                    <td style="font-weight: 600; font-family: monospace;">#${t.transaction_id || '-'}</td>
                     <td>${typeBadge}</td>
                     <td>${dateStr}</td>
                     <td>${t.entity_name || 'غير محدد'}</td>
@@ -708,10 +679,10 @@
 
         function renderSampleMovements() {
             renderMovementsTable([
-                { receipt_number: 'صرف-2026-002', transaction_type: 'Out', transaction_date: '2026-06-12', entity_name: 'مكتب الشؤون الإدارية', store_name: 'المخزن الرئيسي', total_value: 332.50 },
-                { receipt_number: 'صرف-2026-001', transaction_type: 'Out', transaction_date: '2026-06-10', entity_name: 'قسم الهندسة الكهربائية', store_name: 'المخزن الرئيسي', total_value: 504.00 },
-                { receipt_number: 'توريد-2026-002', transaction_type: 'In', transaction_date: '2026-06-07', entity_name: 'مكتبة مصراتة الحديثة', store_name: 'المخزن الرئيسي', total_value: 1575.00 },
-                { receipt_number: 'توريد-2026-001', transaction_type: 'In', transaction_date: '2026-06-02', entity_name: 'شركة المدار للتجهيزات', store_name: 'المخزن الرئيسي', total_value: 3740.00 }
+                { transaction_id: 4, transaction_type: 'Out', transaction_date: '2026-06-12', entity_name: 'مكتب الشؤون الإدارية', store_name: 'المخزن الرئيسي', total_value: 332.50 },
+                { transaction_id: 3, transaction_type: 'Out', transaction_date: '2026-06-10', entity_name: 'قسم الهندسة الكهربائية', store_name: 'المخزن الرئيسي', total_value: 504.00 },
+                { transaction_id: 2, transaction_type: 'In', transaction_date: '2026-06-07', entity_name: 'مكتبة مصراتة الحديثة', store_name: 'المخزن الرئيسي', total_value: 1575.00 },
+                { transaction_id: 1, transaction_type: 'In', transaction_date: '2026-06-02', entity_name: 'شركة المدار للتجهيزات', store_name: 'المخزن الرئيسي', total_value: 3740.00 }
             ]);
         }
 
@@ -719,7 +690,7 @@
             setReportMeta('بطاقة حركة صنف', 'تفاصيل حركات صنف محدد');
             setTableHeaders([
                 { text: 'التاريخ', sortable: true }, { text: 'نوع الحركة', sortable: true },
-                { text: 'رقم الإذن', sortable: true }, { text: 'الجهة', sortable: true },
+                { text: 'رقم الحركة', sortable: true }, { text: 'الجهة', sortable: true },
                 { text: 'الكمية', sortable: true }, { text: 'الرصيد', sortable: true }
             ]);
             document.getElementById('reportTableBody').innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px;">اختر صنفاً من القائمة أعلاه ثم اضغط طباعة التقرير</td></tr>';

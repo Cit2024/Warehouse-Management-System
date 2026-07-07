@@ -23,6 +23,43 @@ db.pragma('foreign_keys = ON');
 
 // دالة بناء الجداول (Schema) بالكامل
 function initializeDatabase() {
+
+    // Migration: remove receipt_number column from existing databases
+    try {
+        const tableInfo = db.prepare("PRAGMA table_info(transactions)").all();
+        const hasReceiptNumber = tableInfo.some(col => col.name === 'receipt_number');
+        if (hasReceiptNumber) {
+            console.log('🔄 Migrating: removing receipt_number column from transactions table...');
+            db.exec(`
+                BEGIN TRANSACTION;
+                CREATE TABLE transactions_new (
+                    transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    transaction_type TEXT CHECK(transaction_type IN ('In', 'Out', 'Opening_Balance')) NOT NULL,
+                    transaction_date DATETIME NOT NULL,
+                    store_id INTEGER NOT NULL,
+                    entity_id INTEGER,
+                    created_by INTEGER,
+                    notes TEXT,
+                    is_deleted INTEGER DEFAULT 0,
+                    FOREIGN KEY (store_id) REFERENCES stores(store_id) ON DELETE RESTRICT,
+                    FOREIGN KEY (entity_id) REFERENCES entities(entity_id) ON DELETE RESTRICT,
+                    FOREIGN KEY (created_by) REFERENCES users(user_id) ON DELETE RESTRICT
+                );
+                INSERT INTO transactions_new
+                    (transaction_id, transaction_type, transaction_date, store_id, entity_id, created_by, notes, is_deleted)
+                SELECT
+                    transaction_id, transaction_type, transaction_date, store_id, entity_id, created_by, notes, is_deleted
+                FROM transactions;
+                DROP TABLE transactions;
+                ALTER TABLE transactions_new RENAME TO transactions;
+                COMMIT;
+            `);
+            console.log('✅ Migration complete: receipt_number column removed');
+        }
+    } catch (e) {
+        console.error('⚠️ Migration warning:', e.message);
+    }
+
     const init = db.transaction(() => {
 
         // 1. جدول المستخدمين
@@ -77,7 +114,6 @@ function initializeDatabase() {
                 transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
                 transaction_type TEXT CHECK(transaction_type IN ('In', 'Out', 'Opening_Balance')) NOT NULL,
                 transaction_date DATETIME NOT NULL,
-                receipt_number TEXT,
                 store_id INTEGER NOT NULL,
                 entity_id INTEGER, 
                 created_by INTEGER,

@@ -30,10 +30,6 @@
     <!-- Print Summary Bar (hidden on screen, shown when printing) -->
     <div class="print-summary-bar print-only">
         <div class="print-summary-item">
-            <span class="print-summary-label">رقم الإذن</span>
-            <span class="print-summary-value" id="printReceiptNumber">-</span>
-        </div>
-        <div class="print-summary-item">
             <span class="print-summary-label">تاريخ الصرف</span>
             <span class="print-summary-value" id="printReceiptDateValue">-</span>
         </div>
@@ -134,10 +130,6 @@
                 <div class="panel-body">
                     <!-- Document Header -->
                     <div class="form-grid">
-                        <div id="rem1" class="form-group">
-                            <label>رقم إذن الصرف الورقي</label>
-                            <input type="text" id="receiptNumber" placeholder="رقم الإذن..." required>
-                        </div>
                         <div id="rem2" class="form-group">
                             <label>تاريخ الصرف</label>
                             <input type="date" id="receiptDate" required>
@@ -323,19 +315,18 @@
         }
 
         async function saveReceipt() {
-            const receiptNumber = document.getElementById('receiptNumber').value.trim();
             const receiptDate = document.getElementById('receiptDate').value;
             const requesterId = document.getElementById('requesterSelect').value;
             const storeId = document.getElementById('storeSelect').value;
             const notes = document.getElementById('receiptNotes').value.trim();
 
-            if (!receiptNumber || !receiptDate || !requesterId || !storeId) { showToast('الرجاء تعبئة كافة البيانات الأساسية', 'warning'); return; }
+            if (!receiptDate || !requesterId || !storeId) { showToast('الرجاء تعبئة كافة البيانات الأساسية', 'warning'); return; }
             if (receiptRows.length === 0) { showToast('لا يمكن حفظ إذن صرف فارغ', 'warning'); return; }
 
             try {
                 const session = JSON.parse(localStorage.getItem('userSession'));
                 const result = await window.api.saveDispenseReceipt({
-                    receiptNumber, date: receiptDate + ' 00:00:00',
+                    date: receiptDate + ' 00:00:00',
                     requesterId: parseInt(requesterId), storeId: parseInt(storeId),
                     notes, createdBy: session ? session.userId : 1,
                     items: receiptRows
@@ -353,9 +344,6 @@
                 const dateEl = document.getElementById('printReceiptDate');
                 if (dateEl) dateEl.textContent = 'تاريخ الطباعة: ' + new Date().toLocaleDateString('ar-LY');
 
-                const numberEl = document.getElementById('printReceiptNumber');
-                if (numberEl) numberEl.textContent = document.getElementById('receiptNumber').value || '-';
-
                 const dateValueEl = document.getElementById('printReceiptDateValue');
                 if (dateValueEl) dateValueEl.textContent = document.getElementById('receiptDate').value || '-';
 
@@ -363,14 +351,11 @@
                 if (countEl) countEl.textContent = receiptRows.length.toString();
 
                 const sel = document.getElementById('itemsSel');
-                const sel1 = document.getElementById('rem1');
                 const sel2 = document.getElementById('rem2');
                 sel.style.display  = "none";
-                sel1.style.display = "none";
                 sel2.style.display = "none";
                 window.print();
                 sel.style.display  = "block";
-                sel1.style.display = "block";
                 sel2.style.display = "block";
             }
             setTimeout(() => window.location.reload(), 1000);

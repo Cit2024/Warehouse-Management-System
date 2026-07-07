@@ -48,14 +48,6 @@
             <span class="print-summary-label">عدد السجلات</span>
             <span class="print-summary-value" id="printRecordCount">0</span>
         </div>
-        <div class="print-summary-item">
-            <span class="print-summary-label">الإجمالي</span>
-            <span class="print-summary-value" id="printTotalValue">0 د.ل</span>
-        </div>
-        <div class="print-summary-item">
-            <span class="print-summary-label">الفترة</span>
-            <span class="print-summary-value" id="printPeriod">-</span>
-        </div>
     </div>
 
     <!-- Sidebar -->
@@ -138,7 +130,7 @@
         </div>
         <div class="page-content">
             <!-- Report Filters Panel -->
-            <div class="panel" style="margin-bottom: 20px;">
+            <div class="panel no-print" style="margin-bottom: 20px;">
                 <div class="panel-body">
                     <div style="display: flex; gap: 16px; align-items: flex-end; flex-wrap: wrap;">
                         <div class="form-group" style="flex: 1; min-width: 200px; margin-bottom: 0;">
@@ -238,9 +230,9 @@
 
             <!-- Print Signatures -->
             <div class="print-signatures print-only">
-                <div class="print-signature-box">المستلم</div>
-                <div class="print-signature-box">أمين المخزن</div>
-                <div class="print-signature-box">المدير</div>
+                <div class="print-signature-box">المستلم<br>الاسم والتوقيع</div>
+                <div class="print-signature-box">أمين المخزن<br>الاسم والتوقيع</div>
+                <div class="print-signature-box">المدير<br>الاسم والتوقيع</div>
             </div>
         </div>
     </main>
@@ -312,8 +304,6 @@
             document.getElementById('printTitle').textContent = reportName;
             document.getElementById('printReportName').textContent = reportName;
             document.getElementById('printRecordCount').textContent = recordCount;
-            document.getElementById('printTotalValue').textContent = totalValue;
-            document.getElementById('printPeriod').textContent = periodText;
 
             // Auto-detect landscape: if more than 6 columns, use landscape
             const table = document.getElementById('reportTable');

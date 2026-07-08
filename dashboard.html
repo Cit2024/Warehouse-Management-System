@@ -13,74 +13,6 @@
 </head>
 <body>
 
-    <!-- Sidebar -->
-    <aside class="sidebar">
-        <div class="sidebar-header">
-            <div class="sidebar-brand">
-                <div class="sidebar-brand-icon" id="sidebarLogo">
-                    <i class="fas fa-warehouse"></i>
-                </div>
-                <div class="sidebar-brand-text">
-                    <div class="sidebar-brand-title">إدارة المخازن</div>
-                    <div class="sidebar-brand-subtitle">كلية التقنية الصناعية</div>
-                </div>
-            </div>
-        </div>
-
-        <nav class="sidebar-nav">
-            <div class="nav-section">
-                <div class="nav-section-title">الرئيسية</div>
-                <a href="dashboard.html" class="menu-item active">
-                    <span class="menu-icon"><i class="fas fa-home"></i></span>
-                    <span class="menu-text">لوحة التحكم</span>
-                </a>
-            </div>
-            <div class="nav-section">
-                <div class="nav-section-title">الحركات</div>
-                <a href="supply.html" class="menu-item">
-                    <span class="menu-icon"><i class="fas fa-arrow-down"></i></span>
-                    <span class="menu-text">أذونات التوريد</span>
-                </a>
-                <a href="dispense.html" class="menu-item">
-                    <span class="menu-icon"><i class="fas fa-arrow-up"></i></span>
-                    <span class="menu-text">أذونات الصرف والعهد</span>
-                </a>
-            </div>
-
-            <div class="nav-section">
-                <div class="nav-section-title">البيانات المالية والإدارية</div>
-                <a href="entities.html" class="menu-item">
-                    <span class="menu-icon"><i class="fas fa-building"></i></span>
-                    <span class="menu-text">الموردون والجهات</span>
-                </a>
-                <a href="report.html" class="menu-item">
-                    <span class="menu-icon"><i class="fas fa-file-alt"></i></span>
-                    <span class="menu-text">التقارير</span>
-                </a>
-            </div>
-
-            <div class="nav-section">
-                <div class="nav-section-title">النسخ الاحتياطي</div>
-                <button type="button" class="menu-item" onclick="handleBackup(event)">
-                    <span class="menu-icon"><i class="fa-solid fa-box-archive"></i></span> 
-                    <span class="menu-text">نسخة احتياطية</span>
-                </button>
-                <button type="button" class="menu-item" onclick="handleRestore(event)">
-                    <span class="menu-icon"><i class="fa-solid fa-file-import"></i></span> 
-                    <span class="menu-text">استيراد نسخة سابقة</span>
-                </button>
-            </div>
-
-            <div class="nav-section">
-                <div class="nav-section-title">النظام</div>
-                <a href="settings.html" class="menu-item">
-                    <span class="menu-icon"><i class="fas fa-cog"></i></span>
-                    <span class="menu-text">الإعدادات</span>
-                </a>
-            </div>
-        </nav>
-    </aside>
-
     <!-- Main Content -->
     <main class="content">
         <!-- Top Header -->
@@ -351,7 +283,14 @@
     </div>
 
     <script src="assets/js/common.js"></script>
+    <script src="assets/js/components/sidebar.js"></script>
+    <script src="assets/js/components/layout.js"></script>
     <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const layout = new Layout();
+            layout.init();
+        });
+
         let allItems = [];
         let inventoryChart = null;
 

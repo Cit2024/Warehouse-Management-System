@@ -83,6 +83,7 @@ out
 dist
 .output
 /release/
+.impeccable/
 
 # Gatsby files
 .cache/

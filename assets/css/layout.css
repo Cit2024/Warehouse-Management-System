@@ -24,6 +24,36 @@
     direction: rtl;
 }
 
+/* Smooth fade-in for dynamically rendered sidebar */
+.sidebar {
+    animation: sidebarFadeIn 0.2s ease;
+}
+
+@keyframes sidebarFadeIn {
+    from {
+        opacity: 0;
+        transform: translateX(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Ensure content area exists even when dynamically created */
+.content {
+    animation: contentFadeIn 0.3s ease;
+}
+
+@keyframes contentFadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
 /* Sidebar Header / Logo Area */
 .sidebar-header {
     padding: 20px 16px;

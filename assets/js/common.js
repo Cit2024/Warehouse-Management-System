@@ -1,3 +1,48 @@
+/**
+ * Component Loader - Dynamically loads JS components
+ * Ensures components are loaded before page scripts run
+ */
+const ComponentLoader = {
+    loaded: new Set(),
+
+    /**
+     * Load a script dynamically
+     * @param {string} src - Script path relative to the page
+     * @returns {Promise}
+     */
+    load(src) {
+        if (this.loaded.has(src)) return Promise.resolve();
+
+        return new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = src;
+            script.onload = () => {
+                this.loaded.add(src);
+                resolve();
+            };
+            script.onerror = reject;
+            document.head.appendChild(script);
+        });
+    },
+
+    /**
+     * Initialize the sidebar layout on the current page
+     */
+    async initLayout() {
+        try {
+            await this.load('assets/js/components/sidebar.js');
+            await this.load('assets/js/components/layout.js');
+
+            if (typeof Layout !== 'undefined') {
+                const layout = new Layout();
+                layout.init();
+            }
+        } catch (error) {
+            console.error('Failed to initialize layout:', error);
+        }
+    }
+};
+
 function showToast(message, type = 'success') {
     const existingToast = document.querySelector('.toast');
     if (existingToast) existingToast.remove();

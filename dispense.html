@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>إذن صرف - منظومة إدارة المخازن | كلية التقنية الصناعية</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="node_modules/@fortawesome/fontawesome-free/css/all.min.css">
     <link rel="stylesheet" href="assets/css/main.css">
     <link rel="stylesheet" href="assets/css/layout.css">
     <link rel="stylesheet" href="assets/css/components.css">
@@ -88,12 +88,12 @@
 
             <div class="nav-section">
                 <div class="nav-section-title">النسخ الاحتياطي</div>
-                <a href="#" class="menu-item" onclick="handleBackup(event)">
+                <button type="button" class="menu-item" onclick="handleBackup(event)">
                     <span class="menu-text">💾 نسخة احتياطية</span>
-                </a>
-                <a href="#" class="menu-item" onclick="handleRestore(event)">
+                </button>
+                <button type="button" class="menu-item" onclick="handleRestore(event)">
                     <span class="menu-text">📂 استيراد نسخة سابقة</span>
-                </a>
+                </button>
             </div>
 
             <div class="nav-section">
@@ -124,79 +124,81 @@
         <div class="page-content">
             <div class="panel">
                 <div class="panel-body">
-                    <!-- Document Header -->
-                    <div class="form-grid">
-                        <div id="rem2" class="form-group">
-                            <label>تاريخ الصرف</label>
-                            <input type="date" id="receiptDate" required>
-                        </div>
-                        <div class="form-group">
-                            <label>الجهة الطالبة (القسم/الموظف)</label>
-                            <select id="requesterSelect" required>
-                                <option value="">-- اختر الجهة --</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>المخزن المصروف منه</label>
-                            <select id="storeSelect" required>
-                                <option value="">-- اختر المخزن --</option>
-                            </select>
-                        </div>
-                        <div class="form-group" style="grid-column: span 2;">
-                            <label>ملاحظات / سبب الصرف</label>
-                            <input type="text" id="receiptNotes" placeholder="مثال: عهدة شخصية، احتياج معمل...">
-                        </div>
-                    </div>
-
-                    <!-- Items Section -->
-                    <div class="items-section" style="margin-top: 30px; border-top: 2px dashed var(--border-color); padding-top: 20px;">
-                        <h3 style="margin-bottom: 20px; color: var(--primary); font-size: 16px;">الأصناف المصروفة</h3>
-
-                        <div id="itemsSel" style="display: flex; gap: 12px; align-items: flex-end; margin-bottom: 20px; flex-wrap: wrap;">
-                            <div class="form-group" style="flex: 2; min-width: 200px; margin-bottom: 0;">
-                                <label>الصنف</label>
-                                <select id="itemSelect" onchange="updateStockBadge()">
-                                    <option value="">-- اختر الصنف --</option>
+                    <form onsubmit="event.preventDefault(); saveReceipt();">
+                        <!-- Document Header -->
+                        <div class="form-grid">
+                            <div id="rem2" class="form-group">
+                                <label>تاريخ الصرف</label>
+                                <input type="date" id="receiptDate" required max="">
+                            </div>
+                            <div class="form-group">
+                                <label>الجهة الطالبة (القسم/الموظف)</label>
+                                <select id="requesterSelect" required>
+                                    <option value="">-- اختر الجهة --</option>
                                 </select>
                             </div>
-                            <div class="stock-badge" id="stockBadge" style="margin-bottom: 8px;">المتاح: 0</div>
-                            <div class="form-group" style="flex: 1; min-width: 100px; margin-bottom: 0;">
-                                <label>الكمية المطلوبة</label>
-                                <input type="number" id="itemQty" placeholder="الكمية" min="1">
+                            <div class="form-group">
+                                <label>المخزن المصروف منه</label>
+                                <select id="storeSelect" required>
+                                    <option value="">-- اختر المخزن --</option>
+                                </select>
                             </div>
-                            <button type="button" class="btn btn-primary" onclick="addRow()">
-                                <i class="fas fa-plus"></i>
-                                <span>إضافة</span>
+                            <div class="form-group" style="grid-column: span 2;">
+                                <label>ملاحظات / سبب الصرف</label>
+                                <input type="text" id="receiptNotes" placeholder="مثال: عهدة شخصية، احتياج معمل...">
+                            </div>
+                        </div>
+
+                        <!-- Items Section -->
+                        <div class="items-section" style="margin-top: 30px; border-top: 2px dashed var(--border-color); padding-top: 20px;">
+                            <h3 style="margin-bottom: 20px; color: var(--primary); font-size: 16px;">الأصناف المصروفة</h3>
+
+                            <div id="itemsSel" style="display: flex; gap: 12px; align-items: flex-end; margin-bottom: 20px; flex-wrap: wrap;">
+                                <div class="form-group" style="flex: 2; min-width: 200px; margin-bottom: 0;">
+                                    <label>الصنف</label>
+                                    <select id="itemSelect" onchange="updateStockBadge()">
+                                        <option value="">-- اختر الصنف --</option>
+                                    </select>
+                                </div>
+                                <div class="stock-badge" id="stockBadge" style="margin-bottom: 8px;">المتاح: 0</div>
+                                <div class="form-group" style="flex: 1; min-width: 100px; margin-bottom: 0;">
+                                    <label>الكمية المطلوبة</label>
+                                    <input type="number" id="itemQty" placeholder="الكمية" min="1">
+                                </div>
+                                <button type="button" class="btn btn-primary" onclick="addRow()">
+                                    <i class="fas fa-plus"></i>
+                                    <span>إضافة</span>
+                                </button>
+                            </div>
+
+                            <div class="table-container" style="margin-bottom: 20px;">
+                                <table id="receiptTable">
+                                    <thead>
+                                        <tr>
+                                            <th>رقم الصنف</th>
+                                            <th>اسم الصنف</th>
+                                            <th>الكمية المصروفة</th>
+                                            <th>إجراء</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="receiptTableBody">
+                                        <tr>
+                                            <td colspan="4" style="text-align: center; padding: 32px; color: var(--text-muted);">
+                                                لم تتم إضافة أصناف بعد
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 12px; margin-top: 24px;">
+                            <button type="submit" class="btn btn-success btn-lg" style="flex: 1;">
+                                <i class="fas fa-save"></i>
+                                <span>حفظ واعتماد إذن الصرف</span>
                             </button>
                         </div>
-
-                        <div class="table-container" style="margin-bottom: 20px;">
-                            <table id="receiptTable">
-                                <thead>
-                                    <tr>
-                                        <th>رقم الصنف</th>
-                                        <th>اسم الصنف</th>
-                                        <th>الكمية المصروفة</th>
-                                        <th>إجراء</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="receiptTableBody">
-                                    <tr>
-                                        <td colspan="4" style="text-align: center; padding: 32px; color: var(--text-muted);">
-                                            لم تتم إضافة أصناف بعد
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <div style="display: flex; gap: 12px; margin-top: 24px;">
-                        <button type="button" class="btn btn-success btn-lg" style="flex: 1;" onclick="saveReceipt()">
-                            <i class="fas fa-save"></i>
-                            <span>حفظ واعتماد إذن الصرف</span>
-                        </button>
-                    </div>
+                    </form>
                 </div>
             </div>
 
@@ -210,17 +212,22 @@
     </main>
 
     <!-- Print Modal -->
-    <div class="modal" id="printModal">
-        <div class="modal-content" style="text-align: center; max-width: 420px;">
-            <div style="font-size: 56px; margin-bottom: 16px; color: var(--success);"><i class="fas fa-check-circle"></i></div>
-            <h3 style="margin-bottom: 8px; color: var(--success); font-size: 18px;" id="successMessage">تم الحفظ بنجاح</h3>
-            <p style="margin-bottom: 28px; color: var(--text-gray); font-size: 14px;">كيف تود التعامل مع هذا المستند؟</p>
+    <div class="modal" id="printModal" role="dialog" aria-modal="true" aria-labelledby="printModalTitle" hidden>
+        <div class="modal-content" role="document" style="text-align: center; max-width: 420px;">
+            <div class="modal-header" style="border-bottom: none; padding-bottom: 0;">
+                <h2 class="modal-title" id="printModalTitle" tabindex="-1" style="width: 100%; text-align: center;">تم اعتماد إذن الصرف</h2>
+            </div>
+            <div class="modal-body">
+                <div style="font-size: 56px; margin-bottom: 16px; color: var(--success);"><i class="fas fa-check-circle"></i></div>
+                <h3 style="margin-bottom: 8px; color: var(--success); font-size: 18px;" id="successMessage">تم الحفظ بنجاح</h3>
+                <p style="margin-bottom: 28px; color: var(--text-gray); font-size: 14px;">كيف تود التعامل مع هذا المستند؟</p>
 
-            <div style="display: flex; gap: 10px; justify-content: center;">
-                <button type="button" class="btn btn-primary" onclick="executePrint('direct')">
-                    <i class="fas fa-print"></i>
-                    <span>طباعة</span>
-                </button>
+                <div style="display: flex; gap: 10px; justify-content: center;">
+                    <button type="button" class="btn btn-primary" onclick="executePrint('direct')">
+                        <i class="fas fa-print"></i>
+                        <span>طباعة</span>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -231,7 +238,18 @@
         let receiptRows = [];
         window.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('receiptDate').valueAsDate = new Date();
-            
+            document.getElementById('receiptDate').max = new Date().toISOString().split('T')[0];
+
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    const modal = document.getElementById('printModal');
+                    if (modal && !modal.hidden) {
+                        modal.hidden = true;
+                        modal.classList.remove('active');
+                    }
+                }
+            });
+
             try {
                 const stores = await window.api.getStores();
                 if (stores && stores.success === false) {
@@ -252,15 +270,34 @@
                 }
 
                 const storeSelect = document.getElementById('storeSelect');
-                stores.forEach(s => storeSelect.innerHTML += `<option value="${s.store_id}">${s.store_name}</option>`);
+                const storeFragment = document.createDocumentFragment();
+                stores.forEach(s => {
+                    const option = document.createElement('option');
+                    option.value = s.store_id;
+                    option.textContent = s.store_name;
+                    storeFragment.appendChild(option);
+                });
+                storeSelect.appendChild(storeFragment);
 
                 const requesterSelect = document.getElementById('requesterSelect');
-                requesters.forEach(req => requesterSelect.innerHTML += `<option value="${req.entity_id}">${req.entity_name} (${req.entity_type === 'Department' ? 'قسم' : 'موظف'})</option>`);
+                const requesterFragment = document.createDocumentFragment();
+                requesters.forEach(req => {
+                    const option = document.createElement('option');
+                    option.value = req.entity_id;
+                    option.textContent = req.entity_name + ' (' + (req.entity_type === 'Department' ? 'قسم' : 'موظف') + ')';
+                    requesterFragment.appendChild(option);
+                });
+                requesterSelect.appendChild(requesterFragment);
 
                 const itemSelect = document.getElementById('itemSelect');
+                const itemFragment = document.createDocumentFragment();
                 availableStock.forEach(item => {
-                    itemSelect.innerHTML += `<option value="${item.item_id}">${item.item_name} (${item.unit})</option>`;
+                    const option = document.createElement('option');
+                    option.value = item.item_id;
+                    option.textContent = item.item_name + ' (' + item.unit + ')';
+                    itemFragment.appendChild(option);
                 });
+                itemSelect.appendChild(itemFragment);
 
             } catch (error) {
                 console.error(error);
@@ -310,14 +347,41 @@
             `).join('');
         }
 
+        function resetForm() {
+            document.getElementById('receiptDate').valueAsDate = new Date();
+            document.getElementById('requesterSelect').value = '';
+            document.getElementById('storeSelect').value = '';
+            document.getElementById('receiptNotes').value = '';
+            document.getElementById('itemSelect').value = '';
+            document.getElementById('itemQty').value = '';
+            document.getElementById('stockBadge').textContent = 'المتاح: 0';
+            receiptRows = [];
+            renderTable();
+        }
+
         async function saveReceipt() {
+            const saveBtn = document.querySelector('.btn-success[type="submit"]');
+            const originalText = saveBtn.innerHTML;
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...';
+
             const receiptDate = document.getElementById('receiptDate').value;
             const requesterId = document.getElementById('requesterSelect').value;
             const storeId = document.getElementById('storeSelect').value;
             const notes = document.getElementById('receiptNotes').value.trim();
 
-            if (!receiptDate || !requesterId || !storeId) { showToast('الرجاء تعبئة كافة البيانات الأساسية', 'warning'); return; }
-            if (receiptRows.length === 0) { showToast('لا يمكن حفظ إذن صرف فارغ', 'warning'); return; }
+            if (!receiptDate || !requesterId || !storeId) {
+                showToast('الرجاء تعبئة كافة البيانات الأساسية', 'warning');
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = originalText;
+                return;
+            }
+            if (receiptRows.length === 0) {
+                showToast('لا يمكن حفظ إذن صرف فارغ', 'warning');
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = originalText;
+                return;
+            }
 
             try {
                 const session = JSON.parse(localStorage.getItem('userSession'));
@@ -329,13 +393,25 @@
                 });
                 if (result.success) {
                     document.getElementById('successMessage').textContent = result.message;
-                    document.getElementById('printModal').classList.add('active');
-                } else { showToast(result.message, 'error'); }
-            } catch (error) { showToast('حدث خطأ أثناء الحفظ', 'error'); }
+                    const modal = document.getElementById('printModal');
+                    modal.hidden = false;
+                    modal.classList.add('active');
+                    document.getElementById('printModalTitle').focus();
+                } else {
+                    showToast(result.message, 'error');
+                }
+            } catch (error) {
+                showToast('حدث خطأ أثناء الحفظ', 'error');
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = originalText;
+            }
         }
 
         function executePrint(choice) {
-            document.getElementById('printModal').classList.remove('active');
+            const modal = document.getElementById('printModal');
+            modal.hidden = true;
+            modal.classList.remove('active');
             if (choice === 'direct') {
                 const dateEl = document.getElementById('printReceiptDate');
                 if (dateEl) dateEl.textContent = 'تاريخ الطباعة: ' + new Date().toLocaleDateString('ar-LY');
@@ -354,7 +430,7 @@
                 sel.style.display  = "block";
                 sel2.style.display = "block";
             }
-            setTimeout(() => window.location.reload(), 1000);
+            setTimeout(() => resetForm(), 1000);
         }
 
 

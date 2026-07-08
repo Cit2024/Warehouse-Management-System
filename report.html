@@ -52,12 +52,6 @@
 
     <!-- Main Content -->
     <main class="content">
-        <header class="top-header">
-            <div class="header-actions">
-                <button class="header-btn" onclick="loadReportData()" title="تحديث"><i class="fas fa-sync-alt"></i></button>
-                <button class="header-btn" onclick="handleLogout()" title="خروج"><i class="fas fa-door-open"></i></button>
-            </div>
-        </header>
         <div class="header-title-section">
             <h1>التقارير</h1>
             <p class="subtitle">إعداد وطباعة تقارير المخزون والحركات</p>
@@ -66,7 +60,7 @@
             <!-- Report Filters Panel -->
             <div class="panel no-print" style="margin-bottom: 20px;">
                 <div class="panel-body">
-                    <div style="display: flex; gap: 16px; align-items: flex-end; flex-wrap: wrap;">
+                    <form class="form-grid" style="display: flex; gap: 16px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 0;" onsubmit="event.preventDefault(); generateReport();">
                         <div class="form-group" style="flex: 1; min-width: 200px; margin-bottom: 0;">
                             <label>نوع التقرير</label>
                             <select class="filter-select" id="reportType" onchange="onReportTypeChange()" style="width: 100%;">
@@ -83,11 +77,11 @@
                         </div>
                         <div class="form-group" id="dateFromGroup" style="min-width: 160px; margin-bottom: 0;">
                             <label>من تاريخ</label>
-                            <input type="date" id="dateFrom" class="filter-select" style="min-width: 160px;">
+                            <input type="date" id="dateFrom" class="filter-select" style="min-width: 160px;" max="">
                         </div>
                         <div class="form-group" id="dateToGroup" style="min-width: 160px; margin-bottom: 0;">
                             <label>إلى تاريخ</label>
-                            <input type="date" id="dateTo" class="filter-select" style="min-width: 160px;">
+                            <input type="date" id="dateTo" class="filter-select" style="min-width: 160px;" max="">
                         </div>
                         <div class="form-group" id="itemSelectGroup" style="flex: 1; min-width: 200px; margin-bottom: 0; display: none;">
                             <label>الصنف (لبطاقة الحركة)</label>
@@ -95,15 +89,15 @@
                                 <option value="">اختر صنفاً</option>
                             </select>
                         </div>
-                        <button class="btn btn-secondary" onclick="openColumnsModal()" title="اختيار الأعمدة الظاهرة في التقرير">
+                        <button type="button" class="btn btn-secondary" onclick="openColumnsModal()" title="اختيار الأعمدة الظاهرة في التقرير">
                             <i class="fas fa-columns"></i>
                             <span>الأعمدة</span>
                         </button>
-                        <button class="btn btn-primary" onclick="printReport()">
+                        <button type="button" class="btn btn-primary" id="printReportBtn" onclick="printReport()">
                             <i class="fas fa-print"></i>
                             <span>طباعة التقرير</span>
                         </button>
-                    </div>
+                    </form>
                 </div>
             </div>
 
@@ -160,20 +154,24 @@
 
             <!-- Print Signatures -->
             <div class="print-signatures print-only">
-                <div class="print-signature-box">المستلم<br>الاسم والتوقيع</div>
-                <div class="print-signature-box">أمين المخزن<br>الاسم والتوقيع</div>
-                <div class="print-signature-box">المدير<br>الاسم والتوقيع</div>
+                <div class="print-signature-box">المستلم</div>
+                <div class="print-signature-box">أمين المخزن</div>
+                <div class="print-signature-box">المدير</div>
             </div>
         </div>
     </main>
 
     <script src="assets/js/common.js"></script>
     <script src="assets/js/components/sidebar.js"></script>
+    <script src="assets/js/components/header.js"></script>
     <script src="assets/js/components/layout.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const layout = new Layout();
+            const layout = new Layout({ showRefresh: true, refreshAction: 'loadReportData()' });
             layout.init();
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('dateFrom').max = today;
+            document.getElementById('dateTo').max = today;
         });
     </script>
     <script>
@@ -208,53 +206,65 @@
 
         // ========== MAIN PRINT FUNCTION ==========
         async function printReport() {
-            await generateReport();
-            const reportName = document.getElementById('reportName').textContent || '-';
-            const recordCount = document.getElementById('recordCount').textContent || '0';
-            const totalValue = document.getElementById('totalValue').textContent || '0 د.ل';
-            const dateFrom = document.getElementById('dateFrom').value;
-            const dateTo = document.getElementById('dateTo').value;
-            const reportType = document.getElementById('reportType').value;
-            const needsPeriod = ['movements_log', 'item_card'].includes(reportType);
-            let periodText = '-';
-            if (needsPeriod && dateFrom && dateTo) {
-                periodText = dateFrom + ' إلى ' + dateTo;
+            const btn = document.getElementById('printReportBtn');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الطباعة...';
             }
-
-            // Set dates
-            const now = new Date();
-            const gregorianDate = now.toLocaleDateString('ar-LY', {
-                year: 'numeric', month: 'long', day: 'numeric'
-            });
-            document.getElementById('printGregorianDate').textContent = gregorianDate;
-
             try {
-                const hijriFormatter = new Intl.DateTimeFormat('ar-SA-u-ca-islamic', {
+                await generateReport();
+                const reportName = document.getElementById('reportName').textContent || '-';
+                const recordCount = document.getElementById('recordCount').textContent || '0';
+                const totalValue = document.getElementById('totalValue').textContent || '0 د.ل';
+                const dateFrom = document.getElementById('dateFrom').value;
+                const dateTo = document.getElementById('dateTo').value;
+                const reportType = document.getElementById('reportType').value;
+                const needsPeriod = ['movements_log', 'item_card'].includes(reportType);
+                let periodText = '-';
+                if (needsPeriod && dateFrom && dateTo) {
+                    periodText = dateFrom + ' إلى ' + dateTo;
+                }
+
+                // Set dates
+                const now = new Date();
+                const gregorianDate = now.toLocaleDateString('ar-LY', {
                     year: 'numeric', month: 'long', day: 'numeric'
                 });
-                document.getElementById('printHijriDate').textContent = hijriFormatter.format(now);
-            } catch(e) {
-                document.getElementById('printHijriDate').textContent = '';
-            }
+                document.getElementById('printGregorianDate').textContent = gregorianDate;
 
-            document.getElementById('printTitle').textContent = reportName;
-            document.getElementById('printReportName').textContent = reportName;
-            document.getElementById('printRecordCount').textContent = recordCount;
+                try {
+                    const hijriFormatter = new Intl.DateTimeFormat('ar-SA-u-ca-islamic', {
+                        year: 'numeric', month: 'long', day: 'numeric'
+                    });
+                    document.getElementById('printHijriDate').textContent = hijriFormatter.format(now);
+                } catch(e) {
+                    document.getElementById('printHijriDate').textContent = '';
+                }
 
-            // Auto-detect landscape: if more than 6 columns, use landscape
-            const table = document.getElementById('reportTable');
-            const colCount = table ? table.querySelectorAll('thead th:not([style*="display: none"])').length : 0;
-            const reportContainer = document.querySelector('.page-content');
-            if (colCount > 6 && reportContainer) {
-                reportContainer.classList.add('print-landscape');
-            }
+                document.getElementById('printTitle').textContent = reportName;
+                document.getElementById('printReportName').textContent = reportName;
+                document.getElementById('printRecordCount').textContent = recordCount;
 
-            window.print();
-            // إزالة كلاس الطباعة الأفقية بعد الانتهاء بدلاً من إعادة تحميل الصفحة
-            setTimeout(() => {
+                // Auto-detect landscape: if more than 6 columns, use landscape
+                const table = document.getElementById('reportTable');
+                const colCount = table ? table.querySelectorAll('thead th:not([style*="display: none"])').length : 0;
                 const reportContainer = document.querySelector('.page-content');
-                if (reportContainer) reportContainer.classList.remove('print-landscape');
-            }, 100);
+                if (colCount > 6 && reportContainer) {
+                    reportContainer.classList.add('print-landscape');
+                }
+
+                window.print();
+                // إزالة كلاس الطباعة الأفقية بعد الانتهاء بدلاً من إعادة تحميل الصفحة
+                setTimeout(() => {
+                    const reportContainer = document.querySelector('.page-content');
+                    if (reportContainer) reportContainer.classList.remove('print-landscape');
+                }, 100);
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-print"></i> طباعة التقرير';
+                }
+            }
         }
 
         // Table sorting is provided by common.js
@@ -766,11 +776,11 @@
                 : '<option value="">لا توجد إعدادات محفوظة لهذا التقرير</option>';
 
             const modalHtml = `
-                <div class="modal" id="columnsModal" style="display:flex;">
+                <div class="modal" id="columnsModal" role="dialog" aria-modal="true" aria-labelledby="columnsModalTitle" hidden>
                     <div class="modal-content" style="max-width:440px;">
                         <div class="modal-header">
-                            <div class="modal-title">🧮 اختيار أعمدة التقرير</div>
-                            <button class="modal-close" onclick="document.getElementById('columnsModal').remove()">
+                            <h3 class="modal-title" id="columnsModalTitle">🧮 اختيار أعمدة التقرير</h3>
+                            <button class="modal-close" aria-label="إغلاق" onclick="closeColumnsModal()">
                                 <i class="fas fa-times"></i>
                             </button>
                         </div>
@@ -791,7 +801,7 @@
                             </div>
                         </div>
                         <div class="modal-footer">
-                            <button class="btn btn-secondary" onclick="document.getElementById('columnsModal').remove()">إغلاق</button>
+                            <button class="btn btn-secondary" onclick="closeColumnsModal()">إغلاق</button>
                             <button class="btn btn-success" onclick="saveColumnsPreset()">حفظ باسم جديد</button>
                             <button class="btn btn-primary" onclick="applyColumnsFromModal()">تطبيق</button>
                         </div>
@@ -799,6 +809,14 @@
                 </div>`;
 
             document.body.insertAdjacentHTML('beforeend', modalHtml);
+            const modal = document.getElementById('columnsModal');
+            modal.classList.add('active');
+            modal.hidden = false;
+        }
+
+        function closeColumnsModal() {
+            const modal = document.getElementById('columnsModal');
+            if (modal) modal.hidden = true;
         }
 
         // قراءة الاختيارات من المودال وتطبيقها على الجدول المعروض دون حفظ
@@ -809,8 +827,7 @@
                 if (!c.checked) hiddenColumns.add(parseInt(c.dataset.colIndex, 10));
             });
             applyColumnVisibility();
-            const modal = document.getElementById('columnsModal');
-            if (modal) modal.remove();
+            closeColumnsModal();
             showToast('تم تحديث أعمدة التقرير', 'success');
         }
 
@@ -836,8 +853,7 @@
 
             hiddenColumns = new Set(hidden);
             applyColumnVisibility();
-            const modal = document.getElementById('columnsModal');
-            if (modal) modal.remove();
+            closeColumnsModal();
             showToast('تم حفظ إعداد الأعمدة باسم "' + trimmedName + '"', 'success');
         }
 
@@ -904,6 +920,12 @@
                 allItems.map(item => `<option value="${item.item_id}">${item.item_name}</option>`).join('');
             generateStockReport();
         }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeColumnsModal();
+            }
+        });
 
     </script>
 </body>

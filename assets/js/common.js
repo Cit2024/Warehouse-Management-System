@@ -1,15 +1,22 @@
 function showToast(message, type = 'success') {
     const existingToast = document.querySelector('.toast');
     if (existingToast) existingToast.remove();
-    
+
+    const iconMap = {
+        success: 'fa-check-circle',
+        error: 'fa-times-circle',
+        warning: 'fa-exclamation-triangle',
+        info: 'fa-info-circle'
+    };
+
     const toast = document.createElement('div');
-    toast.className = `toast toast-container toast-${type}`;
+    toast.className = `toast toast-${type}`;
     toast.innerHTML = `
-        <span>${type === 'success' ? '✅' : '❌'}</span>
+        <span class="toast-icon"><i class="fas ${iconMap[type] || iconMap.info}"></i></span>
         <span>${message}</span>
     `;
     document.body.appendChild(toast);
-    
+
     setTimeout(() => {
         toast.style.opacity = '0';
         toast.style.transition = 'opacity 0.3s ease';

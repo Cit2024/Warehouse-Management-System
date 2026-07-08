@@ -16,7 +16,7 @@
     /* Text Colors */
     --text-dark: #1E293B;
     --text-gray: #64748B;
-    --text-muted: #94A3B8;
+    --text-muted: #64748B;
     --text-light: #ffffff;
 
     /* Border & Shadow */
@@ -29,13 +29,13 @@
     --shadow-orange: 0 4px 14px rgba(255, 107, 0, 0.25);
 
     /* Status Colors */
-    --success: #10B981;
+    --success: #047857;
     --success-light: #D1FAE5;
     --success-text: #065F46;
     --danger: #EF4444;
     --danger-light: #FEE2E2;
     --danger-text: #991B1B;
-    --warning: #F59E0B;
+    --warning: #B45309;
     --warning-light: #FEF3C7;
     --warning-text: #92400E;
     --info: #3B82F6;
@@ -45,7 +45,7 @@
     /* Transitions */
     --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-fast: all 0.15s ease;
-    --transition-bounce: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    --transition-bounce: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
 
     /* Sidebar */
     --sidebar-width: 280px;

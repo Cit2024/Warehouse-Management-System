@@ -5,6 +5,7 @@
 class Layout {
     constructor(options = {}) {
         this.sidebar = new Sidebar();
+        this.header = new Header(options);
         this.options = {
             mountTarget: '#layout-root',
             includeSidebar: true,
@@ -15,7 +16,7 @@ class Layout {
     /**
      * Initialize the layout
      * - Renders sidebar
-     * - Sets up page structure
+     * - Renders header inside main.content
      */
     init() {
         if (this.options.includeSidebar) {
@@ -30,6 +31,14 @@ class Layout {
             }
 
             this.sidebar.mount(container);
+        }
+
+        // Mount header at the top of the main content area
+        const content = document.querySelector('main.content');
+        if (content) {
+            this.header.mount(content);
+        } else {
+            console.warn('No <main class="content"> found for header mounting');
         }
 
         // Initialize logo

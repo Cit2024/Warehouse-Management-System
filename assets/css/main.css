@@ -1,100 +1,128 @@
 :root {
-    /* Primary Orange Theme */
-    --primary: #FF6B00;
-    --primary-hover: #E55A00;
-    --primary-light: #FFF0E5;
-    --primary-gradient: linear-gradient(135deg, #FF6B00, #FF8F00);
-    --primary-soft: linear-gradient(135deg, #FF8F5A, #FFB84D);
+  --primary: #C44A00;
+  --primary-hover: #A63D00;
+  --primary-light: #FFF0E0;
+  --primary-gradient: linear-gradient(135deg, #C44A00, #E6681A);
 
-    /* Light Theme Backgrounds */
-    --bg-body: #F1F5F9;
-    --bg-sidebar: #FFFFFF;
-    --bg-card: #FFFFFF;
-    --bg-header: #FFFFFF;
-    --bg-hover: #F8FAFC;
+  --bg-body: #F1F5F9;
+  --bg-card: #FFFFFF;
+  --bg-header: #FFFFFF;
+  --bg-sidebar: #FAFBFC;
+  --bg-hover: #F1F5F9;
+  --bg-active: #E2E8F0;
 
-    /* Text Colors */
-    --text-dark: #1E293B;
-    --text-gray: #64748B;
-    --text-muted: #64748B;
-    --text-light: #ffffff;
+  --text-primary: #0F172A;
+  --text-secondary: #334155;
+  --text-muted: #64748B;
+  --text-placeholder: #64748B;
 
-    /* Border & Shadow */
-    --border-color: #E2E8F0;
-    --border-light: #F1F5F9;
-    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.07), 0 4px 6px -2px rgba(0, 0, 0, 0.03);
-    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.07), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
-    --shadow-orange: 0 4px 14px rgba(255, 107, 0, 0.25);
+  --border-default: #E2E8F0;
+  --border-subtle: #F1F5F9;
 
-    /* Status Colors */
-    --success: #047857;
-    --success-light: #D1FAE5;
-    --success-text: #065F46;
-    --danger: #EF4444;
-    --danger-light: #FEE2E2;
-    --danger-text: #991B1B;
-    --warning: #B45309;
-    --warning-light: #FEF3C7;
-    --warning-text: #92400E;
-    --info: #3B82F6;
-    --info-light: #DBEAFE;
-    --info-text: #1E40AF;
+  --success: #047857;
+  --success-bg: #D1FAE5;
+  --warning: #B45309;
+  --warning-bg: #FEF3C7;
+  --danger: #B91C1C;
+  --danger-bg: #FEE2E2;
+  --info: #1D4ED8;
+  --info-bg: #DBEAFE;
 
-    /* Transitions */
-    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-fast: all 0.15s ease;
-    --transition-bounce: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.10);
+  --shadow-focus: 0 0 0 3px rgba(196,74,0,0.15);
 
-    /* Sidebar */
-    --sidebar-width: 280px;
-    --sidebar-collapsed: 72px;
-    --header-height: 70px;
+  --transition-fast: 0.15s ease;
+  --transition-base: 0.2s ease;
+  --ease-out: cubic-bezier(0.25, 1, 0.5, 1);
+
+  --font-body: 13px;
+  --font-label: 12px;
+  --font-base: 14px;
+  --font-h3: 16px;
+  --font-h2: 20px;
+  --font-h1: 24px;
+  --font-hero: 32px;
+
+  --weight-normal: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  --leading-tight: 1.25;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.75;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  --sidebar-width: 240px;
+  --header-height: 56px;
+  --card-radius: 12px;
+  --input-radius: 8px;
+  --btn-radius: 8px;
 }
 
 html {
-    height: 100%;
-    overflow: hidden;
+  height: 100%;
+  overflow: hidden;
 }
 
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: 'Segoe UI', 'Cairo', 'Tajawal', Tahoma, Geneva, Verdana, sans-serif;
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
 body {
-    background: var(--bg-body);
-    height: 100%;
-    display: flex;
-    color: var(--text-dark);
-    direction: rtl;
-    overflow: hidden;
+  background-color: var(--bg-body);
+  color: var(--text-primary);
+  direction: rtl;
+  display: flex;
+  font-family: 'Segoe UI', 'Cairo', 'Tajawal', Tahoma, Geneva, Verdana, sans-serif;
+  font-size: var(--font-base);
+  height: 100%;
+  line-height: 1.6;
+  overflow: hidden;
 }
 
-/* Scrollbar Styling */
+/* Scrollbars */
 ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-    background: transparent;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-    background: #CBD5E1;
-    border-radius: 3px;
+  background: var(--text-placeholder);
+  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: #94A3B8;
+  background: var(--text-muted);
 }
 
-/* Selection */
+/* Text selection */
 ::selection {
-    background: rgba(255, 107, 0, 0.2);
-    color: var(--text-dark);
+  background: var(--primary-light);
+  color: var(--text-primary);
+}
+
+/* Focus indicator */
+:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
 }

@@ -41,12 +41,6 @@
 
     <!-- Main Content -->
     <main class="content">
-        <!-- Top Header -->
-        <header class="top-header">
-            <div class="header-actions">
-                <button class="header-btn" onclick="handleLogout()" title="خروج"><i class="fas fa-door-open"></i></button>
-            </div>
-        </header>
 
         <!-- Page Title -->
         <div class="header-title-section">
@@ -157,7 +151,8 @@
     <div class="modal" id="printModal" role="dialog" aria-modal="true" aria-labelledby="printModalTitle" hidden>
         <div class="modal-content" role="document" style="text-align: center; max-width: 420px;">
             <div class="modal-header" style="border-bottom: none; padding-bottom: 0;">
-                <h2 class="modal-title" id="printModalTitle" tabindex="-1" style="width: 100%; text-align: center;">تم اعتماد إذن التوريد</h2>
+                <h2 class="modal-title" id="printModalTitle" tabindex="-1" style="flex: 1; text-align: center;">تم اعتماد إذن التوريد</h2>
+                <button type="button" class="modal-close" aria-label="إغلاق" onclick="closePrintModal()">&times;</button>
             </div>
             <div class="modal-body">
                 <div style="font-size: 56px; margin-bottom: 16px; color: var(--success);"><i class="fas fa-check-circle"></i></div>
@@ -176,6 +171,7 @@
 
     <script src="assets/js/common.js"></script>
     <script src="assets/js/components/sidebar.js"></script>
+    <script src="assets/js/components/header.js"></script>
     <script src="assets/js/components/layout.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -190,16 +186,6 @@
             // تعيين تاريخ اليوم كافتراضي
             document.getElementById('receiptDate').valueAsDate = new Date();
             document.getElementById('receiptDate').max = new Date().toISOString().split('T')[0];
-
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape') {
-                    const modal = document.getElementById('printModal');
-                    if (modal && !modal.hidden) {
-                        modal.hidden = true;
-                        modal.classList.remove('active');
-                    }
-                }
-            });
 
             // جلب البيانات من قاعدة البيانات لتعبئة القوائم المنسدلة
             try {
@@ -369,10 +355,7 @@
 
                 if (result.success) {
                     document.getElementById('successMessage').textContent = result.message;
-                    const modal = document.getElementById('printModal');
-                    modal.hidden = false;
-                    modal.classList.add('active');
-                    document.getElementById('printModalTitle').focus();
+                    openPrintModal();
                 } else {
                     showToast(result.message, 'error');
                 }
@@ -385,9 +368,7 @@
         }
 
         function executePrint(choice) {
-            const modal = document.getElementById('printModal');
-            modal.hidden = true;
-            modal.classList.remove('active');
+            closePrintModal();
             if (choice === 'direct') {
                 const dateEl = document.getElementById('printReceiptDate');
                 if (dateEl) dateEl.textContent = 'تاريخ الطباعة: ' + new Date().toLocaleDateString('ar-LY');
@@ -408,6 +389,25 @@
             }
             setTimeout(() => resetForm(), 1000);
         }
+
+        function openPrintModal() {
+            const modal = document.getElementById('printModal');
+            modal.hidden = false;
+            modal.classList.add('active');
+            document.getElementById('printModalTitle').focus();
+        }
+
+        function closePrintModal() {
+            const modal = document.getElementById('printModal');
+            modal.hidden = true;
+            modal.classList.remove('active');
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closePrintModal();
+            }
+        });
     </script>
 </body>
 </html>

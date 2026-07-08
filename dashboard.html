@@ -15,17 +15,6 @@
 
     <!-- Main Content -->
     <main class="content">
-        <!-- Top Header -->
-        <header class="top-header">
-            <div class="header-actions">
-                <button class="header-btn" onclick="loadDashboardData()" title="تحديث">
-                    <span><i class="fas fa-sync-alt"></i></span>
-                </button>
-                <button class="header-btn" onclick="handleLogout()" title="خروج">
-                    <span><i class="fas fa-door-open"></i></span>
-                </button>
-            </div>
-        </header>
 
         <!-- Page Title -->
         <div class="header-title-section">
@@ -226,14 +215,14 @@
     </main>
 
     <!-- Add Item Modal -->
-    <div class="modal" id="addModal">
+    <div class="modal" id="addModal" role="dialog" aria-modal="true" aria-labelledby="addModalTitle" hidden>
         <div class="modal-content">
             <div class="modal-header">
-                <div class="modal-title">إضافة صنف جديد</div>
-                <button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button>
+                <h3 class="modal-title" id="addModalTitle">إضافة صنف جديد</h3>
+                <button class="modal-close" aria-label="إغلاق" onclick="closeModal()"><i class="fas fa-times"></i></button>
             </div>
             <div class="modal-body">
-                <form id="addItemForm" novalidate>
+                <form id="addItemForm" class="form-grid" onsubmit="event.preventDefault(); submitAddItem();" novalidate>
                     <div class="form-group">
                         <label for="itemName">اسم الصنف *</label>
                         <input type="text" id="itemName" placeholder="أدخل اسم الصنف" required minlength="3">
@@ -284,10 +273,11 @@
 
     <script src="assets/js/common.js"></script>
     <script src="assets/js/components/sidebar.js"></script>
+    <script src="assets/js/components/header.js"></script>
     <script src="assets/js/components/layout.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const layout = new Layout();
+            const layout = new Layout({ showRefresh: true, refreshAction: 'loadDashboardData()' });
             layout.init();
         });
 
@@ -457,25 +447,34 @@
             const lowItems = items.filter(item => (item.current_quantity || 0) <= (item.min_order_qty || 0));
 
             if (lowItems.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-state" style="padding: 24px;">
-                        <div class="empty-state-icon"><i class="fas fa-check-circle"></i></div>
-                        <p>لا توجد أصناف منخفضة</p>
-                    </div>
+                container.innerHTML = '';
+                const emptyState = document.createElement('div');
+                emptyState.className = 'empty-state';
+                emptyState.style.padding = '24px';
+                emptyState.innerHTML = `
+                    <div class="empty-state-icon"><i class="fas fa-check-circle"></i></div>
+                    <p>لا توجد أصناف منخفضة</p>
                 `;
+                container.appendChild(emptyState);
                 return;
             }
 
-            container.innerHTML = lowItems.map(item => `
-                <div class="alert-item">
+            const fragment = document.createDocumentFragment();
+            lowItems.forEach(item => {
+                const alertItem = document.createElement('div');
+                alertItem.className = 'alert-item';
+                alertItem.innerHTML = `
                     <div class="alert-item-icon">${(item.item_name || 'غير معروف').charAt(0)}</div>
                     <div class="alert-item-content">
                         <div class="alert-item-name">${item.item_name || 'غير معروف'}</div>
                         <div class="alert-item-detail">${(item.current_quantity || 0)} ${(item.unit || '')} من حد أدنى ${(item.min_order_qty || 0)}</div>
                     </div>
                     <div class="alert-item-status">منخفض</div>
-                </div>
-            `).join('');
+                `;
+                fragment.appendChild(alertItem);
+            });
+            container.innerHTML = '';
+            container.appendChild(fragment);
         }
 
         // يُستخدم فقط في مسار البيانات التجريبية (عند فشل الاتصال بقاعدة البيانات) لعرض نموذج توضيحي
@@ -488,8 +487,11 @@
                 { type: 'supply', id: 'توريد-2026-001', date: '2026-06-02', entity: 'شركة المدار للتجهيزات', value: '3.740,00 د.ل' }
             ];
 
-            container.innerHTML = movements.map(m => `
-                <div class="activity-item">
+            const fragment = document.createDocumentFragment();
+            movements.forEach(m => {
+                const activityItem = document.createElement('div');
+                activityItem.className = 'activity-item';
+                activityItem.innerHTML = `
                     <div class="activity-icon ${m.type}">
                         <i class="fas fa-arrow-${m.type === 'supply' ? 'down' : 'up'}"></i>
                     </div>
@@ -498,8 +500,11 @@
                         <div class="activity-meta">${m.date} · ${m.entity}</div>
                     </div>
                     <div class="activity-value">${m.value}</div>
-                </div>
-            `).join('');
+                `;
+                fragment.appendChild(activityItem);
+            });
+            container.innerHTML = '';
+            container.appendChild(fragment);
         }
 
         // يعرض آخر الحركات الحقيقية (توريد/صرف) من سجل قاعدة البيانات الفعلي
@@ -510,16 +515,19 @@
             const recent = (history || []).slice(0, 6);
 
             if (recent.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-state-icon"><i class="fas fa-clipboard-list"></i></div>
-                        <p>لا توجد حركات مسجلة</p>
-                    </div>
+                container.innerHTML = '';
+                const emptyState = document.createElement('div');
+                emptyState.className = 'empty-state';
+                emptyState.innerHTML = `
+                    <div class="empty-state-icon"><i class="fas fa-clipboard-list"></i></div>
+                    <p>لا توجد حركات مسجلة</p>
                 `;
+                container.appendChild(emptyState);
                 return;
             }
 
-            container.innerHTML = recent.map(t => {
+            const fragment = document.createDocumentFragment();
+            recent.forEach(t => {
                 const isDispense = t.transaction_type === 'Out';
                 const type = isDispense ? 'dispense' : 'supply';
                 const title = '#' + t.transaction_id;
@@ -527,19 +535,22 @@
                 const dateLabel = formatMovementDate(t.transaction_date);
                 const value = (t.total_value || 0).toLocaleString('ar-LY', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' د.ل';
 
-                return `
-                    <div class="activity-item">
-                        <div class="activity-icon ${type}">
-                            <i class="fas fa-arrow-${type === 'supply' ? 'down' : 'up'}"></i>
-                        </div>
-                        <div class="activity-content">
-                            <div class="activity-title">${title}</div>
-                            <div class="activity-meta">${dateLabel} · ${entity}</div>
-                        </div>
-                        <div class="activity-value">${value}</div>
+                const activityItem = document.createElement('div');
+                activityItem.className = 'activity-item';
+                activityItem.innerHTML = `
+                    <div class="activity-icon ${type}">
+                        <i class="fas fa-arrow-${type === 'supply' ? 'down' : 'up'}"></i>
                     </div>
+                    <div class="activity-content">
+                        <div class="activity-title">${title}</div>
+                        <div class="activity-meta">${dateLabel} · ${entity}</div>
+                    </div>
+                    <div class="activity-value">${value}</div>
                 `;
-            }).join('');
+                fragment.appendChild(activityItem);
+            });
+            container.innerHTML = '';
+            container.appendChild(fragment);
         }
 
         // تنسيق تاريخ الحركة لعرض مختصر وواضح (مثال: 2026-06-12 -> 12-06-2026)
@@ -569,7 +580,8 @@
                 return;
             }
 
-            tbody.innerHTML = items.map(item => {
+            const fragment = document.createDocumentFragment();
+            items.forEach(item => {
                 const quantity = item.current_quantity || 0;
                 const minQty = item.min_order_qty || 0;
                 const unitPrice = item.unit_price || 0;
@@ -578,34 +590,36 @@
                 const statusClass = isLow ? 'badge-low' : 'badge-available';
                 const statusText = isLow ? 'منخفض' : 'متوفر';
 
-                return `
-                    <tr>
-                        <td>
-                            <div style="display: flex; align-items: center; gap: 10px;">
-                                <span style="width: 32px; height: 32px; background: var(--primary-light); color: var(--primary); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px;">${item.item_name.charAt(0)}</span>
-                                <div>
-                                    <div style="font-weight: 600;">${item.item_name}</div>
-                                    <span class="item-id">${item.item_id}</span>
-                                </div>
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span style="width: 32px; height: 32px; background: var(--primary-light); color: var(--primary); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px;">${item.item_name.charAt(0)}</span>
+                            <div>
+                                <div style="font-weight: 600;">${item.item_name}</div>
+                                <span class="item-id">${item.item_id}</span>
                             </div>
-                        </td>
-                        <td><span class="badge badge-supplier">${item.category}</span></td>
-                        <td>${item.unit}</td>
-                        <td style="font-weight: 700;">${quantity}</td>
-                        <td>${minQty}</td>
-                        <td class="numeric currency">${unitPrice.toLocaleString('ar-LY', { minimumFractionDigits: 2 })} د.ل</td>
-                        <td class="numeric currency">${totalValue.toLocaleString('ar-LY', { minimumFractionDigits: 2 })} د.ل</td>
-                        <td><span class="badge ${statusClass}">${statusText}</span></td>
-                        <td>
-                            <div class="row-actions">
-                                <button class="row-action-btn view" title="عرض" onclick="viewItem(${item.item_id})"><i class="fas fa-eye"></i></button>
-                                <button class="row-action-btn edit" title="تعديل" onclick="editItem(${item.item_id})"><i class="fas fa-edit"></i></button>
-                                <button class="row-action-btn delete" title="حذف" onclick="deleteItem(${item.item_id}, '${item.item_name}')"><i class="fas fa-times"></i></button>
-                            </div>
-                        </td>
-                    </tr>
+                        </div>
+                    </td>
+                    <td><span class="badge badge-supplier">${item.category}</span></td>
+                    <td>${item.unit}</td>
+                    <td style="font-weight: 700;">${quantity}</td>
+                    <td>${minQty}</td>
+                    <td class="numeric currency">${unitPrice.toLocaleString('ar-LY', { minimumFractionDigits: 2 })} د.ل</td>
+                    <td class="numeric currency">${totalValue.toLocaleString('ar-LY', { minimumFractionDigits: 2 })} د.ل</td>
+                    <td><span class="badge ${statusClass}">${statusText}</span></td>
+                    <td>
+                        <div class="row-actions">
+                            <button class="row-action-btn view" title="عرض" onclick="viewItem(${item.item_id})"><i class="fas fa-eye"></i></button>
+                            <button class="row-action-btn edit" title="تعديل" onclick="editItem(${item.item_id})"><i class="fas fa-edit"></i></button>
+                            <button class="row-action-btn delete" title="حذف" onclick="deleteItem(${item.item_id}, '${item.item_name}')"><i class="fas fa-times"></i></button>
+                        </div>
+                    </td>
                 `;
-            }).join('');
+                fragment.appendChild(tr);
+            });
+            tbody.innerHTML = '';
+            tbody.appendChild(fragment);
         }
 
         function filterItems() {
@@ -640,6 +654,12 @@
                 return;
             }
 
+            const saveBtn = document.querySelector('#addModal .btn-primary');
+            if (saveBtn) {
+                saveBtn.disabled = true;
+                saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...';
+            }
+
             const itemName = document.getElementById('itemName').value.trim();
             const itemUnit = document.getElementById('itemUnit').value;
             const itemCategory = document.getElementById('itemCategory').value;
@@ -647,12 +667,20 @@
 
             if (itemName.length < 3) {
                 document.getElementById('nameError').classList.add('visible');
+                if (saveBtn) {
+                    saveBtn.disabled = false;
+                    saveBtn.innerHTML = '<i class="fas fa-check-circle"></i> حفظ الصنف';
+                }
                 return;
             }
             document.getElementById('nameError').classList.remove('visible');
 
             if (!itemUnit || !itemCategory) {
                 showToast('يرجى ملء جميع الحقول المطلوبة', 'warning');
+                if (saveBtn) {
+                    saveBtn.disabled = false;
+                    saveBtn.innerHTML = '<i class="fas fa-check-circle"></i> حفظ الصنف';
+                }
                 return;
             }
 
@@ -668,6 +696,11 @@
                 loadDashboardData();
             } catch (error) {
                 showToast('فشل في إضافة الصنف', 'error');
+            } finally {
+                if (saveBtn) {
+                    saveBtn.disabled = false;
+                    saveBtn.innerHTML = '<i class="fas fa-check-circle"></i> حفظ الصنف';
+                }
             }
         }
 
@@ -709,18 +742,28 @@
                 showToast('لا تملك صلاحية الإضافة', 'error');
                 return;
             }
-            document.getElementById('addModal').classList.add('active');
+            const modal = document.getElementById('addModal');
+            modal.hidden = false;
+            modal.classList.add('active');
             document.getElementById('addItemForm').reset();
             document.querySelectorAll('.error-message').forEach(el => el.classList.remove('visible'));
             document.getElementById('itemName').focus();
         }
 
         function closeModal() {
-            document.getElementById('addModal').classList.remove('active');
+            const modal = document.getElementById('addModal');
+            modal.hidden = true;
+            modal.classList.remove('active');
         }
 
         document.getElementById('addModal').addEventListener('click', function(e) {
             if (e.target === this) closeModal();
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeModal();
+            }
         });
 
         function createToastContainer() {

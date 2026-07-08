@@ -335,6 +335,19 @@ tbody tr:last-child td {
     display: flex;
 }
 
+.modal[hidden] {
+    display: none !important;
+}
+
+.modal-content:focus {
+    outline: none;
+}
+
+dialog.modal-content::backdrop {
+    background: rgba(15, 23, 42, 0.5);
+    backdrop-filter: blur(4px);
+}
+
 .modal-content {
     background: white;
     border-radius: 20px;
@@ -445,19 +458,35 @@ tbody tr:last-child td {
 }
 
 .toast-success {
-    border-right: 4px solid var(--success);
+    border-color: var(--success-light);
+}
+
+.toast-success .toast-icon {
+    color: var(--success);
 }
 
 .toast-error {
-    border-right: 4px solid var(--danger);
+    border-color: var(--danger-light);
+}
+
+.toast-error .toast-icon {
+    color: var(--danger);
 }
 
 .toast-warning {
-    border-right: 4px solid var(--warning);
+    border-color: var(--warning-light);
+}
+
+.toast-warning .toast-icon {
+    color: var(--warning);
 }
 
 .toast-info {
-    border-right: 4px solid var(--info);
+    border-color: var(--info-light);
+}
+
+.toast-info .toast-icon {
+    color: var(--info);
 }
 
 /* --- Empty State --- */
@@ -763,7 +792,7 @@ tbody tr:last-child td {
     padding: 12px;
     background: var(--bg-hover);
     border-radius: 12px;
-    border-right: 3px solid var(--warning);
+    border: 1px solid var(--border-color);
     transition: var(--transition-fast);
 }
 

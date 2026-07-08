@@ -51,12 +51,6 @@
 
     <!-- ===== MAIN CONTENT ===== -->
     <main class="content">
-        <!-- Top Header -->
-        <header class="top-header">
-            <div class="header-actions">
-                <button class="header-btn" onclick="handleLogout()" title="خروج"><span><i class="fas fa-door-open"></i></span></button>
-            </div>
-        </header>
 
         <!-- Page Title -->
         <div class="header-title-section">
@@ -118,14 +112,14 @@
     </main>
 
     <!-- Add Entity Modal -->
-    <div class="modal" id="addModal">
+    <div class="modal" id="addModal" role="dialog" aria-modal="true" aria-labelledby="addModalTitle" hidden>
         <div class="modal-content">
             <div class="modal-header">
-                <div class="modal-title">إضافة جهة جديدة</div>
-                <button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button>
+                <h3 class="modal-title" id="addModalTitle">إضافة جهة جديدة</h3>
+                <button class="modal-close" aria-label="إغلاق" onclick="closeModal()"><i class="fas fa-times"></i></button>
             </div>
             <div class="modal-body">
-                <form id="addEntityForm">
+                <form id="addEntityForm" class="form-grid" onsubmit="event.preventDefault(); submitAddEntity();">
                     <div class="form-group">
                         <label>اسم الجهة (الشركة / القسم / الموظف) *</label>
                         <input type="text" id="entityName" placeholder="أدخل اسم الجهة..." required>
@@ -146,13 +140,14 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" onclick="closeModal()">إلغاء</button>
-                <button type="button" class="btn btn-primary" onclick="submitAddEntity()">حفظ</button>
+                <button type="button" class="btn btn-primary" id="saveEntityBtn" onclick="submitAddEntity()"><i class="fas fa-save"></i> حفظ</button>
             </div>
         </div>
     </div>
 
     <script src="assets/js/common.js"></script>
     <script src="assets/js/components/sidebar.js"></script>
+    <script src="assets/js/components/header.js"></script>
     <script src="assets/js/components/layout.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -227,14 +222,16 @@
                 return;
             }
 
-            tbody.innerHTML = entities.map(ent => {
+            const fragment = document.createDocumentFragment();
+            entities.forEach(ent => {
                 let typeAr = '';
                 let badgeClass = '';
                 if (ent.entity_type === 'Supplier') { typeAr = 'مورد'; badgeClass = 'badge-supplier'; }
                 else if (ent.entity_type === 'Department') { typeAr = 'قسم'; badgeClass = 'badge-dept'; }
                 else { typeAr = 'موظف'; badgeClass = 'badge-emp'; }
 
-                return '<tr>' +
+                const tr = document.createElement('tr');
+                tr.innerHTML =
                     '<td><span class="item-id">' + ent.entity_id + '</span></td>' +
                     '<td style="font-weight: 600;">' + ent.entity_name + '</td>' +
                     '<td><span class="badge ' + badgeClass + '">' + typeAr + '</span></td>' +
@@ -243,9 +240,11 @@
                         '<div class="row-actions">' +
                             '<button class="row-action-btn delete" title="حذف" onclick="deleteEntity(' + ent.entity_id + ')"><i class="fas fa-trash"></i></button>' +
                         '</div>' +
-                    '</td>' +
-                '</tr>';
-            }).join('');
+                    '</td>';
+                fragment.appendChild(tr);
+            });
+            tbody.innerHTML = '';
+            tbody.appendChild(fragment);
         }
 
         function filterEntities() {
@@ -263,17 +262,31 @@
             const session = checkSession();
             if (session && session.role === 'viewer') { showToast('لا تملك صلاحية الإضافة', 'error'); return; }
 
+            const btn = document.getElementById('saveEntityBtn');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...';
+
             const name = document.getElementById('entityName').value.trim();
             const type = document.getElementById('entityType').value;
             const phone = document.getElementById('entityPhone').value.trim();
 
-            if (!name) { showToast('يرجى إدخال اسم الجهة', 'warning'); return; }
+            if (!name) {
+                showToast('يرجى إدخال اسم الجهة', 'warning');
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+                return;
+            }
 
             try {
                 const result = await window.api.addEntity({ name, type, phone });
                 if (result.success) { closeModal(); loadEntities(); showToast('تمت الإضافة بنجاح', 'success'); }
                 else { showToast(result.message, 'error'); }
             } catch (error) { showToast('حدث خطأ أثناء الإضافة', 'error'); }
+            finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
         }
 
         async function deleteEntity(id) {
@@ -292,13 +305,25 @@
         function openModal() {
             const session = checkSession();
             if (session && session.role === 'viewer') { showToast('لا تملك صلاحية الإضافة', 'error'); return; }
-            document.getElementById('addModal').classList.add('active');
+            const modal = document.getElementById('addModal');
+            modal.hidden = false;
+            modal.classList.add('active');
             document.getElementById('addEntityForm').reset();
         }
 
-        function closeModal() { document.getElementById('addModal').classList.remove('active'); }
+        function closeModal() {
+            const modal = document.getElementById('addModal');
+            modal.hidden = true;
+            modal.classList.remove('active');
+        }
 
         document.getElementById('addModal').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+        });
 
         // ===== INIT =====
         window.addEventListener('DOMContentLoaded', () => {

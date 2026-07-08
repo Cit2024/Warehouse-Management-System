@@ -41,12 +41,6 @@
 
     <!-- Main Content -->
     <main class="content">
-        <!-- Top Header -->
-        <header class="top-header">
-            <div class="header-actions">
-                <button class="header-btn" onclick="handleLogout()" title="خروج"><i class="fas fa-door-open"></i></button>
-            </div>
-        </header>
 
         <!-- Page Title -->
         <div class="header-title-section">
@@ -57,33 +51,31 @@
         <div class="page-content">
             <div class="panel">
                 <div class="panel-body">
-                    <form onsubmit="event.preventDefault(); saveReceipt();">
+                    <form class="form-grid" onsubmit="event.preventDefault(); saveReceipt();">
                         <!-- Document Header -->
-                        <div class="form-grid">
-                            <div id="rem2" class="form-group">
-                                <label>تاريخ الصرف</label>
-                                <input type="date" id="receiptDate" required max="">
-                            </div>
-                            <div class="form-group">
-                                <label>الجهة الطالبة (القسم/الموظف)</label>
-                                <select id="requesterSelect" required>
-                                    <option value="">-- اختر الجهة --</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>المخزن المصروف منه</label>
-                                <select id="storeSelect" required>
-                                    <option value="">-- اختر المخزن --</option>
-                                </select>
-                            </div>
-                            <div class="form-group" style="grid-column: span 2;">
-                                <label>ملاحظات / سبب الصرف</label>
-                                <input type="text" id="receiptNotes" placeholder="مثال: عهدة شخصية، احتياج معمل...">
-                            </div>
+                        <div id="rem2" class="form-group">
+                            <label>تاريخ الصرف</label>
+                            <input type="date" id="receiptDate" required max="">
+                        </div>
+                        <div class="form-group">
+                            <label>الجهة الطالبة (القسم/الموظف)</label>
+                            <select id="requesterSelect" required>
+                                <option value="">-- اختر الجهة --</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>المخزن المصروف منه</label>
+                            <select id="storeSelect" required>
+                                <option value="">-- اختر المخزن --</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="grid-column: span 2;">
+                            <label>ملاحظات / سبب الصرف</label>
+                            <input type="text" id="receiptNotes" placeholder="مثال: عهدة شخصية، احتياج معمل...">
                         </div>
 
                         <!-- Items Section -->
-                        <div class="items-section" style="margin-top: 30px; border-top: 2px dashed var(--border-color); padding-top: 20px;">
+                        <div class="items-section" style="grid-column: 1 / -1; margin-top: 30px; border-top: 2px dashed var(--border-default); padding-top: 20px;">
                             <h3 style="margin-bottom: 20px; color: var(--primary); font-size: 16px;">الأصناف المصروفة</h3>
 
                             <div id="itemsSel" style="display: flex; gap: 12px; align-items: flex-end; margin-bottom: 20px; flex-wrap: wrap;">
@@ -125,7 +117,7 @@
                             </div>
                         </div>
 
-                        <div style="display: flex; gap: 12px; margin-top: 24px;">
+                        <div style="grid-column: 1 / -1; display: flex; gap: 12px; margin-top: 24px;">
                             <button type="submit" class="btn btn-success btn-lg" style="flex: 1;">
                                 <i class="fas fa-save"></i>
                                 <span>حفظ واعتماد إذن الصرف</span>
@@ -149,11 +141,12 @@
         <div class="modal-content" role="document" style="text-align: center; max-width: 420px;">
             <div class="modal-header" style="border-bottom: none; padding-bottom: 0;">
                 <h2 class="modal-title" id="printModalTitle" tabindex="-1" style="width: 100%; text-align: center;">تم اعتماد إذن الصرف</h2>
+                <button type="button" class="modal-close" aria-label="إغلاق" onclick="closePrintModal()">&times;</button>
             </div>
             <div class="modal-body">
                 <div style="font-size: 56px; margin-bottom: 16px; color: var(--success);"><i class="fas fa-check-circle"></i></div>
                 <h3 style="margin-bottom: 8px; color: var(--success); font-size: 18px;" id="successMessage">تم الحفظ بنجاح</h3>
-                <p style="margin-bottom: 28px; color: var(--text-gray); font-size: 14px;">كيف تود التعامل مع هذا المستند؟</p>
+                <p style="margin-bottom: 28px; color: var(--text-muted); font-size: 14px;">كيف تود التعامل مع هذا المستند؟</p>
 
                 <div style="display: flex; gap: 10px; justify-content: center;">
                     <button type="button" class="btn btn-primary" onclick="executePrint('direct')">
@@ -167,6 +160,7 @@
 
     <script src="assets/js/common.js"></script>
     <script src="assets/js/components/sidebar.js"></script>
+    <script src="assets/js/components/header.js"></script>
     <script src="assets/js/components/layout.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -183,11 +177,7 @@
 
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Escape') {
-                    const modal = document.getElementById('printModal');
-                    if (modal && !modal.hidden) {
-                        modal.hidden = true;
-                        modal.classList.remove('active');
-                    }
+                    closePrintModal();
                 }
             });
 
@@ -334,10 +324,7 @@
                 });
                 if (result.success) {
                     document.getElementById('successMessage').textContent = result.message;
-                    const modal = document.getElementById('printModal');
-                    modal.hidden = false;
-                    modal.classList.add('active');
-                    document.getElementById('printModalTitle').focus();
+                    openPrintModal();
                 } else {
                     showToast(result.message, 'error');
                 }
@@ -349,10 +336,21 @@
             }
         }
 
-        function executePrint(choice) {
+        function openPrintModal() {
+            const modal = document.getElementById('printModal');
+            modal.hidden = false;
+            modal.classList.add('active');
+            document.getElementById('printModalTitle').focus();
+        }
+
+        function closePrintModal() {
             const modal = document.getElementById('printModal');
             modal.hidden = true;
             modal.classList.remove('active');
+        }
+
+        function executePrint(choice) {
+            closePrintModal();
             if (choice === 'direct') {
                 const dateEl = document.getElementById('printReceiptDate');
                 if (dateEl) dateEl.textContent = 'تاريخ الطباعة: ' + new Date().toLocaleDateString('ar-LY');

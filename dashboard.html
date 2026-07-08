@@ -593,8 +593,8 @@
                         <td>${item.unit}</td>
                         <td style="font-weight: 700;">${quantity}</td>
                         <td>${minQty}</td>
-                        <td>${unitPrice.toLocaleString('ar-LY', { minimumFractionDigits: 2 })} د.ل</td>
-                        <td style="font-weight: 600;">${totalValue.toLocaleString('ar-LY', { minimumFractionDigits: 2 })} د.ل</td>
+                        <td class="numeric currency">${unitPrice.toLocaleString('ar-LY', { minimumFractionDigits: 2 })} د.ل</td>
+                        <td class="numeric currency">${totalValue.toLocaleString('ar-LY', { minimumFractionDigits: 2 })} د.ل</td>
                         <td><span class="badge ${statusClass}">${statusText}</span></td>
                         <td>
                             <div class="row-actions">

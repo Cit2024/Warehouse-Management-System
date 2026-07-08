@@ -150,6 +150,14 @@ tbody td {
     transition: var(--transition-fast);
 }
 
+tbody td.numeric {
+    font-variant-numeric: tabular-nums;
+}
+
+tbody td.currency {
+    white-space: nowrap;
+}
+
 tbody tr:hover td {
     background: var(--primary-light);
 }

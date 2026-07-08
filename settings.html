@@ -9,17 +9,74 @@
     <link rel="stylesheet" href="assets/css/layout.css">
     <link rel="stylesheet" href="assets/css/components.css">
     <link rel="stylesheet" href="assets/css/print.css">
+    <style>
+        .locked-state {
+            text-align: center;
+            padding: var(--space-6);
+        }
+        .locked-icon {
+            font-size: 40px;
+            margin-bottom: var(--space-2);
+        }
+        .locked-title {
+            color: var(--success);
+            margin-bottom: var(--space-3);
+        }
+        .locked-text {
+            color: var(--text-muted);
+            margin-bottom: var(--space-5);
+            font-size: var(--font-body);
+        }
+        .settings-panel {
+            margin-bottom: var(--space-5);
+        }
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: var(--space-5);
+            grid-column: 1 / -1;
+        }
+        .text-danger {
+            color: var(--danger);
+        }
+        .text-muted {
+            color: var(--text-muted);
+        }
+        .status-bar {
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+            margin-bottom: var(--space-5);
+            padding: var(--space-3);
+            background: var(--bg-hover);
+            border-radius: var(--card-radius);
+        }
+        .backup-select {
+            grid-column: span 2;
+        }
+        .backup-actions {
+            grid-column: span 2;
+            display: flex;
+            gap: var(--space-3);
+        }
+        .btn-flex {
+            flex: 1;
+        }
+        .help-text {
+            font-size: var(--font-label);
+            color: var(--text-muted);
+            margin-top: var(--space-1);
+        }
+        .panel-description {
+            margin-bottom: var(--space-5);
+            font-size: var(--font-body);
+        }
+    </style>
 </head>
 <body>
 
     <!-- Main Content -->
     <main class="content">
-        <!-- Top Header -->
-        <header class="top-header">
-            <div class="header-actions">
-                <button class="header-btn" onclick="handleLogout()" title="خروج"><i class="fas fa-door-open"></i></button>
-            </div>
-        </header>
 
         <!-- Page Title -->
         <div class="header-title-section">
@@ -33,16 +90,18 @@
                 <span><i class="fas fa-exclamation-triangle"></i></span>
                 <span>النظام غير متصل بالمستودع السحابي حالياً. يرجى إعداد الروابط أدناه لتفادي فقدان بيانات المخزن.</span>
             </div>
-             <div id="settingsLockedState" style="text-align: center; padding: 20px;">
-                <div style="font-size: 40px; margin-bottom: 10px;">🔒</div>
-                <h4 style="color: var(--success); margin-bottom: 15px;">الإعدادات السحابية محفوظة ومحمية</h4>
-                <p style="color: #666; margin-bottom: 20px; font-size: 14px;">لا يمكن عرض أو تعديل الروابط ورموز الوصول حمايةً للبيانات.</p>
-                <button class="btn btn-warning" onclick="promptForPassword(showSettings)" style="margin: 0 auto;">
+
+            <div id="settingsLockedState" class="locked-state">
+                <div class="locked-icon">🔒</div>
+                <h4 class="locked-title">الإعدادات السحابية محفوظة ومحمية</h4>
+                <p class="locked-text">لا يمكن عرض أو تعديل الروابط ورموز الوصول حمايةً للبيانات.</p>
+                <button class="btn btn-warning" onclick="promptForPassword(showSettings)">
                     🔓 تعديل الإعدادات (يتطلب كلمة المرور)
                 </button>
             </div>
+
             <!-- Cloud Settings Panel -->
-            <div id="cloudSettingsForm" class="panel" style="margin-bottom: 20px; display:none;">
+            <div id="cloudSettingsForm" class="panel settings-panel" style="display: none;">
                 <div class="panel-header">
                     <div>
                         <div class="panel-title"><i class="fas fa-cloud"></i> إعدادات التخزين السحابي (GitHub Backup)</div>
@@ -50,27 +109,25 @@
                     </div>
                 </div>
                 <div class="panel-body">
-                    <form id="cloudSettingsForm">
-                        <div class="form-grid">
-                            <div class="form-group" style="grid-column: span 2;">
-                                <label>رابط المستودع (HTTPS Repo URL)</label>
-                                <input type="url" id="repoUrl" placeholder="https://github.com/username/repo.git" required>
-                            </div>
-                            <div class="form-group">
-                                <label>رمز الوصول الدائم (Personal Access Token)</label>
-                                <input type="password" id="accessToken" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" required>
-                                <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">يتم تشفير هذا الرمز وحفظه محلياً ولا يتم مشاركته.</div>
-                            </div>
-                            <div class="form-group">
-                                <label>معدل النسخ التلقائي</label>
-                                <select id="backupFrequency">
-                                    <option value="14">كل أسبوعين (موصى به)</option>
-                                    <option value="21">كل 3 أسابيع</option>
-                                    <option value="30">كل شهر (أقصى حد)</option>
-                                </select>
-                            </div>
+                    <form id="cloudSettingsFormEl" class="form-grid" onsubmit="event.preventDefault(); saveSettings();">
+                        <div class="form-group" style="grid-column: span 2;">
+                            <label>رابط المستودع (HTTPS Repo URL)</label>
+                            <input type="url" id="repoUrl" placeholder="https://github.com/username/repo.git" required>
                         </div>
-                        <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
+                        <div class="form-group">
+                            <label>رمز الوصول الدائم (Personal Access Token)</label>
+                            <input type="password" id="accessToken" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" required>
+                            <div class="help-text">يتم تشفير هذا الرمز وحفظه محلياً ولا يتم مشاركته.</div>
+                        </div>
+                        <div class="form-group">
+                            <label>معدل النسخ التلقائي</label>
+                            <select id="backupFrequency">
+                                <option value="14">كل أسبوعين (موصى به)</option>
+                                <option value="21">كل 3 أسابيع</option>
+                                <option value="30">كل شهر (أقصى حد)</option>
+                            </select>
+                        </div>
+                        <div class="form-actions">
                             <button type="submit" class="btn btn-primary" id="saveBtn">
                                 <span><i class="fas fa-link"></i></span>
                                 <span>فحص الاتصال وحفظ الإعدادات</span>
@@ -84,33 +141,33 @@
             <div class="panel">
                 <div class="panel-header">
                     <div>
-                        <div class="panel-title" style="color: var(--danger);"><i class="fas fa-sync-alt"></i> الاسترجاع والعودة بالزمن (Restore)</div>
+                        <div class="panel-title text-danger"><i class="fas fa-sync-alt"></i> الاسترجاع والعودة بالزمن (Restore)</div>
                         <div class="panel-subtitle">استرجاع نسخة سابقة من البيانات</div>
                     </div>
                 </div>
                 <div class="panel-body">
-                    <p style="color: var(--text-gray); margin-bottom: 20px; font-size: 13px;">
+                    <p class="panel-description text-muted">
                         يمكنك استرجاع أي نسخة سابقة تم حفظها محلياً أو سحابياً. إذا فقدت بياناتك، يمكنك جلب النسخ من المستودع السحابي.
                     </p>
 
-                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px; padding: 12px; background: var(--bg-hover); border-radius: 10px;">
+                    <div class="status-bar">
                         <span><i class="fas fa-globe"></i> حالة الاتصال:</span>
                         <span id="statusText" class="status-badge status-offline">غير متصل</span>
                     </div>
 
                     <div class="form-grid" id="restoreControls">
-                        <div class="form-group" style="grid-column: span 2;">
+                        <div class="form-group backup-select">
                             <label>النسخ الاحتياطية المتوفرة</label>
                             <select id="cloudBackupsSelect">
                                 <option value="">-- اضغط على زر عرض النسخ --</option>
                             </select>
                         </div>
-                        <div class="form-group" style="grid-column: span 2; display: flex; gap: 12px;">
-                            <button type="button" class="btn btn-primary" style="flex: 1;" id="syncAndShowBtn">
+                        <div class="form-group backup-actions">
+                            <button type="button" class="btn btn-primary btn-flex" id="syncAndShowBtn">
                                 <span><i class="fas fa-sync-alt"></i></span>
                                 <span>عرض النسخ السابقة</span>
                             </button>
-                            <button type="button" class="btn btn-danger" style="flex: 1;" id="restoreBtn" onclick="restoreDatabase()">
+                            <button type="button" class="btn btn-danger btn-flex" id="restoreBtn" onclick="restoreDatabase()">
                                 <span><i class="fas fa-exclamation-triangle"></i></span>
                                 <span>استرجاع النسخة المحددة</span>
                             </button>
@@ -123,6 +180,7 @@
 
     <script src="assets/js/common.js"></script>
     <script src="assets/js/components/sidebar.js"></script>
+    <script src="assets/js/components/header.js"></script>
     <script src="assets/js/components/layout.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -155,7 +213,7 @@
             const btn = document.getElementById('syncAndShowBtn');
             const select = document.getElementById('cloudBackupsSelect');
             const originalText = btn.innerHTML;
-            btn.innerHTML = '<span class="loading-spinner"></span> جاري الفحص...';
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الفحص...';
             btn.disabled = true;
 
             try {
@@ -182,7 +240,7 @@
                     return;
                 }
 
-                btn.innerHTML = '<span class="loading-spinner"></span> جاري المزامنة...';
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري المزامنة...';
                 const syncResult = await window.api.syncWithCloud();
 
                 if (syncResult.success) {
@@ -205,25 +263,33 @@
 
         function displayBackups(backups, isOnlineMode) {
             const select = document.getElementById('cloudBackupsSelect');
-            if (!backups || backups.length === 0) { select.innerHTML = '<option value="">لا توجد نسخ احتياطية</option>'; return; }
+            if (!backups || backups.length === 0) {
+                select.innerHTML = '<option value="">لا توجد نسخ احتياطية</option>';
+                return;
+            }
 
             select.innerHTML = '<option value="">-- اختر نسخة --</option>';
+            const fragment = document.createDocumentFragment();
             backups.forEach(b => {
                 const source = b.source || 'local';
                 const icon = source === 'cloud' ? '<i class="fas fa-cloud"></i>' : '<i class="fas fa-save"></i>';
                 const sText = source === 'cloud' ? 'سحابية' : 'محلية';
-                select.innerHTML += `<option value="${b.fullCommitId || b.commitId}">${icon} [${sText}] ${b.date} - ${b.message}</option>`;
+                const option = document.createElement('option');
+                option.value = b.fullCommitId || b.commitId;
+                option.innerHTML = `${icon} [${sText}] ${b.date} - ${b.message}`;
+                fragment.appendChild(option);
             });
+            select.appendChild(fragment);
         }
 
         async function restoreDatabase() {
             const commitId = document.getElementById('cloudBackupsSelect').value;
             if (!commitId) { showToast('يرجى اختيار نسخة أولاً', 'warning'); return; }
 
-            if (confirm('<i class="fas fa-exclamation-triangle"></i> استرجاع هذه النسخة سيمسح البيانات الحالية ويستبدلها. هل أنت متأكد؟')) {
+            if (confirm('استرجاع هذه النسخة سيمسح البيانات الحالية ويستبدلها. هل أنت متأكد؟')) {
                 const btn = document.getElementById('restoreBtn');
                 const originalText = btn.innerHTML;
-                btn.innerHTML = '<span class="loading-spinner"></span> جاري الاسترجاع...';
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الاسترجاع...';
                 btn.disabled = true;
 
                 try {
@@ -254,11 +320,10 @@
         });
 
         // Save settings
-        document.getElementById('cloudSettingsForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
+        async function saveSettings() {
             const btn = document.getElementById('saveBtn');
             const originalText = btn.innerHTML;
-            btn.innerHTML = '<span class="loading-spinner"></span> جاري الحفظ...';
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...';
             btn.disabled = true;
 
             const result = await window.api.saveSettings({
@@ -267,10 +332,12 @@
                 backupFrequency: document.getElementById('backupFrequency').value
             });
 
-            if (result.success) { showToast(result.message, 'success'); document.getElementById('alertBanner').style.display = 'none'; }
-            else { showToast(result.message, 'error'); }
+            if (result.success) {
+                showToast(result.message, 'success');
+                document.getElementById('alertBanner').style.display = 'none';
+            } else { showToast(result.message, 'error'); }
             btn.innerHTML = originalText; btn.disabled = false;
-        });
+        }
     </script>
     <script>
     (function() {

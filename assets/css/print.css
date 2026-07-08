@@ -1,5 +1,6 @@
 /* ========================================================= */
-/* Print Styles v2 - Professional Report Layout              */
+/* Print Styles v3 — Clean report layout (Impeccable)        */
+/* Tokens: assets/css/main.css                               */
 /* ========================================================= */
 
 /* --- Screen: hide all print-only elements --- */
@@ -21,7 +22,7 @@
     /* --- Page Setup --- */
     @page {
         size: A4;
-        margin: 12mm 10mm 15mm 10mm;
+        margin: 12mm 10mm 12mm 10mm;
     }
 
     /* --- Landscape for wide tables --- */
@@ -108,7 +109,8 @@
     select.filter-select,
     input[type="date"],
     input[type="text"],
-    .panel-header {
+    .panel-header,
+    .report-filters-print {
         display: none !important;
         visibility: hidden !important;
     }
@@ -183,176 +185,167 @@
     .print-signatures,
     .print-grand-total,
     .print-logo-fallback {
-        display: flex !important;
-        visibility: visible !important;
-        opacity: 1 !important;
-        position: static !important;
-        width: auto !important;
-        height: auto !important;
+        display: flex;
+        visibility: visible;
+        opacity: 1;
+        position: static;
+        width: auto;
+        height: auto;
     }
 
     /* ===================================================== */
     /* PRINT HEADER - 3 Column Layout                       */
     /* ===================================================== */
     .print-header {
-        display: flex !important;
-        flex-direction: row !important;
-        align-items: center !important;
-        justify-content: space-between !important;
-        border-bottom: 2pt solid #333 !important;
-        padding-bottom: 10pt !important;
-        margin-bottom: 10pt !important;
-        width: 100% !important;
-        direction: rtl !important;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 2pt solid #000;
+        padding-bottom: 10pt;
+        margin-bottom: 10pt;
+        width: 100%;
+        direction: rtl;
     }
 
     /* RIGHT - Logo (order:1 in RTL = right side) */
     .print-logo-area {
-        width: 65px !important;
-        height: 65px !important;
-        flex-shrink: 0 !important;
-        order: 1 !important;
+        width: 65px;
+        height: 65px;
+        flex-shrink: 0;
+        order: 1;
     }
 
     .print-logo-area img {
-        width: 100% !important;
-        height: 100% !important;
-        object-fit: contain !important;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
     }
 
     .print-logo-fallback {
-        width: 65px !important;
-        height: 65px !important;
-        display: none !important;
-        align-items: center !important;
-        justify-content: center !important;
+        width: 65px;
+        height: 65px;
+        display: none;
+        align-items: center;
+        justify-content: center;
     }
 
     /* CENTER - Titles (order:2 in RTL = center) */
     .print-title-area {
-        flex: 1 !important;
-        text-align: center !important;
-        order: 2 !important;
-        padding: 0 8pt !important;
+        flex: 1;
+        text-align: center;
+        order: 2;
+        padding: 0 8pt;
     }
 
     .print-college-name {
-        font-size: 13pt !important;
-        font-weight: bold !important;
-        color: #000 !important;
-        margin-bottom: 2pt !important;
+        font-size: 13pt;
+        font-weight: var(--weight-bold);
+        color: #000;
+        margin-bottom: 2pt;
     }
 
     .print-system-name {
-        font-size: 10pt !important;
-        color: #FF6B00 !important;
-        font-weight: 600 !important;
-        margin-bottom: 3pt !important;
+        font-size: 10pt;
+        color: var(--primary);
+        font-weight: var(--weight-semibold);
+        margin-bottom: 3pt;
     }
 
     .print-report-title {
-        font-size: 14pt !important;
-        font-weight: bold !important;
-        color: #000 !important;
-        margin: 0 !important;
+        font-size: 14pt;
+        font-weight: var(--weight-bold);
+        color: #000;
+        margin: 0;
     }
 
     /* LEFT - Dates (order:3 in RTL = left side) */
     .print-date-area {
-        text-align: center !important;
-        flex-shrink: 0 !important;
-        order: 3 !important;
-        min-width: 90px !important;
+        text-align: center;
+        flex-shrink: 0;
+        order: 3;
+        min-width: 90px;
     }
 
     .print-gregorian {
-        font-size: 8.5pt !important;
-        color: #333 !important;
-        font-weight: 600 !important;
-        margin-bottom: 2pt !important;
+        font-size: 8.5pt;
+        color: var(--text-secondary);
+        font-weight: var(--weight-semibold);
+        margin-bottom: 2pt;
     }
 
     .print-hijri-label {
-        font-size: 7.5pt !important;
-        color: #888 !important;
-        margin-bottom: 1pt !important;
+        font-size: 7.5pt;
+        color: var(--text-muted);
+        margin-bottom: 1pt;
     }
 
     .print-hijri {
-        font-size: 8.5pt !important;
-        color: #555 !important;
-        font-weight: 600 !important;
+        font-size: 8.5pt;
+        color: var(--text-secondary);
+        font-weight: var(--weight-semibold);
     }
 
     /* ===================================================== */
     /* PRINT HEADER - Receipt pages variant                  */
-    /* (dispense.html / supply.html و ما شابهها)              */
     /* ===================================================== */
-    /*
-       صفحات الأذون (الصرف/التوريد) تستخدم بنية رأس مختلفة عن
-       report.html: .print-header-top > (.print-logo + .print-header-titles)
-       بدل .print-logo-area / .print-title-area / .print-date-area.
-       هذه الكلاسات لم يكن لها أي تنسيق طباعة، فكانت صورة الشعار
-       تُطبع بحجمها الطبيعي الكامل (بدون تصغير) — وهو سبب ظهورها
-       كبيرة جداً. أضفنا هنا نفس منطق التحجيم المستخدم في report.html.
-    */
     .print-header-top {
-        display: flex !important;
-        flex-direction: row !important;
-        align-items: center !important;
-        gap: 12pt !important;
-        width: 100% !important;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 12pt;
+        width: 100%;
     }
 
     .print-logo {
-        width: 65px !important;
-        height: 65px !important;
-        flex-shrink: 0 !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        overflow: hidden !important;
+        width: 65px;
+        height: 65px;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
     }
 
     .print-logo img {
-        width: 100% !important;
-        height: 100% !important;
-        object-fit: contain !important;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
     }
 
     .print-header-titles {
-        flex: 1 !important;
-        text-align: center !important;
-        padding: 0 8pt !important;
+        flex: 1;
+        text-align: center;
+        padding: 0 8pt;
     }
 
     .print-college {
-        font-size: 13pt !important;
-        font-weight: bold !important;
-        color: #000 !important;
-        margin-bottom: 2pt !important;
+        font-size: 13pt;
+        font-weight: var(--weight-bold);
+        color: #000;
+        margin-bottom: 2pt;
     }
 
     .print-system {
-        font-size: 10pt !important;
-        color: #FF6B00 !important;
-        font-weight: 600 !important;
-        margin-bottom: 3pt !important;
+        font-size: 10pt;
+        color: var(--primary);
+        font-weight: var(--weight-semibold);
+        margin-bottom: 3pt;
     }
 
     .print-header-titles h1 {
-        font-size: 14pt !important;
-        font-weight: bold !important;
-        color: #000 !important;
-        margin: 0 !important;
-        line-height: 1.3 !important;
+        font-size: 14pt;
+        font-weight: var(--weight-bold);
+        color: #000;
+        margin: 0;
+        line-height: 1.3;
     }
 
     #printReceiptDate {
-        font-size: 8.5pt !important;
-        color: #555 !important;
-        font-weight: 600 !important;
-        margin-top: 3pt !important;
+        font-size: 8.5pt;
+        color: var(--text-secondary);
+        font-weight: var(--weight-semibold);
+        margin-top: 3pt;
     }
 
     /* ===================================================== */
@@ -360,88 +353,90 @@
     /* ===================================================== */
     .print-summary,
     .print-summary-bar {
-        display: flex !important;
-        justify-content: flex-start !important;
-        gap: 20pt !important;
-        background: #f5f5f5 !important;
-        border: 0.5pt solid #ccc !important;
-        padding: 6pt 10pt !important;
-        margin-bottom: 10pt !important;
-        page-break-inside: avoid !important;
+        display: flex;
+        justify-content: flex-start;
+        gap: 20pt;
+        background: var(--bg-hover);
+        border: 0.5pt solid var(--border-default);
+        padding: 6pt 10pt;
+        margin-bottom: 10pt;
+        page-break-inside: avoid;
     }
 
     .print-summary-item {
-        text-align: center !important;
-        flex: 0 0 auto !important;
-        min-width: 100pt !important;
+        text-align: center;
+        flex: 0 0 auto;
+        min-width: 100pt;
     }
 
     .print-summary-label {
-        display: block !important;
-        font-size: 7.5pt !important;
-        color: #777 !important;
-        margin-bottom: 1pt !important;
+        display: block;
+        font-size: 7.5pt;
+        color: var(--text-muted);
+        margin-bottom: 1pt;
     }
 
     .print-summary-value {
-        display: block !important;
-        font-size: 9pt !important;
-        font-weight: bold !important;
-        color: #000 !important;
+        display: block;
+        font-size: 9pt;
+        font-weight: var(--weight-bold);
+        color: #000;
     }
 
     /* ===================================================== */
     /* TABLE                                                 */
     /* ===================================================== */
     .table-container {
-        display: block !important;
-        width: 100% !important;
-        padding: 0 !important;
-        margin: 4pt 0 !important;
-        border: none !important;
-        background: white !important;
+        display: block;
+        width: 100%;
+        padding: 0;
+        margin: 4pt 0;
+        border: none;
+        background: white;
     }
 
     table {
-        width: 100% !important;
-        border-collapse: collapse !important;
-        border: 0.5pt solid #888 !important;
-        border-radius: 3pt !important;
-        margin-top: 4pt !important;
-        font-size: 8.5pt !important;
-        direction: rtl !important;
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        border: 0.5pt solid #999;
+        border-radius: 3pt;
+        margin-top: 4pt;
+        font-size: 8.5pt;
+        direction: rtl;
     }
 
     thead {
-        display: table-header-group !important;
+        display: table-header-group;
     }
 
     thead th {
-        background-color: #d0d0d0 !important;
-        border: 0.5pt solid #666 !important;
-        border-bottom: 1pt solid #333 !important;
-        padding: 6pt 8pt !important;
-        font-weight: bold !important;
-        font-size: 8.5pt !important;
-        text-align: right !important;
+        background: #E8E8E8;
+        border: 0.5pt solid #777;
+        border-bottom: 1pt solid #333;
+        padding: 5pt 8pt;
+        font-weight: var(--weight-bold);
+        font-size: 8.5pt;
+        text-align: right;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
     }
 
     tbody td {
-        border: 0.5pt solid #bbb !important;
-        padding: 5pt 8pt !important;
-        text-align: right !important;
-        vertical-align: middle !important;
+        border: 0.5pt solid #BBB;
+        padding: 4pt 8pt;
+        text-align: right;
+        vertical-align: middle;
     }
 
     tbody tr {
-        page-break-inside: avoid !important;
+        page-break-inside: avoid;
     }
 
     tbody tr:nth-child(even) {
-        background-color: #f8f8f8 !important;
+        background-color: var(--bg-hover);
         -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
     }
 
     /* ===================================================== */
@@ -453,104 +448,113 @@
     }
 
     .badge-available {
-        background: #d1fae5 !important;
-        color: #065f46 !important;
+        background: var(--success-bg) !important;
+        color: var(--success) !important;
     }
 
     .badge-low {
-        background: #fee2e2 !important;
-        color: #991b1b !important;
+        background: var(--warning-bg) !important;
+        color: var(--warning) !important;
     }
 
     .badge-supplier {
-        background: #dbeafe !important;
-        color: #1e40af !important;
+        background: var(--info-bg) !important;
+        color: var(--info) !important;
     }
 
     .item-id {
-        font-family: monospace !important;
-        font-size: 7.5pt !important;
-        color: #666 !important;
+        font-family: monospace;
+        font-size: 7.5pt;
+        color: var(--text-muted);
     }
 
     /* ===================================================== */
     /* FOOTER - Signatures anchored to page bottom           */
     /* ===================================================== */
     .print-signatures.print-only {
-        display: flex !important;
-        justify-content: space-between !important;
-        position: fixed !important;
-        bottom: 15mm !important;
-        left: 12mm !important;
-        right: 12mm !important;
-        margin: 0 !important;
-        page-break-before: avoid !important;
+        display: flex;
+        justify-content: space-between;
+        position: fixed;
+        bottom: 12mm;
+        left: 10mm;
+        right: 10mm;
+        margin: 0;
+        page-break-before: avoid;
     }
 
     .print-signatures:not(.print-only) {
-        display: flex !important;
-        justify-content: space-between !important;
-        position: static !important;
-        margin: 16pt 0 0 0 !important;
-        page-break-inside: avoid !important;
+        display: flex;
+        justify-content: space-between;
+        position: static;
+        margin: 16pt 0 0 0;
+        page-break-inside: avoid;
     }
 
     .print-signature-box {
-        width: 28% !important;
-        text-align: center !important;
-        padding-top: 30pt !important;
-        border-top: 1pt solid #000 !important;
-        font-size: 8pt !important;
-        font-weight: 600 !important;
-        line-height: 1.6 !important;
+        width: 30%;
+        text-align: center;
+        padding-top: 28pt;
+        border-top: 1pt solid #000;
+        font-size: 9pt;
+        font-weight: var(--weight-semibold);
+        line-height: 1.5;
+    }
+
+    .print-signature-box::after {
+        content: "الاسم والتوقيع";
+        display: block;
+        font-size: 8pt;
+        font-weight: var(--weight-normal);
+        margin-top: 2pt;
+        color: #000;
     }
 
     /* ===================================================== */
     /* GRAND TOTAL                                           */
     /* ===================================================== */
     .print-grand-total {
-        display: flex !important;
-        justify-content: space-between !important;
-        background: #f0f0f0 !important;
-        border: 0.5pt solid #888 !important;
-        padding: 6pt 10pt !important;
-        margin: 6pt 0 10pt 0 !important;
-        font-weight: bold !important;
-        font-size: 9pt !important;
-        page-break-inside: avoid !important;
+        display: flex;
+        justify-content: space-between;
+        background: var(--bg-hover);
+        border: 0.5pt solid var(--border-default);
+        padding: 6pt 10pt;
+        margin: 6pt 0 10pt 0;
+        font-weight: var(--weight-bold);
+        font-size: 9pt;
+        page-break-inside: avoid;
     }
 
     .print-grand-total .total-value {
-        font-size: 10pt !important;
-        color: #FF6B00 !important;
+        font-size: 10pt;
+        color: var(--primary);
     }
 
     /* ===================================================== */
     /* RECEIPT INFO BLOCK                                    */
     /* ===================================================== */
     .receipt-info-block {
-        display: block !important;
-        background: #f9f9f9 !important;
-        border: 0.5pt solid #ccc !important;
-        padding: 6pt !important;
-        margin-bottom: 6pt !important;
-        font-size: 8.5pt !important;
-        page-break-inside: avoid !important;
+        display: block;
+        background: var(--bg-hover);
+        border: 0.5pt solid var(--border-default);
+        padding: 6pt;
+        margin-bottom: 6pt;
+        font-size: 8.5pt;
+        page-break-inside: avoid;
     }
 
     .receipt-info-block strong {
-        color: #333 !important;
+        color: var(--text-primary);
     }
 
     /* ===================================================== */
     /* LINKS & UTILS                                         */
     /* ===================================================== */
     a {
-        text-decoration: none !important;
-        color: black !important;
+        text-decoration: none;
+        color: black;
     }
 
     .page-break {
-        page-break-before: always !important;
+        page-break-before: always;
     }
 }

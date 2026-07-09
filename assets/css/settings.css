@@ -1,0 +1,78 @@
+/**
+ * Settings page specific styles
+ */
+
+.locked-state {
+    text-align: center;
+    padding: var(--space-6);
+}
+
+.locked-icon {
+    font-size: 40px;
+    margin-bottom: var(--space-2);
+}
+
+.locked-title {
+    color: var(--success);
+    margin-bottom: var(--space-3);
+}
+
+.locked-text {
+    color: var(--text-muted);
+    margin-bottom: var(--space-5);
+    font-size: var(--font-body);
+}
+
+.settings-panel {
+    margin-bottom: var(--space-5);
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: var(--space-5);
+    grid-column: 1 / -1;
+}
+
+.text-danger {
+    color: var(--danger);
+}
+
+.text-muted {
+    color: var(--text-muted);
+}
+
+.status-bar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    margin-bottom: var(--space-5);
+    padding: var(--space-3);
+    background: var(--bg-hover);
+    border-radius: var(--card-radius);
+}
+
+.backup-select {
+    grid-column: span 2;
+}
+
+.backup-actions {
+    grid-column: span 2;
+    display: flex;
+    gap: var(--space-3);
+}
+
+.btn-flex {
+    flex: 1;
+}
+
+.help-text {
+    font-size: var(--font-label);
+    color: var(--text-muted);
+    margin-top: var(--space-1);
+}
+
+.panel-description {
+    margin-bottom: var(--space-5);
+    font-size: var(--font-body);
+}

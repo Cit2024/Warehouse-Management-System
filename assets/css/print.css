@@ -139,6 +139,44 @@
         visibility: hidden !important;
     }
 
+    /* --- AGGRESSIVE HIDE: Form elements on receipts --- */
+    .form-group select,
+    .form-group input[type="text"],
+    .form-group input[type="date"],
+    .form-group input[type="number"],
+    .form-group textarea,
+    #supplierSelect,
+    #storeSelect,
+    #requesterSelect,
+    #receiptNumber,
+    #receiptDate,
+    #receiptNotes,
+    #itemSelect,
+    #itemQty,
+    #itemPrice,
+    #itemsSel,
+    #rem1,
+    #rem2,
+    .stock-badge,
+    .screen-only {
+        display: none !important;
+        visibility: hidden !important;
+    }
+
+    .form-group label {
+        display: none !important;
+    }
+
+    .items-section {
+        margin-top: 0 !important;
+        padding-top: 0 !important;
+        border-top: none !important;
+    }
+
+    .items-section h3 {
+        display: none !important;
+    }
+
     /* --- AGGRESSIVE HIDE: Misc UI --- */
     .activity-list,
     .activity-item,
@@ -289,7 +327,19 @@
     /* ===================================================== */
     /* PRINT HEADER - Receipt pages variant                  */
     /* ===================================================== */
-    .print-header-top {
+    .print-header:not(.print-only) {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        border-bottom: 1.5pt solid #333 !important;
+        padding-bottom: 8pt !important;
+        margin-bottom: 8pt !important;
+        width: 100% !important;
+        direction: rtl !important;
+    }
+
+    .print-header:not(.print-only) .print-header-top {
         display: flex;
         flex-direction: row;
         align-items: center;
@@ -297,62 +347,109 @@
         width: 100%;
     }
 
-    .print-logo {
-        width: 65px;
-        height: 65px;
-        flex-shrink: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+    .print-header:not(.print-only) .print-logo {
+        width: 55px !important;
+        height: 55px !important;
+        flex-shrink: 0 !important;
+        order: 1 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
         overflow: hidden;
     }
 
-    .print-logo img {
-        width: 100%;
-        height: 100%;
-        object-fit: contain;
+    .print-header:not(.print-only) .print-logo img {
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: contain !important;
     }
 
-    .print-header-titles {
-        flex: 1;
-        text-align: center;
-        padding: 0 8pt;
+    .print-header:not(.print-only) .print-header-titles {
+        flex: 1 !important;
+        text-align: center !important;
+        order: 2 !important;
+        padding: 0 6pt !important;
     }
 
-    .print-college {
-        font-size: 13pt;
-        font-weight: var(--weight-bold);
-        color: #000;
-        margin-bottom: 2pt;
+    .print-header:not(.print-only) .print-college {
+        font-size: 12pt !important;
+        font-weight: 700 !important;
+        color: #000 !important;
+        margin-bottom: 1pt !important;
     }
 
-    .print-system {
-        font-size: 10pt;
-        color: var(--primary);
-        font-weight: var(--weight-semibold);
-        margin-bottom: 3pt;
+    .print-header:not(.print-only) .print-system {
+        font-size: 9pt !important;
+        color: #E55A00 !important;
+        font-weight: 600 !important;
+        margin-bottom: 2pt !important;
     }
 
-    .print-header-titles h1 {
-        font-size: 14pt;
-        font-weight: var(--weight-bold);
-        color: #000;
-        margin: 0;
-        line-height: 1.3;
+    .print-header:not(.print-only) .print-header-titles h1 {
+        font-size: 13pt !important;
+        font-weight: 700 !important;
+        color: #000 !important;
+        margin: 0 !important;
+        line-height: 1.3 !important;
     }
 
-    #printReceiptDate {
-        font-size: 8.5pt;
-        color: var(--text-secondary);
-        font-weight: var(--weight-semibold);
-        margin-top: 3pt;
+    /* HIDE the English subtitle in print */
+    .print-header:not(.print-only) .print-header-titles h1 span {
+        display: none !important;
+    }
+
+    /* Single elegant date line */
+    .print-header:not(.print-only) #printReceiptDate {
+        font-size: 8.5pt !important;
+        color: #555 !important;
+        font-weight: 500 !important;
+        margin-top: 2pt !important;
     }
 
     /* ===================================================== */
-    /* PRINT SUMMARY BAR                                     */
+    /* PRINT SUMMARY BAR - Receipt pages                     */
     /* ===================================================== */
-    .print-summary,
     .print-summary-bar {
+        display: flex !important;
+        justify-content: center !important;
+        background: #f8f8f8 !important;
+        border: 0.5pt solid #ccc !important;
+        border-radius: 4pt !important;
+        padding: 5pt 10pt !important;
+        margin-bottom: 8pt !important;
+        page-break-inside: avoid !important;
+        gap: 20pt !important;
+    }
+
+    /* HIDE the date item -- we show date in header only */
+    .print-summary-bar .print-summary-item:nth-child(2) {
+        display: none !important;
+    }
+
+    .print-summary-bar .print-summary-item {
+        text-align: center !important;
+        flex: 0 0 auto !important;
+        min-width: 80px !important;
+    }
+
+    .print-summary-bar .print-summary-label {
+        display: block !important;
+        font-size: 7.5pt !important;
+        color: #777 !important;
+        margin-bottom: 1pt !important;
+    }
+
+    .print-summary-bar .print-summary-value {
+        display: block !important;
+        font-size: 10pt !important;
+        font-weight: 700 !important;
+        color: #000 !important;
+    }
+
+    /* ===================================================== */
+    /* PRINT SUMMARY - Report pages                          */
+    /* ===================================================== */
+    .print-summary {
         display: flex;
         justify-content: flex-start;
         gap: 20pt;
@@ -363,24 +460,86 @@
         page-break-inside: avoid;
     }
 
-    .print-summary-item {
+    .print-summary .print-summary-item {
         text-align: center;
         flex: 0 0 auto;
         min-width: 100pt;
     }
 
-    .print-summary-label {
+    .print-summary .print-summary-label {
         display: block;
         font-size: 7.5pt;
         color: var(--text-muted);
         margin-bottom: 1pt;
     }
 
-    .print-summary-value {
+    .print-summary .print-summary-value {
         display: block;
         font-size: 9pt;
         font-weight: var(--weight-bold);
         color: #000;
+    }
+
+    /* ===================================================== */
+    /* RECEIPT META BLOCK (المورد / المخزن / الملاحظات)      */
+    /* ===================================================== */
+    .print-receipt-meta {
+        display: flex !important;
+        gap: 16pt !important;
+        margin-bottom: 8pt !important;
+        page-break-inside: avoid !important;
+    }
+
+    .print-meta-item {
+        flex: 1 !important;
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: baseline !important;
+        gap: 4pt !important;
+        padding: 4pt 0 !important;
+        border-bottom: 0.5pt solid #ddd !important;
+    }
+
+    .print-meta-label {
+        font-size: 8pt !important;
+        font-weight: 600 !important;
+        color: #555 !important;
+        white-space: nowrap !important;
+    }
+
+    .print-meta-value {
+        font-size: 9.5pt !important;
+        font-weight: 700 !important;
+        color: #000 !important;
+        flex: 1 !important;
+    }
+
+    .print-receipt-notes {
+        display: block !important;
+        font-size: 8.5pt !important;
+        color: #444 !important;
+        padding: 3pt 0 !important;
+        margin-bottom: 6pt !important;
+        border-bottom: 0.5pt solid #eee !important;
+        page-break-inside: avoid !important;
+    }
+
+    .print-receipt-notes strong {
+        color: #333 !important;
+        font-weight: 600 !important;
+    }
+
+    /* ===================================================== */
+    /* PRINT SECTION TITLE                                   */
+    /* ===================================================== */
+    .print-section-title {
+        font-size: 10pt !important;
+        font-weight: 700 !important;
+        color: #000 !important;
+        padding: 4pt 0 4pt 0 !important;
+        margin: 4pt 0 2pt 0 !important;
+        border-bottom: 1pt solid #333 !important;
+        page-break-after: avoid !important;
     }
 
     /* ===================================================== */
@@ -396,14 +555,11 @@
     }
 
     table {
-        width: 100%;
-        border-collapse: separate;
-        border-spacing: 0;
-        border: 0.5pt solid #999;
-        border-radius: 3pt;
-        margin-top: 4pt;
-        font-size: 8.5pt;
-        direction: rtl;
+        width: 100% !important;
+        border-collapse: collapse !important;
+        margin: 2pt 0 4pt 0 !important;
+        font-size: 8.5pt !important;
+        direction: rtl !important;
     }
 
     thead {
@@ -411,30 +567,30 @@
     }
 
     thead th {
-        background: #E8E8E8;
-        border: 0.5pt solid #777;
-        border-bottom: 1pt solid #333;
-        padding: 5pt 8pt;
-        font-weight: var(--weight-bold);
-        font-size: 8.5pt;
-        text-align: right;
+        background-color: #E8E8E8 !important;
+        border: 0.5pt solid #888 !important;
+        border-bottom: 1.5pt solid #333 !important;
+        padding: 5pt 6pt !important;
+        font-weight: 700 !important;
+        font-size: 8.5pt !important;
+        text-align: right !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
     }
 
     tbody td {
-        border: 0.5pt solid #BBB;
-        padding: 4pt 8pt;
-        text-align: right;
-        vertical-align: middle;
+        border: 0.5pt solid #bbb !important;
+        padding: 4pt 6pt !important;
+        text-align: right !important;
+        vertical-align: middle !important;
     }
 
     tbody tr {
-        page-break-inside: avoid;
+        page-break-inside: avoid !important;
     }
 
     tbody tr:nth-child(even) {
-        background-color: var(--bg-hover);
+        background-color: #f5f5f5 !important;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
     }
@@ -463,70 +619,72 @@
     }
 
     .item-id {
-        font-family: monospace;
-        font-size: 7.5pt;
-        color: var(--text-muted);
+        font-family: 'Segoe UI', Tahoma, sans-serif !important;
+        font-size: 8pt !important;
+        font-weight: 600 !important;
+        color: #444 !important;
     }
 
     /* ===================================================== */
     /* FOOTER - Signatures anchored to page bottom           */
     /* ===================================================== */
     .print-signatures.print-only {
-        display: flex;
-        justify-content: space-between;
-        position: fixed;
-        bottom: 12mm;
-        left: 10mm;
-        right: 10mm;
-        margin: 0;
-        page-break-before: avoid;
-    }
-
-    .print-signatures:not(.print-only) {
-        display: flex;
-        justify-content: space-between;
-        position: static;
-        margin: 16pt 0 0 0;
-        page-break-inside: avoid;
+        display: flex !important;
+        justify-content: space-between !important;
+        position: fixed !important;
+        bottom: 15mm !important;
+        left: 12mm !important;
+        right: 12mm !important;
+        margin: 0 !important;
+        page-break-before: avoid !important;
     }
 
     .print-signature-box {
-        width: 30%;
-        text-align: center;
-        padding-top: 28pt;
-        border-top: 1pt solid #000;
-        font-size: 9pt;
-        font-weight: var(--weight-semibold);
-        line-height: 1.5;
+        width: 28% !important;
+        text-align: center !important;
+        padding-top: 30pt !important;
+        border-top: 0.8pt solid #000 !important;
+        font-size: 8pt !important;
+        font-weight: 600 !important;
+        line-height: 1.6 !important;
+        color: #333 !important;
     }
 
     .print-signature-box::after {
-        content: "الاسم والتوقيع";
-        display: block;
-        font-size: 8pt;
-        font-weight: var(--weight-normal);
-        margin-top: 2pt;
-        color: #000;
+        content: 'الاسم والتوقيع';
+        display: block !important;
+        font-size: 7pt !important;
+        font-weight: 400 !important;
+        color: #777 !important;
+        margin-top: 2pt !important;
     }
 
     /* ===================================================== */
     /* GRAND TOTAL                                           */
     /* ===================================================== */
     .print-grand-total {
-        display: flex;
-        justify-content: space-between;
-        background: var(--bg-hover);
-        border: 0.5pt solid var(--border-default);
-        padding: 6pt 10pt;
-        margin: 6pt 0 10pt 0;
-        font-weight: var(--weight-bold);
-        font-size: 9pt;
-        page-break-inside: avoid;
+        display: flex !important;
+        justify-content: flex-end !important;
+        align-items: center !important;
+        gap: 8pt !important;
+        background: #f5f5f5 !important;
+        border: 0.5pt solid #ccc !important;
+        border-top: 1.5pt solid #333 !important;
+        padding: 5pt 10pt !important;
+        margin: 2pt 0 8pt 0 !important;
+        page-break-inside: avoid !important;
+    }
+
+    .print-grand-total .total-label {
+        font-size: 9pt !important;
+        font-weight: 600 !important;
+        color: #444 !important;
     }
 
     .print-grand-total .total-value {
-        font-size: 10pt;
-        color: var(--primary);
+        font-size: 11pt !important;
+        font-weight: 700 !important;
+        color: #000 !important;
     }
 
     /* ===================================================== */

@@ -374,62 +374,6 @@ function filterItems() {
 }
 
 // ========== Item Actions ==========
-async function submitAddItem() {
-    const session = checkSession();
-    if (session && session.role === 'viewer') {
-        showToast('لا تملك صلاحية الإضافة', 'error');
-        return;
-    }
-
-    const saveBtn = document.querySelector('#addModal .btn-primary');
-    if (saveBtn) {
-        saveBtn.disabled = true;
-        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...';
-    }
-
-    const itemName = document.getElementById('itemName').value.trim();
-    const itemUnit = document.getElementById('itemUnit').value;
-    const itemCategory = document.getElementById('itemCategory').value;
-    const itemMinQty = parseFloat(document.getElementById('itemMinQty').value) || 0;
-
-    if (itemName.length < 3) {
-        document.getElementById('nameError').classList.add('visible');
-        if (saveBtn) {
-            saveBtn.disabled = false;
-            saveBtn.innerHTML = '<i class="fas fa-check-circle"></i> حفظ الصنف';
-        }
-        return;
-    }
-    document.getElementById('nameError').classList.remove('visible');
-
-    if (!itemUnit || !itemCategory) {
-        showToast('يرجى ملء جميع الحقول المطلوبة', 'warning');
-        if (saveBtn) {
-            saveBtn.disabled = false;
-            saveBtn.innerHTML = '<i class="fas fa-check-circle"></i> حفظ الصنف';
-        }
-        return;
-    }
-
-    try {
-        await window.api.addItem({
-            item_name: itemName,
-            unit: itemUnit,
-            category: itemCategory,
-            min_order_qty: itemMinQty
-        });
-        closeModal();
-        showToast('تمت إضافة الصنف بنجاح', 'success');
-        loadDashboardData();
-    } catch (error) {
-        showToast('فشل في إضافة الصنف', 'error');
-    } finally {
-        if (saveBtn) {
-            saveBtn.disabled = false;
-            saveBtn.innerHTML = '<i class="fas fa-check-circle"></i> حفظ الصنف';
-        }
-    }
-}
 
 async function deleteItem(id, name) {
     const session = checkSession();
@@ -463,39 +407,25 @@ function editItem(id) {
 }
 
 // ========== Modal ==========
+let addItemModal;
+
 function openModal() {
-    const session = checkSession();
-    if (session && session.role === 'viewer') {
-        showToast('لا تملك صلاحية الإضافة', 'error');
-        return;
+    if (!addItemModal) {
+        addItemModal = new AddItemModal({ onSuccess: loadDashboardData });
     }
-    const modal = document.getElementById('addModal');
-    modal.hidden = false;
-    modal.classList.add('active');
-    document.getElementById('addItemForm').reset();
-    document.querySelectorAll('.error-message').forEach(el => el.classList.remove('visible'));
-    document.getElementById('itemName').focus();
+    addItemModal.open();
 }
 
 function closeModal() {
-    const modal = document.getElementById('addModal');
-    modal.hidden = true;
-    modal.classList.remove('active');
+    if (addItemModal) addItemModal.close();
 }
 
-// إغلاق عند النقر على الخلفية
-const addModal = document.getElementById('addModal');
-if (addModal) {
-    addModal.addEventListener('click', function(e) {
-        if (e.target === this) closeModal();
-    });
-}
-
-document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-        closeModal();
+async function submitAddItem() {
+    if (!addItemModal) {
+        addItemModal = new AddItemModal({ onSuccess: loadDashboardData });
     }
-});
+    await addItemModal.submit();
+}
 
 function createToastContainer() {
     const container = document.createElement('div');

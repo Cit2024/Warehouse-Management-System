@@ -214,66 +214,10 @@
         </div>
     </main>
 
-    <!-- Add Item Modal -->
-    <div class="modal" id="addModal" role="dialog" aria-modal="true" aria-labelledby="addModalTitle" hidden>
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title" id="addModalTitle">إضافة صنف جديد</h3>
-                <button class="modal-close" aria-label="إغلاق" onclick="closeModal()"><i class="fas fa-times"></i></button>
-            </div>
-            <div class="modal-body">
-                <form id="addItemForm" class="form-grid" onsubmit="event.preventDefault(); submitAddItem();" novalidate>
-                    <div class="form-group">
-                        <label for="itemName">اسم الصنف *</label>
-                        <input type="text" id="itemName" placeholder="أدخل اسم الصنف" required minlength="3">
-                        <div class="error-message" id="nameError">يجب أن يكون اسم الصنف 3 أحرف على الأقل</div>
-                    </div>
-                    <div class="form-group">
-                        <label for="itemUnit">الوحدة *</label>
-                        <select id="itemUnit" required>
-                            <option value="">اختر الوحدة...</option>
-                            <option value="قطعة">قطعة</option>
-                            <option value="كرتونة">كرتونة</option>
-                            <option value="كيلوجرام">كيلوجرام</option>
-                            <option value="لتر">لتر</option>
-                            <option value="متر">متر</option>
-                            <option value="صندوق">صندوق</option>
-                            <option value="رزمة">رزمة</option>
-                            <option value="زوج">زوج</option>
-                            <option value="لفة">لفة</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="itemCategory">التصنيف *</label>
-                        <select id="itemCategory" required>
-                            <option value="">اختر التصنيف...</option>
-                            <option value="قرطاسية">قرطاسية</option>
-                            <option value="أحبار وطباعة">أحبار وطباعة</option>
-                            <option value="شبكات">شبكات</option>
-                            <option value="سلامة مهنية">سلامة مهنية</option>
-                            <option value="عدد وأدوات">عدد وأدوات</option>
-                            <option value="كهرباء">كهرباء</option>
-                            <option value="مواد خام">مواد خام</option>
-                            <option value="مستهلكات">مستهلكات</option>
-                            <option value="قطع غيار">قطع غيار</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="itemMinQty">نقطة إعادة الطلب (الحد الأدنى)</label>
-                        <input type="number" id="itemMinQty" value="0" min="0" required>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" onclick="closeModal()">إلغاء</button>
-                <button type="button" class="btn btn-primary" onclick="submitAddItem()"><i class="fas fa-check-circle"></i> حفظ الصنف</button>
-            </div>
-        </div>
-    </div>
-
     <script src="assets/js/common.js"></script>
     <script src="assets/js/components/sidebar.js"></script>
     <script src="assets/js/components/header.js"></script>
+    <script src="assets/js/components/addItemModal.js"></script>
     <script src="assets/js/components/layout.js"></script>
     <script src="assets/js/pages/dashboard.js"></script>
 </body>

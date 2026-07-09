@@ -2,12 +2,12 @@ const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
-const db = require('./database/db');
 const GitManager = require('./gitManager.js');
 const Database = require('better-sqlite3');
 const git = require('isomorphic-git');
 const http = require('isomorphic-git/http/node'); // بروتوكول الاتصال لـ Push/Pull
 let gitManager;
+let db;
 let scheduledBackupInterval = null;
 
 const createWindow = () => {
@@ -29,6 +29,10 @@ const createWindow = () => {
 };
 
 app.whenReady().then(async () => {
+  // Initialize database AFTER app is ready (lazy init prevents temp-path data loss)
+  db = require('./database/db');
+  db.initializeDatabase();
+
   gitManager = new GitManager(app.getPath('userData'));
   await gitManager.init();
   await startAutoBackupScheduling();
@@ -326,8 +330,32 @@ ipcMain.handle('get-requesters', async () => {
 // جلب الأصناف مع رصيدها اللحظي من العرض (View)
 ipcMain.handle('get-stock', async () => {
   try {
-    // نجلب فقط الأصناف التي رصيدها أكبر من 0
-    return db.prepare("SELECT * FROM view_current_stock WHERE current_quantity > 0").all();
+    // نجلب فقط الأصناف التي رصيدها أكبر من 0 مع آخر سعر شراء مسجّل
+    return db.prepare(`
+      SELECT
+        i.item_id,
+        i.item_name,
+        i.unit,
+        i.category,
+        i.min_order_qty,
+        COALESCE(vcs.current_quantity, 0) AS current_quantity,
+        COALESCE((
+          SELECT td.unit_price
+          FROM transaction_details td
+          JOIN transactions t ON t.transaction_id = td.transaction_id
+          WHERE td.item_id = i.item_id
+            AND t.transaction_type = 'In'
+            AND t.is_deleted = 0
+            AND td.unit_price > 0
+          ORDER BY t.transaction_date DESC, t.transaction_id DESC
+          LIMIT 1
+        ), 0) AS unit_price
+      FROM items i
+      LEFT JOIN view_current_stock vcs ON vcs.item_id = i.item_id
+      WHERE i.is_deleted = 0
+        AND COALESCE(vcs.current_quantity, 0) > 0
+      ORDER BY i.item_id DESC
+    `).all();
   } catch (error) {
     console.error('[get-stock] خطأ في جلب الأرصدة:', error);
     return { success: false, message: 'حدث خطأ أثناء جلب الأرصدة', error: error.message };

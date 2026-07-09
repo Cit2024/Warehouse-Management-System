@@ -15,8 +15,8 @@ document.addEventListener('DOMContentLoaded', () => {
         title: 'إذن توريد',
         subtitle: 'Supply Receipt',
         summaryItems: [
-            { id: 'printReceiptDateValue', label: 'تاريخ التوريد', defaultValue: '-' },
-            { id: 'printItemCount', label: 'عدد الأصناف', defaultValue: '0' }
+            { id: 'printItemCount', label: 'عدد الأصناف', defaultValue: '0' },
+            { id: 'printReceiptDateValue', label: 'تاريخ التوريد', defaultValue: '-' }
         ]
     });
 
@@ -132,6 +132,8 @@ function renderTable() {
     if (receiptRows.length === 0) {
         tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 32px; color: var(--text-muted);">لم تتم إضافة أصناف بعد</td></tr>';
         document.getElementById('grandTotal').textContent = '0.00';
+        const screenTotal = document.getElementById('grandTotalScreen');
+        if (screenTotal) screenTotal.textContent = '0.00';
         return;
     }
 
@@ -151,6 +153,8 @@ function renderTable() {
     }).join('');
 
     document.getElementById('grandTotal').textContent = grandTotal.toFixed(2);
+    const screenTotal = document.getElementById('grandTotalScreen');
+    if (screenTotal) screenTotal.textContent = grandTotal.toFixed(2);
 }
 
 function resetForm() {
@@ -215,19 +219,81 @@ async function saveReceipt() {
 
 function executePrint(choice) {
     if (choice === 'direct') {
-        printLayout.setDates(new Date());
+        const now = new Date();
+        printLayout.setDates(now);
+
+        // Override header date format to "التاريخ: ..."
+        const dateEl = document.getElementById('printReceiptDate');
+        if (dateEl) {
+            const dateStr = now.toLocaleDateString('ar-LY', {
+                year: 'numeric', month: 'long', day: 'numeric'
+            });
+            dateEl.textContent = 'التاريخ: ' + dateStr;
+        }
+
         printLayout.setSummary({
             printReceiptDateValue: document.getElementById('receiptDate').value || '-',
             printItemCount: receiptRows.length.toString()
         });
+
+        // --- Receipt Meta Block (NEW) ---
+        const supplierSelect = document.getElementById('supplierSelect');
+        const storeSelect = document.getElementById('storeSelect');
+        const notesInput = document.getElementById('receiptNotes');
+
+        const supplierName = supplierSelect.options[supplierSelect.selectedIndex]?.text || '-';
+        const storeName = storeSelect.options[storeSelect.selectedIndex]?.text || '-';
+        const notes = notesInput.value.trim();
+
+        // Remove old meta block if exists
+        const oldMeta = document.getElementById('printMetaBlock');
+        if (oldMeta) oldMeta.remove();
+        const oldNotes = document.getElementById('printNotesBlock');
+        if (oldNotes) oldNotes.remove();
+
+        // Insert new meta block after summary bar
+        const summaryBar = document.querySelector('.print-summary-bar');
+        if (summaryBar) {
+            const metaHtml = `
+                <div class="print-receipt-meta print-only" id="printMetaBlock">
+                    <div class="print-meta-item">
+                        <span class="print-meta-label">المورد:</span>
+                        <span class="print-meta-value">${escapePrintHtml(supplierName)}</span>
+                    </div>
+                    <div class="print-meta-item">
+                        <span class="print-meta-label">المخزن المستلم:</span>
+                        <span class="print-meta-value">${escapePrintHtml(storeName)}</span>
+                    </div>
+                </div>
+                ${notes ? `<div class="print-receipt-notes print-only" id="printNotesBlock"><strong>ملاحظات:</strong> ${escapePrintHtml(notes)}</div>` : ''}
+            `;
+            summaryBar.insertAdjacentHTML('afterend', metaHtml);
+        }
 
         const sel = document.getElementById('itemsSel');
         const sel2 = document.getElementById('rem2');
         sel.style.display  = "none";
         sel2.style.display = "none";
         window.print();
-        sel.style.display  = "block";
-        sel2.style.display = "block";
+        sel.style.display  = "";
+        sel2.style.display = "";
+
+        // Clean up inserted elements
+        const cleanupIds = ['printMetaBlock', 'printNotesBlock'];
+        cleanupIds.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.remove();
+        });
     }
     setTimeout(() => resetForm(), 1000);
+}
+
+function escapePrintHtml(text) {
+    if (text == null) return '';
+    return String(text)
+        .replace(/\u0026/g, '&amp;')
+        .replace(/\u003c/g, '&lt;')
+        .replace(/\u003e/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
 }

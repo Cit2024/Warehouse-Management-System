@@ -74,6 +74,8 @@
                                 </button>
                             </div>
 
+                            <div class="print-section-title print-only">الأصناف الموردة</div>
+
                             <div class="table-container" style="margin-bottom: 20px;">
                                 <table id="receiptTable">
                                     <thead>
@@ -96,8 +98,12 @@
                                 </table>
                             </div>
 
-                            <div style="text-align: center; font-size: 18px; font-weight: 700; color: var(--primary); padding: 16px; background: var(--primary-light); border-radius: 12px;">
-                                إجمالي قيمة الفاتورة: <span id="grandTotal">0.00</span> د.ل
+                            <div class="print-grand-total print-only">
+                                <span class="total-label">إجمالي قيمة الفاتورة:</span>
+                                <span class="total-value"><span id="grandTotal">0.00</span> د.ل</span>
+                            </div>
+                            <div class="screen-only" style="text-align: center; font-size: 18px; font-weight: 700; color: var(--primary); padding: 16px; background: var(--primary-light); border-radius: 12px;">
+                                إجمالي قيمة الفاتورة: <span id="grandTotalScreen">0.00</span> د.ل
                             </div>
                         </div>
 

@@ -219,48 +219,119 @@ function sortTable(tableId, colIndex) {
 }
 
 function promptForPassword(actionCallback) {
-    // إنشاء النافذة المنبثقة
+    // تجنب فتح أكثر من نافذة أمنية في نفس الوقت
+    if (document.getElementById('securityModal')) return;
+
     const modalHtml = `
-        <div class="modal" id="securityModal" style="display: flex;">
-            <div class="modal-content" style="max-width: 400px; text-align: center;">
-                <div style="font-size: 40px; margin-bottom: 10px;">🔐</div>
-                <h3 style="margin-bottom: 10px;">إجراء أمني مطلوب</h3>
-                <p style="color: #666; font-size: 14px; margin-bottom: 20px;">
-                    يرجى إدخال كلمة المرور الخاصة بك لتأكيد هويتك والسماح بهذا الإجراء.
-                </p>
-                <input type="password" id="securityPassword" class="form-control" 
-                       style="width: 100%; padding: 10px; margin-bottom: 15px; border: 2px solid var(--border-color); border-radius: 8px;" 
-                       placeholder="كلمة المرور...">
-                <div style="display: flex; gap: 10px;">
-                    <button class="btn btn-success" style="flex: 1;" id="confirmSecurityBtn">تأكيد</button>
-                    <button class="btn btn-secondary" style="flex: 1;" onclick="document.getElementById('securityModal').remove()">إلغاء</button>
+        <div class="modal active" id="securityModal" role="dialog" aria-modal="true" aria-labelledby="securityModalTitle">
+            <div class="modal-content modal-sm modal-center">
+                <div class="modal-body">
+                    <div class="modal-icon" aria-hidden="true">
+                        <i class="fas fa-lock"></i>
+                    </div>
+                    <h3 class="modal-title" id="securityModalTitle">إجراء أمني مطلوب</h3>
+                    <p class="modal-description">
+                        يرجى إدخال كلمة المرور الخاصة بك لتأكيد هويتك والسماح بهذا الإجراء.
+                    </p>
+                    <div class="form-group">
+                        <label for="securityPassword">كلمة المرور</label>
+                        <input type="password" id="securityPassword" class="form-control" 
+                               placeholder="أدخل كلمة المرور..."
+                               autocomplete="current-password"
+                               aria-required="true">
+                    </div>
+                </div>
+                <div class="modal-footer modal-footer-center">
+                    <button type="button" class="btn btn-secondary" id="cancelSecurityBtn">إلغاء</button>
+                    <button type="button" class="btn btn-primary" id="confirmSecurityBtn">تأكيد</button>
                 </div>
             </div>
         </div>
     `;
-    
+
     document.body.insertAdjacentHTML('beforeend', modalHtml);
+    const modal = document.getElementById('securityModal');
     const passwordInput = document.getElementById('securityPassword');
+    const confirmBtn = document.getElementById('confirmSecurityBtn');
+    const cancelBtn = document.getElementById('cancelSecurityBtn');
+
+    // حفظ العنصر الذي كان محل التركيز قبل فتح النافذة
+    const previouslyFocused = document.activeElement;
+
     passwordInput.focus();
 
-    document.getElementById('confirmSecurityBtn').onclick = async () => {
-        const password = passwordInput.value;
+    function closeModal() {
+        if (modal) {
+            modal.remove();
+        }
+        if (previouslyFocused && previouslyFocused.focus) {
+            previouslyFocused.focus();
+        }
+    }
+
+    async function confirm() {
+        const password = passwordInput.value.trim();
         if (!password) {
             showToast('الرجاء إدخال كلمة المرور', 'error');
+            passwordInput.focus();
             return;
         }
-        const sessionData = JSON.parse(localStorage.getItem("userSession"));
-        // التحقق من كلمة المرور عبر API (يجب بناء هذه الدالة في Electron)
-        const isAuthorized = await window.api.login({ username:sessionData.username,password });
-        
-        if (isAuthorized.success) {
-            document.getElementById('securityModal').remove();
-            actionCallback(); // تنفيذ الإجراء المطلوب (نسخ احتياطي أو فتح إعدادات)
-        } else {
-            showToast('كلمة المرور غير صحيحة', 'error');
-            passwordInput.value = '';
+
+        confirmBtn.disabled = true;
+        confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري التحقق...';
+
+        try {
+            const sessionData = JSON.parse(localStorage.getItem('userSession')) || {};
+            const isAuthorized = await window.api.login({
+                username: sessionData.username,
+                password: password
+            });
+
+            if (isAuthorized && isAuthorized.success) {
+                closeModal();
+                actionCallback();
+            } else {
+                showToast('كلمة المرور غير صحيحة', 'error');
+                passwordInput.value = '';
+                passwordInput.focus();
+            }
+        } catch (error) {
+            showToast('حدث خطأ أثناء التحقق', 'error');
+            console.error('Security modal login error:', error);
+        } finally {
+            if (document.getElementById('confirmSecurityBtn')) {
+                confirmBtn.disabled = false;
+                confirmBtn.innerHTML = 'تأكيد';
+            }
         }
-    };
+    }
+
+    confirmBtn.addEventListener('click', confirm);
+    cancelBtn.addEventListener('click', closeModal);
+
+    // إغلاق عند الضغط على Escape
+    function handleKeydown(e) {
+        if (e.key === 'Escape') {
+            closeModal();
+            document.removeEventListener('keydown', handleKeydown);
+        }
+    }
+    document.addEventListener('keydown', handleKeydown);
+
+    // التأكيد عند الضغط على Enter داخل حقل كلمة المرور
+    passwordInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            confirm();
+        }
+    });
+
+    // إغلاق عند النقر على الخلفية
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            closeModal();
+        }
+    });
 }
 function showSettings(){
     const SETTINGS_PAGE_TIME_LIMIT = 10 * 60 * 100 * 8; 

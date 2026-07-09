@@ -26,6 +26,23 @@ let allTransactions = [];
 let currentReportData = [];
 let printLayout;
 
+// ========== Number formatting utility ==========
+const Nums = {
+    fmt(num, digits = 2) {
+        const n = parseFloat(num);
+        if (isNaN(n)) return '0.00';
+        return n.toLocaleString('ar-LY', {
+            minimumFractionDigits: digits,
+            maximumFractionDigits: digits
+        });
+    },
+    fmtInt(num) {
+        const n = parseInt(num);
+        if (isNaN(n)) return '0';
+        return n.toLocaleString('ar-LY');
+    }
+};
+
 // ========== Column Visibility (اختيار الأعمدة + الإعدادات المحفوظة) ==========
 let hiddenColumns = new Set();
 const COLUMN_PRESETS_KEY = 'reportColumnPresets';
@@ -138,38 +155,73 @@ async function generateStockReport() {
         { text: 'الحالة', sortable: true }
     ]);
     try {
-        const items = await window.api.getStock();
-        renderStockTable(items || allItems);
-    } catch (e) { renderStockTable(allItems); }
+        // Fetch BOTH stock and items data to ensure we have all fields
+        const stockItems = await window.api.getStock();
+        const fullItems = await window.api.getItems(); // This has unit_price, category, etc.
+
+        // Merge stock quantities with full item details
+        const mergedItems = mergeStockWithItems(stockItems, fullItems);
+        renderStockTable(mergedItems);
+    } catch (e) {
+        // Fallback: render with what we have
+        renderStockTable(allItems);
+    }
+}
+
+// NEW: Merge function that combines stock quantities with full item details
+function mergeStockWithItems(stockItems, fullItems) {
+    if (!stockItems || !fullItems) return [];
+
+    return stockItems.map(stockItem => {
+        // Find the full item record by item_id
+        const fullItem = fullItems.find(fi => fi.item_id === stockItem.item_id) || {};
+
+        // Merge: stock quantities + full item details (price, category, etc.)
+        return {
+            item_id: stockItem.item_id || fullItem.item_id || '-',
+            item_name: stockItem.item_name || fullItem.item_name || 'غير معروف',
+            category: fullItem.category || stockItem.category || 'غير مصنف',
+            unit: stockItem.unit || fullItem.unit || 'قطعة',
+            current_quantity: stockItem.current_quantity || 0,
+            min_order_qty: stockItem.min_order_qty || fullItem.min_order_qty || 0,
+            unit_price: parseFloat(fullItem.unit_price || stockItem.unit_price || 0),
+        };
+    });
 }
 
 function renderStockTable(items) {
-    if (!items || items.length === 0) {
-        console.log("fail to get items.");
-    }
     const tbody = document.getElementById('reportTableBody');
+    if (!items || items.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 40px;">لا توجد بيانات للعرض</td></tr>';
+        updateStats(0, '0.00 د.ل');
+        return;
+    }
+
     let totalValue = 0;
     currentReportData = items;
+
     tbody.innerHTML = items.map(item => {
-        const qty = item.current_quantity || 0;
-        const minQty = item.min_order_qty || 0;
-        const price = item.unit_price || 0;
+        const qty = parseFloat(item.current_quantity) || 0;
+        const minQty = parseFloat(item.min_order_qty) || 0;
+        const price = parseFloat(item.unit_price) || 0;
         const value = qty * price;
         totalValue += value;
         const isLow = qty <= minQty;
+
         return `<tr>
-            <td><span class="item-id">${item.item_id}</span></td>
-            <td style="font-weight: 600;">${item.item_name}</td>
-            <td><span class="badge badge-supplier">${item.category}</span></td>
-            <td>${item.unit}</td>
-            <td style="font-weight: 700;">${qty}</td>
-            <td>${minQty}</td>
-            <td>${price.toLocaleString('ar-LY', {minimumFractionDigits: 2})} د.ل</td>
-            <td style="font-weight: 600;">${value.toLocaleString('ar-LY', {minimumFractionDigits: 2})} د.ل</td>
+            <td><span class="item-id">${item.item_id || '-'}</span></td>
+            <td style="font-weight: 600;">${item.item_name || 'غير معروف'}</td>
+            <td><span class="badge badge-supplier">${item.category || 'غير مصنف'}</span></td>
+            <td>${item.unit || 'قطعة'}</td>
+            <td style="font-weight: 700;">${Nums.fmtInt(qty)}</td>
+            <td>${Nums.fmtInt(minQty)}</td>
+            <td>${Nums.fmt(price)} د.ل</td>
+            <td style="font-weight: 600;">${Nums.fmt(value)} د.ل</td>
             <td><span class="badge ${isLow ? 'badge-low' : 'badge-available'}">${isLow ? 'منخفض' : 'متوفر'}</span></td>
         </tr>`;
     }).join('');
-    updateStats(items.length, totalValue.toLocaleString('ar-LY', {minimumFractionDigits: 2}) + ' د.ل');
+
+    updateStats(items.length, Nums.fmt(totalValue) + ' د.ل');
 }
 
 async function generateItemsBaseReport() {
@@ -313,9 +365,9 @@ function renderSupplyReceipt(receipt) {
                 <span class="total-value">${totalValue.toLocaleString('ar-LY', {minimumFractionDigits: 2})} د.ل</span>
             </div>
             <div class="print-signatures">
-                <div class="print-signature-box">المورد</div>
-                <div class="print-signature-box">أمين المخزن</div>
-                <div class="print-signature-box">مدير الإدارة / الاعتماد</div>
+                <div class="print-signature-box" data-role="المورد">المورد<br><span style="font-size:7pt;color:#999;">الاسم والتوقيع</span></div>
+                <div class="print-signature-box" data-role="أمين المخزن">أمين المخزن<br><span style="font-size:7pt;color:#999;">الاسم والتوقيع</span></div>
+                <div class="print-signature-box" data-role="مدير الإدارة / الاعتماد">مدير الإدارة / الاعتماد<br><span style="font-size:7pt;color:#999;">الاسم والتوقيع</span></div>
             </div>
         </td></tr>
     `;
@@ -373,9 +425,9 @@ function renderDispenseReceipt(receipt) {
                 <span class="total-value">${sampleReceipt.items.length} صنف</span>
             </div>
             <div class="print-signatures">
-                <div class="print-signature-box">المستلم (الجهة الطالبة)</div>
-                <div class="print-signature-box">أمين المخزن</div>
-                <div class="print-signature-box">مدير الإدارة / الاعتماد</div>
+                <div class="print-signature-box" data-role="المستلم (الجهة الطالبة)">المستلم (الجهة الطالبة)<br><span style="font-size:7pt;color:#999;">الاسم والتوقيع</span></div>
+                <div class="print-signature-box" data-role="أمين المخزن">أمين المخزن<br><span style="font-size:7pt;color:#999;">الاسم والتوقيع</span></div>
+                <div class="print-signature-box" data-role="مدير الإدارة / الاعتماد">مدير الإدارة / الاعتماد<br><span style="font-size:7pt;color:#999;">الاسم والتوقيع</span></div>
             </div>
         </td></tr>
     `;

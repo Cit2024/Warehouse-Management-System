@@ -365,9 +365,21 @@ function renderSupplyReceipt(receipt) {
                 <span class="total-value">${totalValue.toLocaleString('ar-LY', {minimumFractionDigits: 2})} د.ل</span>
             </div>
             <div class="print-signatures">
-                <div class="print-signature-box" data-role="المورد">المورد<br><span style="font-size:7pt;color:#999;">الاسم والتوقيع</span></div>
-                <div class="print-signature-box" data-role="أمين المخزن">أمين المخزن<br><span style="font-size:7pt;color:#999;">الاسم والتوقيع</span></div>
-                <div class="print-signature-box" data-role="مدير الإدارة / الاعتماد">مدير الإدارة / الاعتماد<br><span style="font-size:7pt;color:#999;">الاسم والتوقيع</span></div>
+                <div class="print-signature-box">
+                    <span class="sig-role">المورد</span>
+                    <span class="sig-name">الاسم</span>
+                    <span class="sig-signature">التوقيع</span>
+                </div>
+                <div class="print-signature-box">
+                    <span class="sig-role">أمين المخزن</span>
+                    <span class="sig-name">الاسم</span>
+                    <span class="sig-signature">التوقيع</span>
+                </div>
+                <div class="print-signature-box">
+                    <span class="sig-role">مدير الإدارة / الاعتماد</span>
+                    <span class="sig-name">الاسم</span>
+                    <span class="sig-signature">التوقيع</span>
+                </div>
             </div>
         </td></tr>
     `;
@@ -425,9 +437,21 @@ function renderDispenseReceipt(receipt) {
                 <span class="total-value">${sampleReceipt.items.length} صنف</span>
             </div>
             <div class="print-signatures">
-                <div class="print-signature-box" data-role="المستلم (الجهة الطالبة)">المستلم (الجهة الطالبة)<br><span style="font-size:7pt;color:#999;">الاسم والتوقيع</span></div>
-                <div class="print-signature-box" data-role="أمين المخزن">أمين المخزن<br><span style="font-size:7pt;color:#999;">الاسم والتوقيع</span></div>
-                <div class="print-signature-box" data-role="مدير الإدارة / الاعتماد">مدير الإدارة / الاعتماد<br><span style="font-size:7pt;color:#999;">الاسم والتوقيع</span></div>
+                <div class="print-signature-box">
+                    <span class="sig-role">المستلم (الجهة الطالبة)</span>
+                    <span class="sig-name">الاسم</span>
+                    <span class="sig-signature">التوقيع</span>
+                </div>
+                <div class="print-signature-box">
+                    <span class="sig-role">أمين المخزن</span>
+                    <span class="sig-name">الاسم</span>
+                    <span class="sig-signature">التوقيع</span>
+                </div>
+                <div class="print-signature-box">
+                    <span class="sig-role">مدير الإدارة / الاعتماد</span>
+                    <span class="sig-name">الاسم</span>
+                    <span class="sig-signature">التوقيع</span>
+                </div>
             </div>
         </td></tr>
     `;

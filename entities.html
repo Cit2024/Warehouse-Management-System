@@ -12,43 +12,6 @@
 </head>
 <body>
 
-    <!-- ===== PRINT HEADER (hidden on screen, shown when printing) ===== -->
-    <div class="print-header print-only">
-        <div class="print-logo-area">
-            <img src="assets/images/logo.png" alt="شعار الكلية"
-                 onerror="this.style.display='none'; this.parentElement.querySelector('.print-logo-fallback').style.display='flex';">
-            <div class="print-logo-fallback" style="display:none;">
-                <i class="fas fa-university" style="font-size:48px; color:#FF6B00;"></i>
-            </div>
-        </div>
-        <div class="print-title-area">
-            <div class="print-college-name">كلية التقنية الصناعية - مصراتة</div>
-            <div class="print-system-name">منظومة إدارة المخازن</div>
-            <h1 class="print-report-title" id="printTitle">تقرير الموردين والجهات</h1>
-        </div>
-        <div class="print-date-area">
-            <div class="print-gregorian" id="printGregorianDate"></div>
-            <div class="print-hijri-label">الموافق</div>
-            <div class="print-hijri" id="printHijriDate"></div>
-        </div>
-    </div>
-
-    <!-- Print Summary Bar -->
-    <div class="print-summary print-only">
-        <div class="print-summary-item">
-            <span class="print-summary-label">اسم التقرير</span>
-            <span class="print-summary-value" id="printReportName">تقرير الموردين والجهات</span>
-        </div>
-        <div class="print-summary-item">
-            <span class="print-summary-label">عدد الجهات</span>
-            <span class="print-summary-value" id="printRecordCount">0</span>
-        </div>
-        <div class="print-summary-item">
-            <span class="print-summary-label">تاريخ الطباعة</span>
-            <span class="print-summary-value" id="printDateValue">-</span>
-        </div>
-    </div>
-
     <!-- ===== MAIN CONTENT ===== -->
     <main class="content">
 
@@ -111,43 +74,11 @@
         </div>
     </main>
 
-    <!-- Add Entity Modal -->
-    <div class="modal" id="addModal" role="dialog" aria-modal="true" aria-labelledby="addModalTitle" hidden>
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title" id="addModalTitle">إضافة جهة جديدة</h3>
-                <button class="modal-close" aria-label="إغلاق" onclick="closeModal()"><i class="fas fa-times"></i></button>
-            </div>
-            <div class="modal-body">
-                <form id="addEntityForm" class="form-grid" onsubmit="event.preventDefault(); submitAddEntity();">
-                    <div class="form-group">
-                        <label>اسم الجهة (الشركة / القسم / الموظف) *</label>
-                        <input type="text" id="entityName" placeholder="أدخل اسم الجهة..." required>
-                    </div>
-                    <div class="form-group">
-                        <label>نوع الجهة *</label>
-                        <select id="entityType" required>
-                            <option value="Supplier">مورد (شركة/تاجر)</option>
-                            <option value="Department">قسم (داخل الكلية)</option>
-                            <option value="Employee">موظف / عضو هيئة تدريس</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>رقم الهاتف (اختياري)</label>
-                        <input type="text" id="entityPhone" placeholder="09X-XXXXXXX">
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" onclick="closeModal()">إلغاء</button>
-                <button type="button" class="btn btn-primary" id="saveEntityBtn" onclick="submitAddEntity()"><i class="fas fa-save"></i> حفظ</button>
-            </div>
-        </div>
-    </div>
-
     <script src="assets/js/common.js"></script>
     <script src="assets/js/components/sidebar.js"></script>
     <script src="assets/js/components/header.js"></script>
+    <script src="assets/js/components/printLayout.js"></script>
+    <script src="assets/js/components/addEntityModal.js"></script>
     <script src="assets/js/components/layout.js"></script>
     <script src="assets/js/pages/entities.js"></script>
 </body>

@@ -3,9 +3,27 @@
  * Handles dispense receipt creation, stock badge, row management, save, and print.
  */
 
+let printLayout;
+let printModal;
+
 document.addEventListener('DOMContentLoaded', () => {
     const layout = new Layout();
     layout.init();
+
+    printLayout = new PrintLayout({
+        layout: 'receipt',
+        title: 'إذن صرف',
+        subtitle: 'Dispense Receipt',
+        summaryItems: [
+            { id: 'printReceiptDateValue', label: 'تاريخ الصرف', defaultValue: '-' },
+            { id: 'printItemCount', label: 'عدد الأصناف', defaultValue: '0' }
+        ]
+    });
+
+    printModal = new PrintModal({
+        title: 'تم اعتماد إذن الصرف',
+        onPrint: () => executePrint('direct')
+    });
 });
 
 let availableStock = [];
@@ -14,12 +32,6 @@ let receiptRows = [];
 window.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('receiptDate').valueAsDate = new Date();
     document.getElementById('receiptDate').max = new Date().toISOString().split('T')[0];
-
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-            closePrintModal();
-        }
-    });
 
     try {
         const stores = await window.api.getStores();
@@ -164,8 +176,7 @@ async function saveReceipt() {
             items: receiptRows
         });
         if (result.success) {
-            document.getElementById('successMessage').textContent = result.message;
-            openPrintModal();
+            printModal.open(result.message);
         } else {
             showToast(result.message, 'error');
         }
@@ -177,30 +188,13 @@ async function saveReceipt() {
     }
 }
 
-function openPrintModal() {
-    const modal = document.getElementById('printModal');
-    modal.hidden = false;
-    modal.classList.add('active');
-    document.getElementById('printModalTitle').focus();
-}
-
-function closePrintModal() {
-    const modal = document.getElementById('printModal');
-    modal.hidden = true;
-    modal.classList.remove('active');
-}
-
 function executePrint(choice) {
-    closePrintModal();
     if (choice === 'direct') {
-        const dateEl = document.getElementById('printReceiptDate');
-        if (dateEl) dateEl.textContent = 'تاريخ الطباعة: ' + new Date().toLocaleDateString('ar-LY');
-
-        const dateValueEl = document.getElementById('printReceiptDateValue');
-        if (dateValueEl) dateValueEl.textContent = document.getElementById('receiptDate').value || '-';
-
-        const countEl = document.getElementById('printItemCount');
-        if (countEl) countEl.textContent = receiptRows.length.toString();
+        printLayout.setDates(new Date());
+        printLayout.setSummary({
+            printReceiptDateValue: document.getElementById('receiptDate').value || '-',
+            printItemCount: receiptRows.length.toString()
+        });
 
         const sel = document.getElementById('itemsSel');
         const sel2 = document.getElementById('rem2');

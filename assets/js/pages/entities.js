@@ -3,35 +3,41 @@
  * Handles loading, rendering, filtering, adding, and deleting entities.
  */
 
+let printLayout;
+let addEntityModal;
+
 document.addEventListener('DOMContentLoaded', () => {
     const layout = new Layout();
     layout.init();
+
+    printLayout = new PrintLayout({
+        layout: 'report',
+        title: 'تقرير الموردين والجهات',
+        showDates: true,
+        summaryItems: [
+            { id: 'printReportName', label: 'اسم التقرير', defaultValue: 'تقرير الموردين والجهات' },
+            { id: 'printRecordCount', label: 'عدد الجهات', defaultValue: '0' },
+            { id: 'printDateValue', label: 'تاريخ الطباعة', defaultValue: '-' }
+        ]
+    });
+
+    addEntityModal = new AddEntityModal({ onSuccess: loadEntities });
 });
 
 let allEntities = [];
 
 // ===== PRINT FUNCTION =====
 function printEntities() {
-    // Set dates
-    var now = new Date();
-    var gregorianDate = now.toLocaleDateString('ar-LY', { year: 'numeric', month: 'long', day: 'numeric' });
-    document.getElementById('printGregorianDate').textContent = gregorianDate;
-    document.getElementById('printDateValue').textContent = gregorianDate;
+    const now = new Date();
+    const gregorianDate = now.toLocaleDateString('ar-LY', { year: 'numeric', month: 'long', day: 'numeric' });
 
-    // Hijri date
-    try {
-        var hijriFormatter = new Intl.DateTimeFormat('ar-SA-u-ca-islamic', {
-            year: 'numeric', month: 'long', day: 'numeric'
-        });
-        document.getElementById('printHijriDate').textContent = hijriFormatter.format(now);
-    } catch(e) {
-        document.getElementById('printHijriDate').textContent = '';
-    }
+    printLayout.setDates(now);
+    printLayout.setSummary({
+        printReportName: 'تقرير الموردين والجهات',
+        printRecordCount: allEntities.length,
+        printDateValue: gregorianDate
+    });
 
-    // Set record count
-    document.getElementById('printRecordCount').textContent = allEntities.length;
-
-    // Trigger browser print
     window.print();
 }
 
@@ -110,35 +116,16 @@ function filterEntities() {
     renderEntities(filtered);
 }
 
+function openModal() {
+    addEntityModal.open();
+}
+
+function closeModal() {
+    addEntityModal.close();
+}
+
 async function submitAddEntity() {
-    const session = checkSession();
-    if (session && session.role === 'viewer') { showToast('لا تملك صلاحية الإضافة', 'error'); return; }
-
-    const btn = document.getElementById('saveEntityBtn');
-    const originalText = btn.innerHTML;
-    btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...';
-
-    const name = document.getElementById('entityName').value.trim();
-    const type = document.getElementById('entityType').value;
-    const phone = document.getElementById('entityPhone').value.trim();
-
-    if (!name) {
-        showToast('يرجى إدخال اسم الجهة', 'warning');
-        btn.disabled = false;
-        btn.innerHTML = originalText;
-        return;
-    }
-
-    try {
-        const result = await window.api.addEntity({ name, type, phone });
-        if (result.success) { closeModal(); loadEntities(); showToast('تمت الإضافة بنجاح', 'success'); }
-        else { showToast(result.message, 'error'); }
-    } catch (error) { showToast('حدث خطأ أثناء الإضافة', 'error'); }
-    finally {
-        btn.disabled = false;
-        btn.innerHTML = originalText;
-    }
+    await addEntityModal.submit();
 }
 
 async function deleteEntity(id) {
@@ -153,32 +140,6 @@ async function deleteEntity(id) {
         } catch (error) { showToast('حدث خطأ أثناء الحذف', 'error'); }
     }
 }
-
-function openModal() {
-    const session = checkSession();
-    if (session && session.role === 'viewer') { showToast('لا تملك صلاحية الإضافة', 'error'); return; }
-    const modal = document.getElementById('addModal');
-    modal.hidden = false;
-    modal.classList.add('active');
-    document.getElementById('addEntityForm').reset();
-}
-
-function closeModal() {
-    const modal = document.getElementById('addModal');
-    modal.hidden = true;
-    modal.classList.remove('active');
-}
-
-const addModal = document.getElementById('addModal');
-if (addModal) {
-    addModal.addEventListener('click', function(e) { if (e.target === this) closeModal(); });
-}
-
-document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-        closeModal();
-    }
-});
 
 // ===== INIT =====
 window.addEventListener('DOMContentLoaded', () => {

@@ -3,9 +3,27 @@
  * Handles supply receipt creation, row management, save, and print.
  */
 
+let printLayout;
+let printModal;
+
 document.addEventListener('DOMContentLoaded', () => {
     const layout = new Layout();
     layout.init();
+
+    printLayout = new PrintLayout({
+        layout: 'receipt',
+        title: 'إذن توريد',
+        subtitle: 'Supply Receipt',
+        summaryItems: [
+            { id: 'printReceiptDateValue', label: 'تاريخ التوريد', defaultValue: '-' },
+            { id: 'printItemCount', label: 'عدد الأصناف', defaultValue: '0' }
+        ]
+    });
+
+    printModal = new PrintModal({
+        title: 'تم اعتماد إذن التوريد',
+        onPrint: () => executePrint('direct')
+    });
 });
 
 let allItems = [];
@@ -183,8 +201,7 @@ async function saveReceipt() {
         });
 
         if (result.success) {
-            document.getElementById('successMessage').textContent = result.message;
-            openPrintModal();
+            printModal.open(result.message);
         } else {
             showToast(result.message, 'error');
         }
@@ -197,16 +214,12 @@ async function saveReceipt() {
 }
 
 function executePrint(choice) {
-    closePrintModal();
     if (choice === 'direct') {
-        const dateEl = document.getElementById('printReceiptDate');
-        if (dateEl) dateEl.textContent = 'تاريخ الطباعة: ' + new Date().toLocaleDateString('ar-LY');
-
-        const dateValueEl = document.getElementById('printReceiptDateValue');
-        if (dateValueEl) dateValueEl.textContent = document.getElementById('receiptDate').value || '-';
-
-        const countEl = document.getElementById('printItemCount');
-        if (countEl) countEl.textContent = receiptRows.length.toString();
+        printLayout.setDates(new Date());
+        printLayout.setSummary({
+            printReceiptDateValue: document.getElementById('receiptDate').value || '-',
+            printItemCount: receiptRows.length.toString()
+        });
 
         const sel = document.getElementById('itemsSel');
         const sel2 = document.getElementById('rem2');
@@ -218,22 +231,3 @@ function executePrint(choice) {
     }
     setTimeout(() => resetForm(), 1000);
 }
-
-function openPrintModal() {
-    const modal = document.getElementById('printModal');
-    modal.hidden = false;
-    modal.classList.add('active');
-    document.getElementById('printModalTitle').focus();
-}
-
-function closePrintModal() {
-    const modal = document.getElementById('printModal');
-    modal.hidden = true;
-    modal.classList.remove('active');
-}
-
-document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-        closePrintModal();
-    }
-});

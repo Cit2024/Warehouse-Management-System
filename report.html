@@ -12,44 +12,6 @@
 </head>
 <body>
 
-    <!-- Professional Print Header -->
-    <div class="print-header print-only">
-        <!-- Right: College Logo -->
-        <div class="print-logo-area">
-            <img src="assets/images/logo.png" alt="شعار الكلية"
-                 onerror="this.style.display='none'; this.parentElement.querySelector('.print-logo-fallback').style.display='flex';">
-            <div class="print-logo-fallback" style="display:none;">
-                <i class="fas fa-university" style="font-size:48px; color:#FF6B00;"></i>
-            </div>
-        </div>
-
-        <!-- Center: College Name + System Name + Report Title -->
-        <div class="print-title-area">
-            <div class="print-college-name">كلية التقنية الصناعية - مصراتة</div>
-            <div class="print-system-name">منظومة إدارة المخازن</div>
-            <h1 class="print-report-title" id="printTitle">تقرير حالة المخزون</h1>
-        </div>
-
-        <!-- Left: Gregorian Date + Hijri Date -->
-        <div class="print-date-area">
-            <div class="print-gregorian" id="printGregorianDate"></div>
-            <div class="print-hijri-label">الموافق</div>
-            <div class="print-hijri" id="printHijriDate"></div>
-        </div>
-    </div>
-
-    <!-- Print Summary Bar (hidden on screen, shown when printing) -->
-    <div class="print-summary print-only">
-        <div class="print-summary-item">
-            <span class="print-summary-label">اسم التقرير</span>
-            <span class="print-summary-value" id="printReportName">-</span>
-        </div>
-        <div class="print-summary-item">
-            <span class="print-summary-label">عدد السجلات</span>
-            <span class="print-summary-value" id="printRecordCount">0</span>
-        </div>
-    </div>
-
     <!-- Main Content -->
     <main class="content">
         <div class="header-title-section">
@@ -164,6 +126,7 @@
     <script src="assets/js/common.js"></script>
     <script src="assets/js/components/sidebar.js"></script>
     <script src="assets/js/components/header.js"></script>
+    <script src="assets/js/components/printLayout.js"></script>
     <script src="assets/js/components/layout.js"></script>
     <script src="assets/js/pages/report.js"></script>
 </body>

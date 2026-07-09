@@ -9,11 +9,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('dateFrom').max = today;
     document.getElementById('dateTo').max = today;
+
+    printLayout = new PrintLayout({
+        layout: 'report',
+        title: 'تقرير حالة المخزون',
+        showDates: true,
+        summaryItems: [
+            { id: 'printReportName', label: 'اسم التقرير', defaultValue: '-' },
+            { id: 'printRecordCount', label: 'عدد السجلات', defaultValue: '0' }
+        ]
+    });
 });
 
 let allItems = [];
 let allTransactions = [];
 let currentReportData = [];
+let printLayout;
 
 // ========== Column Visibility (اختيار الأعمدة + الإعدادات المحفوظة) ==========
 let hiddenColumns = new Set();
@@ -61,25 +72,14 @@ async function printReport() {
             periodText = dateFrom + ' إلى ' + dateTo;
         }
 
-        // Set dates
+        // Set dates and title/summary via PrintLayout component
         const now = new Date();
-        const gregorianDate = now.toLocaleDateString('ar-LY', {
-            year: 'numeric', month: 'long', day: 'numeric'
+        printLayout.setTitle(reportName);
+        printLayout.setSummary({
+            printReportName: reportName,
+            printRecordCount: recordCount
         });
-        document.getElementById('printGregorianDate').textContent = gregorianDate;
-
-        try {
-            const hijriFormatter = new Intl.DateTimeFormat('ar-SA-u-ca-islamic', {
-                year: 'numeric', month: 'long', day: 'numeric'
-            });
-            document.getElementById('printHijriDate').textContent = hijriFormatter.format(now);
-        } catch(e) {
-            document.getElementById('printHijriDate').textContent = '';
-        }
-
-        document.getElementById('printTitle').textContent = reportName;
-        document.getElementById('printReportName').textContent = reportName;
-        document.getElementById('printRecordCount').textContent = recordCount;
+        printLayout.setDates(now);
 
         // Auto-detect landscape: if more than 6 columns, use landscape
         const table = document.getElementById('reportTable');

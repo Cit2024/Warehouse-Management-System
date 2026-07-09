@@ -628,26 +628,44 @@
     /* ===================================================== */
     /* FOOTER - Signatures anchored to page bottom           */
     /* ===================================================== */
+    .print-signatures,
     .print-signatures.print-only {
         display: flex !important;
         justify-content: space-between !important;
         position: fixed !important;
-        bottom: 15mm !important;
-        left: 12mm !important;
-        right: 12mm !important;
+        bottom: 18mm !important;
+        left: 15mm !important;
+        right: 15mm !important;
         margin: 0 !important;
         page-break-before: avoid !important;
+        break-before: avoid-page !important;
+        orphans: 3 !important;
+        z-index: 10 !important;
     }
 
     .print-signature-box {
-        width: 28% !important;
+        width: 26% !important;
         text-align: center !important;
-        padding-top: 30pt !important;
-        border-top: 0.8pt solid #000 !important;
-        font-size: 8pt !important;
+        padding-top: 32pt !important;
+        border-top: 1pt solid #000 !important;
+        font-size: 9pt !important;
         font-weight: 600 !important;
-        line-height: 1.6 !important;
+        line-height: 1.5 !important;
         color: #333 !important;
+        position: relative !important;
+    }
+
+    /* Role label ABOVE the line (for hand-written signature space) */
+    .print-signature-box::before {
+        content: attr(data-role);
+        position: absolute !important;
+        top: -18pt !important;
+        left: 0 !important;
+        right: 0 !important;
+        font-size: 7.5pt !important;
+        font-weight: 400 !important;
+        color: #888 !important;
+        text-align: center !important;
     }
 
     .print-signature-box::after {

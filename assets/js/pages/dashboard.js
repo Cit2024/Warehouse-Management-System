@@ -386,7 +386,7 @@ async function deleteItem(id, name) {
         try {
             await window.api.deleteItem(id);
             showToast(`تم حذف الصنف "${name}" بنجاح`, 'success');
-            loadDashboardData();
+            await loadDashboardData();
         } catch (error) {
             showToast('فشل في حذف الصنف', 'error');
         }
@@ -411,7 +411,11 @@ let addItemModal;
 
 function openModal() {
     if (!addItemModal) {
-        addItemModal = new AddItemModal({ onSuccess: loadDashboardData });
+        addItemModal = new AddItemModal({
+            onSuccess: async () => {
+                await loadDashboardData();
+            }
+        });
     }
     addItemModal.open();
 }

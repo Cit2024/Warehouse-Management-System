@@ -33,6 +33,10 @@ window.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('receiptDate').valueAsDate = new Date();
     document.getElementById('receiptDate').max = new Date().toISOString().split('T')[0];
 
+    await loadDropdownData();
+});
+
+async function loadDropdownData() {
     try {
         const stores = await window.api.getStores();
         if (stores && stores.success === false) {
@@ -52,41 +56,50 @@ window.addEventListener('DOMContentLoaded', async () => {
             return;
         }
 
+        // تعبئة المخازن
         const storeSelect = document.getElementById('storeSelect');
-        const storeFragment = document.createDocumentFragment();
+        const previousStore = storeSelect.value;
+        storeSelect.innerHTML = '<option value="">-- اختر المخزن --</option>';
         stores.forEach(s => {
             const option = document.createElement('option');
             option.value = s.store_id;
             option.textContent = s.store_name;
-            storeFragment.appendChild(option);
+            storeSelect.appendChild(option);
         });
-        storeSelect.appendChild(storeFragment);
+        storeSelect.value = previousStore;
 
+        // تعبئة الجهات الطالبة
         const requesterSelect = document.getElementById('requesterSelect');
-        const requesterFragment = document.createDocumentFragment();
+        const previousRequester = requesterSelect.value;
+        requesterSelect.innerHTML = '<option value="">-- اختر الجهة --</option>';
         requesters.forEach(req => {
             const option = document.createElement('option');
             option.value = req.entity_id;
             option.textContent = req.entity_name + ' (' + (req.entity_type === 'Department' ? 'قسم' : 'موظف') + ')';
-            requesterFragment.appendChild(option);
+            requesterSelect.appendChild(option);
         });
-        requesterSelect.appendChild(requesterFragment);
+        requesterSelect.value = previousRequester;
 
+        // تعبئة الأصناف
         const itemSelect = document.getElementById('itemSelect');
-        const itemFragment = document.createDocumentFragment();
+        const previousItem = itemSelect.value;
+        itemSelect.innerHTML = '<option value="">-- اختر الصنف --</option>';
         availableStock.forEach(item => {
             const option = document.createElement('option');
             option.value = item.item_id;
             option.textContent = item.item_name + ' (' + item.unit + ')';
-            itemFragment.appendChild(option);
+            itemSelect.appendChild(option);
         });
-        itemSelect.appendChild(itemFragment);
+        itemSelect.value = previousItem;
+
+        // تحديث شارة الرصيد إذا كان صنف محدد
+        updateStockBadge();
 
     } catch (error) {
         console.error(error);
         alert("حدث خطأ في جلب البيانات.");
     }
-});
+}
 
 function updateStockBadge() {
     const itemId = parseInt(document.getElementById('itemSelect').value);
@@ -176,6 +189,8 @@ async function saveReceipt() {
             items: receiptRows
         });
         if (result.success) {
+            // تحديث القوائم المنسدلة لتعكس الأرصدة الجديدة قبل فتح نافذة الطباعة
+            await loadDropdownData();
             printModal.open(result.message);
         } else {
             showToast(result.message, 'error');

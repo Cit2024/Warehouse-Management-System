@@ -35,6 +35,10 @@ window.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('receiptDate').max = new Date().toISOString().split('T')[0];
 
     // جلب البيانات من قاعدة البيانات لتعبئة القوائم المنسدلة
+    await loadDropdownData();
+});
+
+async function loadDropdownData() {
     try {
         const stores = await window.api.getStores();
         if (stores && stores.success === false) {
@@ -57,42 +61,45 @@ window.addEventListener('DOMContentLoaded', async () => {
 
         // تعبئة المخازن
         const storeSelect = document.getElementById('storeSelect');
-        const storeFragment = document.createDocumentFragment();
+        const previousStore = storeSelect.value;
+        storeSelect.innerHTML = '<option value="">-- اختر المخزن --</option>';
         stores.forEach(s => {
             const option = document.createElement('option');
             option.value = s.store_id;
             option.textContent = s.store_name;
-            storeFragment.appendChild(option);
+            storeSelect.appendChild(option);
         });
-        storeSelect.appendChild(storeFragment);
+        storeSelect.value = previousStore;
 
         // تعبئة الموردين
         const supplierSelect = document.getElementById('supplierSelect');
-        const supplierFragment = document.createDocumentFragment();
+        const previousSupplier = supplierSelect.value;
+        supplierSelect.innerHTML = '<option value="">-- اختر المورد --</option>';
         suppliers.forEach(sup => {
             const option = document.createElement('option');
             option.value = sup.entity_id;
             option.textContent = sup.entity_name;
-            supplierFragment.appendChild(option);
+            supplierSelect.appendChild(option);
         });
-        supplierSelect.appendChild(supplierFragment);
+        supplierSelect.value = previousSupplier;
 
         // تعبئة الأصناف
         const itemSelect = document.getElementById('itemSelect');
-        const itemFragment = document.createDocumentFragment();
+        const previousItem = itemSelect.value;
+        itemSelect.innerHTML = '<option value="">-- اختر صنفاً لإضافته --</option>';
         allItems.forEach(item => {
             const option = document.createElement('option');
             option.value = item.item_id;
             option.textContent = item.item_name + ' (' + item.unit + ')';
-            itemFragment.appendChild(option);
+            itemSelect.appendChild(option);
         });
-        itemSelect.appendChild(itemFragment);
+        itemSelect.value = previousItem;
 
     } catch (error) {
         console.error("خطأ في التحميل الأولي", error);
         alert("حدث خطأ في جلب البيانات الأساسية.");
     }
-});
+}
 
 function addRow() {
     const itemSelect = document.getElementById('itemSelect');
@@ -205,6 +212,8 @@ async function saveReceipt() {
         });
 
         if (result.success) {
+            // تحديث القوائم المنسدلة لتعكس الكميات الجديدة قبل فتح نافذة الطباعة
+            await loadDropdownData();
             printModal.open(result.message);
         } else {
             showToast(result.message, 'error');

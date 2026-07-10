@@ -115,23 +115,7 @@
             </div>
 
             <!-- Print Signatures -->
-            <div class="print-signatures print-only">
-                <div class="print-signature-box">
-                    <span class="sig-role">المستلم</span>
-                    <span class="sig-name">الاسم</span>
-                    <span class="sig-signature">التوقيع</span>
-                </div>
-                <div class="print-signature-box">
-                    <span class="sig-role">أمين المخزن</span>
-                    <span class="sig-name">الاسم</span>
-                    <span class="sig-signature">التوقيع</span>
-                </div>
-                <div class="print-signature-box">
-                    <span class="sig-role">المدير</span>
-                    <span class="sig-name">الاسم</span>
-                    <span class="sig-signature">التوقيع</span>
-                </div>
-            </div>
+            <div id="printSignaturesContainer"></div>
         </div>
     </main>
 
@@ -139,7 +123,13 @@
     <script src="assets/js/components/sidebar.js"></script>
     <script src="assets/js/components/header.js"></script>
     <script src="assets/js/components/printLayout.js"></script>
+    <script src="assets/js/components/printSignatures.js"></script>
     <script src="assets/js/components/layout.js"></script>
     <script src="assets/js/pages/report.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            PrintSignatures.render('#printSignaturesContainer', ['المستلم', 'أمين المخزن', 'المدير']);
+        });
+    </script>
 </body>
 </html>

@@ -19,6 +19,9 @@ document.addEventListener('DOMContentLoaded', () => {
             { id: 'printRecordCount', label: 'عدد السجلات', defaultValue: '0' }
         ]
     });
+
+    // Load data first; generateStockReport() is called after allItems is populated
+    loadReportData();
 });
 
 let allItems = [];
@@ -98,14 +101,22 @@ async function printReport() {
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الطباعة...';
     }
     try {
+        // Ensure data is generated before printing
         await generateReport();
 
         // Use unified PrintReport component
-        window.printReport.printInventoryTable(currentReportData, {
-            title: document.getElementById('reportName').textContent || 'تقرير',
-            subtitle: document.getElementById('reportTableMeta').textContent || ''
-        });
-
+        if (window.printReport && typeof window.printReport.printInventoryTable === 'function') {
+            window.printReport.printInventoryTable(currentReportData, {
+                title: document.getElementById('reportName').textContent || 'تقرير',
+                subtitle: document.getElementById('reportTableMeta').textContent || ''
+            });
+        } else {
+            console.warn('[Report] PrintReport component not available');
+            showToast('مكوّن الطباعة غير متوفر', 'error');
+        }
+    } catch (error) {
+        console.error('[Report] Print error:', error);
+        showToast('فشل في إعداد التقرير للطباعة', 'error');
     } finally {
         if (btn) {
             btn.disabled = false;

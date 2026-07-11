@@ -671,8 +671,8 @@
     }
 
     .print-signature-box .sig-name::after {
-        content: '' !important;
-        display: block !important;
+        content: ': ' !important;
+        display: inline !important;
         border-bottom: 0.5pt dotted #999 !important;
         margin: 2pt 4pt 0 4pt !important;
         height: 8pt !important;
@@ -688,8 +688,8 @@
     }
 
     .print-signature-box .sig-signature::after {
-        content: '' !important;
-        display: block !important;
+        content: ': ' !important;
+        display: inline !important;
         border-bottom: 0.5pt dotted #999 !important;
         margin: 2pt 4pt 0 4pt !important;
         height: 8pt !important;

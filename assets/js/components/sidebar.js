@@ -20,9 +20,15 @@ class Sidebar {
                 ]
             },
             {
-                section: 'البيانات المالية والإدارية',
+                section: 'البيانات الأساسية',
                 items: [
-                    { href: 'entities.html', icon: 'fas fa-building', text: 'الموردون والجهات' },
+                    { href: 'items.html', icon: 'fas fa-boxes', text: 'الأصناف والمخزون' },
+                    { href: 'entities.html', icon: 'fas fa-building', text: 'الموردون والجهات' }
+                ]
+            },
+            {
+                section: 'التقارير',
+                items: [
                     { href: 'report.html', icon: 'fas fa-file-alt', text: 'التقارير' }
                 ]
             },

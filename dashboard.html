@@ -153,61 +153,24 @@
                 </div>
             </div>
 
-            <!-- Items Table Section -->
+            <!-- Items Summary Section -->
             <div class="panel" id="itemsSection" style="margin-top: 20px;">
                 <div class="panel-header">
                     <div>
                         <div class="panel-title">الأصناف والمخزون</div>
-                        <div class="panel-subtitle">إدارة بيانات الأصناف والكميات المتوفرة</div>
+                        <div class="panel-subtitle">نظرة مختصرة على المخزون</div>
                     </div>
+                    <a href="items.html" class="btn btn-primary">
+                        <span><i class="fas fa-external-link-alt"></i></span>
+                        <span>إدارة الأصناف</span>
+                    </a>
                 </div>
-                <div class="panel-body" style="padding: 0;">
-                    <!-- Toolbar -->
-                    <div class="table-toolbar">
-                        <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
-                            <div class="toolbar-search">
-                                <span class="toolbar-search-icon"><i class="fas fa-search"></i></span>
-                                <input type="text" id="searchInput" placeholder="بحث برقم أو اسم أو تصنيف الصنف..." oninput="filterItems()">
-                            </div>
-                            <select class="filter-select" id="statusFilter" onchange="filterItems()">
-                                <option value="">كل الحالات</option>
-                                <option value="متوفر">متوفر</option>
-                                <option value="منخفض">منخفض</option>
-                            </select>
+                <div class="panel-body">
+                    <div id="itemsSummary">
+                        <div class="empty-state" style="padding: 32px;">
+                            <div class="empty-state-icon"><i class="fas fa-spinner fa-spin"></i></div>
+                            <h3>جاري تحميل البيانات...</h3>
                         </div>
-                        <button class="btn btn-primary" onclick="openModal()">
-                            <span><i class="fas fa-plus"></i></span>
-                            <span>إضافة صنف</span>
-                        </button>
-                    </div>
-
-                    <!-- Table -->
-                    <div style="overflow-x: auto;">
-                        <table id="itemsTable">
-                            <thead>
-                                <tr>
-                                    <th class="sortable" onclick="sortTable('itemsTable', 0)">الصنف <span class="sort-icon">↕</span></th>
-                                    <th class="sortable" onclick="sortTable('itemsTable', 1)">التصنيف <span class="sort-icon">↕</span></th>
-                                    <th class="sortable" onclick="sortTable('itemsTable', 2)">الوحدة <span class="sort-icon">↕</span></th>
-                                    <th class="sortable" onclick="sortTable('itemsTable', 3)">الرصيد <span class="sort-icon">↕</span></th>
-                                    <th class="sortable" onclick="sortTable('itemsTable', 4)">الحد الأدنى <span class="sort-icon">↕</span></th>
-                                    <th class="sortable" onclick="sortTable('itemsTable', 5)">سعر الوحدة <span class="sort-icon">↕</span></th>
-                                    <th class="sortable" onclick="sortTable('itemsTable', 6)">القيمة <span class="sort-icon">↕</span></th>
-                                    <th class="sortable" onclick="sortTable('itemsTable', 7)">الحالة <span class="sort-icon">↕</span></th>
-                                    <th>الإجراءات</th>
-                                </tr>
-                            </thead>
-                            <tbody id="itemsTableBody">
-                                <tr>
-                                    <td colspan="9">
-                                        <div class="empty-state">
-                                            <div class="empty-state-icon"><i class="fas fa-spinner fa-spin"></i></div>
-                                            <h3>جاري تحميل البيانات...</h3>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
                     </div>
                 </div>
             </div>
@@ -217,7 +180,6 @@
     <script src="assets/js/common.js"></script>
     <script src="assets/js/components/sidebar.js"></script>
     <script src="assets/js/components/header.js"></script>
-    <script src="assets/js/components/addItemModal.js"></script>
     <script src="assets/js/components/layout.js"></script>
     <script src="assets/js/pages/dashboard.js"></script>
 </body>

@@ -4,6 +4,7 @@ contextBridge.exposeInMainWorld('api', {
     login: (credentials) => ipcRenderer.invoke('login', credentials),
     getItems: () => ipcRenderer.invoke('get-items'),
     addItem: (itemData) => ipcRenderer.invoke('add-item', itemData),
+    updateItem: (itemData) => ipcRenderer.invoke('update-item', itemData),
     deleteItem: (itemId) => ipcRenderer.invoke('delete-item', itemId),
     printDirect: () => ipcRenderer.invoke('print-direct'),
     generateReport: () => ipcRenderer.invoke('generate-report'),

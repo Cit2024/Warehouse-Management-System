@@ -162,6 +162,33 @@ ipcMain.handle('delete-item', async (event, itemId) => {
   }
 });
 
+// 4. تعديل بيانات صنف
+ipcMain.handle('update-item', async (event, itemData) => {
+  try {
+    const stmt = db.prepare(`
+      UPDATE items 
+      SET item_name = ?, unit = ?, category = ?, min_order_qty = ?
+      WHERE item_id = ? AND is_deleted = 0
+    `);
+    const result = stmt.run(
+      itemData.item_name,
+      itemData.unit,
+      itemData.category,
+      itemData.min_order_qty,
+      itemData.item_id
+    );
+
+    if (result.changes === 0) {
+      return { success: false, message: 'لم يتم العثور على الصنف أو لم يتم تعديله' };
+    }
+
+    return { success: true, message: 'تم التحديث بنجاح' };
+  } catch (error) {
+    console.error('[update-item] خطأ في تحديث الصنف:', error);
+    return { success: false, message: 'حدث خطأ في قاعدة البيانات', error: error.message };
+  }
+});
+
 ipcMain.handle('print-direct', async (event) => {
   const win = BrowserWindow.getFocusedWindow();
 

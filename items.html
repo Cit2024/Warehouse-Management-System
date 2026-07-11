@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>الأصناف والمخزون - منظومة إدارة المخازن | كلية التقنية الصناعية</title>
+    <link rel="stylesheet" href="node_modules/@fortawesome/fontawesome-free/css/all.min.css">
+    <link rel="stylesheet" href="assets/css/main.css">
+    <link rel="stylesheet" href="assets/css/layout.css">
+    <link rel="stylesheet" href="assets/css/components.css">
+    <link rel="stylesheet" href="assets/css/print.css">
+</head>
+<body>
+
+    <!-- ===== MAIN CONTENT ===== -->
+    <main class="content">
+
+        <!-- Page Title -->
+        <div class="header-title-section">
+            <h1>إدارة الأصناف والمخزون</h1>
+            <p class="subtitle">إدارة بيانات الأصناف والكميات والحدود الدنيا</p>
+        </div>
+
+        <div class="page-content">
+            <!-- Summary Stats -->
+            <div class="stats-grid" style="grid-template-columns: repeat(4, 1fr);">
+                <div class="stat-card">
+                    <div class="stat-icon orange"><i class="fas fa-th-large"></i></div>
+                    <div class="stat-content">
+                        <div class="stat-label">إجمالي الأصناف</div>
+                        <div class="stat-value" id="statTotalItems">0</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon green">ل.د</div>
+                    <div class="stat-content">
+                        <div class="stat-label">قيمة المخزون</div>
+                        <div class="stat-value" id="statInventoryValue">0</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon blue"><i class="fas fa-cubes"></i></div>
+                    <div class="stat-content">
+                        <div class="stat-label">إجمالي الوحدات</div>
+                        <div class="stat-value" id="statTotalUnits">0</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon red"><i class="fas fa-exclamation-circle"></i></div>
+                    <div class="stat-content">
+                        <div class="stat-label">أصناف منخفضة</div>
+                        <div class="stat-value" id="statLowStock">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Toolbar -->
+            <div class="toolbar">
+                <button class="btn btn-primary" onclick="openAddModal()">
+                    <span><i class="fas fa-plus"></i></span>
+                    <span>إضافة صنف جديد</span>
+                </button>
+                <div class="toolbar-search">
+                    <span class="toolbar-search-icon"><i class="fas fa-search"></i></span>
+                    <input type="text" id="searchInput" placeholder="بحث باسم أو رقم أو تصنيف الصنف..." oninput="filterItems()">
+                </div>
+                <select class="filter-select" id="categoryFilter" onchange="filterItems()">
+                    <option value="">كل التصنيفات</option>
+                </select>
+                <select class="filter-select" id="statusFilter" onchange="filterItems()">
+                    <option value="">كل الحالات</option>
+                    <option value="متوفر">متوفر</option>
+                    <option value="منخفض">منخفض</option>
+                </select>
+                <button class="btn btn-secondary" onclick="printItems()">
+                    <span><i class="fas fa-print"></i></span>
+                    <span>طباعة</span>
+                </button>
+            </div>
+
+            <!-- Table -->
+            <div class="table-container">
+                <div class="table-toolbar">
+                    <div class="table-title">قائمة الأصناف</div>
+                    <div class="table-meta" id="itemsCount">0 صنف مسجل</div>
+                </div>
+                <div style="overflow-x: auto;">
+                    <table id="itemsTable">
+                        <thead>
+                            <tr>
+                                <th class="sortable" onclick="sortTable('itemsTable', 0)">الصنف <span class="sort-icon">↕</span></th>
+                                <th class="sortable" onclick="sortTable('itemsTable', 1)">التصنيف <span class="sort-icon">↕</span></th>
+                                <th class="sortable" onclick="sortTable('itemsTable', 2)">الوحدة <span class="sort-icon">↕</span></th>
+                                <th class="sortable" onclick="sortTable('itemsTable', 3)">الرصيد <span class="sort-icon">↕</span></th>
+                                <th class="sortable" onclick="sortTable('itemsTable', 4)">الحد الأدنى <span class="sort-icon">↕</span></th>
+                                <th class="sortable" onclick="sortTable('itemsTable', 5)">سعر الوحدة <span class="sort-icon">↕</span></th>
+                                <th class="sortable" onclick="sortTable('itemsTable', 6)">القيمة <span class="sort-icon">↕</span></th>
+                                <th class="sortable" onclick="sortTable('itemsTable', 7)">الحالة <span class="sort-icon">↕</span></th>
+                                <th>الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="itemsTableBody">
+                            <tr>
+                                <td colspan="9" style="text-align: center; padding: 40px;">
+                                    <div class="empty-state">
+                                        <div class="empty-state-icon"><i class="fas fa-spinner fa-spin"></i></div>
+                                        <h3>جاري تحميل البيانات...</h3>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Print Signatures (fixed at page bottom) -->
+        <div id="printSignaturesContainer"></div>
+    </main>
+
+    <script src="assets/js/common.js"></script>
+    <script src="assets/js/components/sidebar.js"></script>
+    <script src="assets/js/components/header.js"></script>
+    <script src="assets/js/components/printLayout.js"></script>
+    <script src="assets/js/components/itemModal.js"></script>
+    <script src="assets/js/components/printSignatures.js"></script>
+    <script src="assets/js/components/layout.js"></script>
+    <script src="assets/js/pages/items.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            PrintSignatures.render('#printSignaturesContainer', ['المستلم', 'أمين المخزن', 'المدير']);
+        });
+    </script>
+</body>
+</html>

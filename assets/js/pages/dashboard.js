@@ -38,7 +38,7 @@ async function loadDashboardData() {
         }
 
         updateStats(allItems, countMovementsThisMonth(history));
-        renderItemsTable(allItems);
+        renderItemsSummary(allItems);
         renderLowStockAlerts(allItems);
         renderChart(allItems);
         renderRecentMovements(history);
@@ -73,8 +73,8 @@ function loadSampleData() {
         { item_id: 'ITM-010', item_name: 'وصلة كاميرا', unit: 'قطعة', category: 'شبكات', min_order_qty: 8, current_quantity: 5, unit_price: 68.00 }
     ];
     allItems = sampleItems;
-    updateStats(sampleItems, 4); // "4" هنا بيانات تجريبية بديلة فقط (نفس أسلوب sampleItems)، وليست القيمة الفعلية
-    renderItemsTable(sampleItems);
+    updateStats(sampleItems, 4);
+    renderItemsSummary(sampleItems);
     renderLowStockAlerts(sampleItems);
     renderChart(sampleItems);
     updateSidebarBadge(sampleItems.length);
@@ -288,154 +288,77 @@ function formatMovementDate(dateStr) {
     return d.toLocaleDateString('ar-LY', { year: 'numeric', month: '2-digit', day: '2-digit' });
 }
 
-// ========== Items Table ==========
-function renderItemsTable(items) {
-    const tbody = document.getElementById('itemsTableBody');
+// ========== Items Summary ==========
+function renderItemsSummary(items) {
+    const container = document.getElementById('itemsSummary');
+    if (!container) return;
 
     if (!items || items.length === 0) {
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="9">
-                    <div class="empty-state">
-                        <div class="empty-state-icon"><i class="fas fa-inbox"></i></div>
-                        <h3>لا توجد أصناف حالياً</h3>
-                        <p>قم بإضافة صنف جديد للبدء</p>
-                    </div>
-                </td>
-            </tr>
+        container.innerHTML = `
+            <div class="empty-state" style="padding: 32px;">
+                <div class="empty-state-icon"><i class="fas fa-inbox"></i></div>
+                <h3>لا توجد أصناف حالياً</h3>
+                <p>قم بإضافة صنف جديد من صفحة الأصناف والمخزون</p>
+            </div>
         `;
         return;
     }
 
-    const fragment = document.createDocumentFragment();
-    items.forEach(item => {
-        const quantity = item.current_quantity || 0;
-        const minQty = item.min_order_qty || 0;
-        const unitPrice = item.unit_price || 0;
-        const totalValue = quantity * unitPrice;
-        const isLow = quantity <= minQty;
-        const statusClass = isLow ? 'badge-low' : 'badge-available';
-        const statusText = isLow ? 'منخفض' : 'متوفر';
+    const lowItems = items.filter(item => (item.current_quantity || 0) <= (item.min_order_qty || 0));
+    const previewItems = items.slice(0, 5);
 
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td>
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <span style="width: 32px; height: 32px; background: var(--primary-light); color: var(--primary); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px;">${item.item_name.charAt(0)}</span>
-                    <div>
-                        <div style="font-weight: 600;">${item.item_name}</div>
-                        <span class="item-id">${item.item_id}</span>
-                    </div>
+    let html = `
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 20px;">
+            <div class="stat-card" style="margin: 0;">
+                <div class="stat-content">
+                    <div class="stat-label">إجمالي الأصناف</div>
+                    <div class="stat-value" style="font-size: 24px;">${items.length}</div>
                 </div>
-            </td>
-            <td><span class="badge badge-supplier">${item.category}</span></td>
-            <td>${item.unit}</td>
-            <td style="font-weight: 700;">${quantity}</td>
-            <td>${minQty}</td>
-            <td class="numeric currency">${unitPrice.toLocaleString('ar-LY', { minimumFractionDigits: 2 })} د.ل</td>
-            <td class="numeric currency">${totalValue.toLocaleString('ar-LY', { minimumFractionDigits: 2 })} د.ل</td>
-            <td><span class="badge ${statusClass}">${statusText}</span></td>
-            <td>
-                <div class="row-actions">
-                    <button class="row-action-btn view" title="عرض" onclick="viewItem(${item.item_id})"><i class="fas fa-eye"></i></button>
-                    <button class="row-action-btn edit" title="تعديل" onclick="editItem(${item.item_id})"><i class="fas fa-edit"></i></button>
-                    <button class="row-action-btn delete" title="حذف" onclick="deleteItem(${item.item_id}, '${item.item_name}')"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="stat-card" style="margin: 0;">
+                <div class="stat-content">
+                    <div class="stat-label">أصناف منخفضة</div>
+                    <div class="stat-value" style="font-size: 24px; color: var(--danger);">${lowItems.length}</div>
                 </div>
-            </td>
+            </div>
+        </div>
+
+        <h4 style="margin-bottom: 12px; font-size: 15px; color: var(--text-primary);">آخر الأصناف المسجلة</h4>
+        <div class="activity-list">
+    `;
+
+    previewItems.forEach(item => {
+        const isLow = (item.current_quantity || 0) <= (item.min_order_qty || 0);
+        html += `
+            <div class="activity-item">
+                <div class="activity-icon" style="background: var(--primary-light); color: var(--primary);">
+                    <i class="fas fa-box"></i>
+                </div>
+                <div class="activity-content">
+                    <div class="activity-title">${item.item_name}</div>
+                    <div class="activity-meta">${item.category || 'غير مصنف'} · ${item.current_quantity || 0} ${item.unit}</div>
+                </div>
+                <div class="activity-value">
+                    <span class="badge ${isLow ? 'badge-low' : 'badge-available'}">${isLow ? 'منخفض' : 'متوفر'}</span>
+                </div>
+            </div>
         `;
-        fragment.appendChild(tr);
     });
-    tbody.innerHTML = '';
-    tbody.appendChild(fragment);
-}
 
-function filterItems() {
-    const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
-    const statusFilter = document.getElementById('statusFilter').value;
+    html += '</div>';
 
-    let filtered = allItems;
-
-    if (searchTerm) {
-        filtered = filtered.filter(item =>
-            (item.item_name || '').toLowerCase().includes(searchTerm) ||
-            (item.item_id || '').toLowerCase().includes(searchTerm) ||
-            (item.category || '').toLowerCase().includes(searchTerm)
-        );
+    if (items.length > 5) {
+        html += `
+            <div style="text-align: center; margin-top: 16px;">
+                <a href="items.html" class="btn btn-secondary">
+                    <span>عرض كل الأصناف</span>
+                    <span><i class="fas fa-arrow-left"></i></span>
+                </a>
+            </div>
+        `;
     }
 
-    if (statusFilter) {
-        filtered = filtered.filter(item => {
-            const isLow = (item.current_quantity || 0) <= (item.min_order_qty || 0);
-            return statusFilter === 'منخفض' ? isLow : !isLow;
-        });
-    }
-
-    renderItemsTable(filtered);
-}
-
-// ========== Item Actions ==========
-
-async function deleteItem(id, name) {
-    const session = checkSession();
-    if (session && session.role === 'viewer') {
-        showToast('لا تملك صلاحية الحذف', 'error');
-        return;
-    }
-
-    if (confirm(`هل أنت متأكد من حذف الصنف "${name}"؟\nهذا الإجراء لا يمكن التراجع عنه.`)) {
-        try {
-            await window.api.deleteItem(id);
-            showToast(`تم حذف الصنف "${name}" بنجاح`, 'success');
-            await loadDashboardData();
-        } catch (error) {
-            showToast('فشل في حذف الصنف', 'error');
-        }
-    }
-}
-
-function viewItem(id) {
-    showToast('عرض تفاصيل الصنف: ' + id, 'info');
-}
-
-function editItem(id) {
-    const session = checkSession();
-    if (session && session.role === 'viewer') {
-        showToast('لا تملك صلاحية التعديل', 'error');
-        return;
-    }
-    showToast('تعديل الصنف: ' + id, 'info');
-}
-
-// ========== Modal ==========
-let addItemModal;
-
-function openModal() {
-    if (!addItemModal) {
-        addItemModal = new AddItemModal({
-            onSuccess: async () => {
-                await loadDashboardData();
-            }
-        });
-    }
-    addItemModal.open();
-}
-
-function closeModal() {
-    if (addItemModal) addItemModal.close();
-}
-
-async function submitAddItem() {
-    if (!addItemModal) {
-        addItemModal = new AddItemModal({ onSuccess: loadDashboardData });
-    }
-    await addItemModal.submit();
-}
-
-function createToastContainer() {
-    const container = document.createElement('div');
-    container.className = 'toast-container';
-    document.body.appendChild(container);
-    return container;
+    container.innerHTML = html;
 }
 
 // ========== Print ==========

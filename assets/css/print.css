@@ -32,8 +32,28 @@
     }
 
     /* --- Landscape for wide tables --- */
-    .print-landscape {
-        page: landscape;
+    .print-landscape,
+    .page-content.print-landscape,
+    body.print-landscape,
+    main.content.print-landscape {
+        page: landscape !important;
+    }
+
+    .print-landscape table,
+    .page-content.print-landscape table {
+        font-size: 9pt !important;
+    }
+
+    .print-landscape thead th,
+    .page-content.print-landscape thead th {
+        padding: 6pt 8pt !important;
+        font-size: 9pt !important;
+    }
+
+    .print-landscape tbody td,
+    .page-content.print-landscape tbody td {
+        padding: 5pt 8pt !important;
+        font-size: 9pt !important;
     }
 
     /* --- Base reset --- */

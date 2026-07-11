@@ -363,7 +363,15 @@ function renderItemsSummary(items) {
 
 // ========== Print ==========
 function handleDirectPrint() {
-    window.print();
+    const stats = {
+        totalItems: allItems.length,
+        totalUnits: allItems.reduce((s, i) => s + (i.current_quantity || 0), 0),
+        totalValue: allItems.reduce((s, i) => s + ((i.current_quantity || 0) * (i.unit_price || 0)), 0),
+        lowStock: allItems.filter(i => (i.current_quantity || 0) <= (i.min_order_qty || 0)).length
+    };
+    window.printReport.printDashboardSummary(stats, allItems, {
+        title: 'تقرير حالة المخزون'
+    });
 }
 
 // ========== Init ==========

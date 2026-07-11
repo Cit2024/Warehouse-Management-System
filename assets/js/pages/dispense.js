@@ -205,24 +205,6 @@ async function saveReceipt() {
 
 function executePrint(choice) {
     if (choice === 'direct') {
-        const now = new Date();
-        printLayout.setDates(now);
-
-        // Override header date format to "التاريخ: ..."
-        const dateEl = document.getElementById('printReceiptDate');
-        if (dateEl) {
-            const dateStr = now.toLocaleDateString('ar-LY', {
-                year: 'numeric', month: 'long', day: 'numeric'
-            });
-            dateEl.textContent = 'التاريخ: ' + dateStr;
-        }
-
-        printLayout.setSummary({
-            printReceiptDateValue: document.getElementById('receiptDate').value || '-',
-            printItemCount: receiptRows.length.toString()
-        });
-
-        // --- Receipt Meta Block (NEW) ---
         const requesterSelect = document.getElementById('requesterSelect');
         const storeSelect = document.getElementById('storeSelect');
         const notesInput = document.getElementById('receiptNotes');
@@ -231,45 +213,22 @@ function executePrint(choice) {
         const storeName = storeSelect.options[storeSelect.selectedIndex]?.text || '-';
         const notes = notesInput.value.trim();
 
-        // Remove old meta block if exists
-        const oldMeta = document.getElementById('printMetaBlock');
-        if (oldMeta) oldMeta.remove();
-        const oldNotes = document.getElementById('printNotesBlock');
-        if (oldNotes) oldNotes.remove();
+        const receiptData = {
+            requester: requesterName,
+            store: storeName,
+            notes: notes,
+            items: receiptRows.map(row => {
+                const fullItem = availableStock.find(i => i.item_id === row.itemId) || {};
+                return {
+                    item_id: row.itemId,
+                    item_name: row.itemName,
+                    unit: row.unit || fullItem.unit,
+                    quantity: row.quantity
+                };
+            })
+        };
 
-        // Insert new meta block after summary bar
-        const summaryBar = document.querySelector('.print-summary-bar');
-        if (summaryBar) {
-            const metaHtml = `
-                <div class="print-receipt-meta print-only" id="printMetaBlock">
-                    <div class="print-meta-item">
-                        <span class="print-meta-label">الجهة الطالبة:</span>
-                        <span class="print-meta-value">${escapePrintHtml(requesterName)}</span>
-                    </div>
-                    <div class="print-meta-item">
-                        <span class="print-meta-label">المخزن المصدر:</span>
-                        <span class="print-meta-value">${escapePrintHtml(storeName)}</span>
-                    </div>
-                </div>
-                ${notes ? `<div class="print-receipt-notes print-only" id="printNotesBlock"><strong>ملاحظات:</strong> ${escapePrintHtml(notes)}</div>` : ''}
-            `;
-            summaryBar.insertAdjacentHTML('afterend', metaHtml);
-        }
-
-        const sel = document.getElementById('itemsSel');
-        const sel2 = document.getElementById('rem2');
-        sel.style.display  = "none";
-        sel2.style.display = "none";
-        window.print();
-        sel.style.display  = "";
-        sel2.style.display = "";
-
-        // Clean up inserted elements
-        const cleanupIds = ['printMetaBlock', 'printNotesBlock'];
-        cleanupIds.forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.remove();
-        });
+        window.printReport.printReceipt(receiptData, { type: 'dispense' });
     }
     setTimeout(() => resetForm(), 1000);
 }

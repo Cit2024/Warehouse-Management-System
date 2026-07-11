@@ -99,48 +99,13 @@ async function printReport() {
     }
     try {
         await generateReport();
-        const reportName = document.getElementById('reportName').textContent || '-';
-        const recordCount = document.getElementById('recordCount').textContent || '0';
-        const totalValue = document.getElementById('totalValue').textContent || '0 د.ل';
-        const dateFrom = document.getElementById('dateFrom').value;
-        const dateTo = document.getElementById('dateTo').value;
-        const reportType = document.getElementById('reportType').value;
-        const needsPeriod = ['movements_log', 'item_card'].includes(reportType);
-        let periodText = '-';
-        if (needsPeriod && dateFrom && dateTo) {
-            periodText = dateFrom + ' إلى ' + dateTo;
-        }
 
-        // Set dates and title/summary via PrintLayout component
-        const now = new Date();
-        printLayout.setTitle(reportName);
-        printLayout.setSummary({
-            printReportName: reportName,
-            printRecordCount: recordCount
+        // Use unified PrintReport component
+        window.printReport.printInventoryTable(currentReportData, {
+            title: document.getElementById('reportName').textContent || 'تقرير',
+            subtitle: document.getElementById('reportTableMeta').textContent || ''
         });
-        printLayout.setDates(now);
 
-        // Auto-detect landscape: if more than 6 columns visible, use landscape
-        const table = document.getElementById('reportTable');
-        const visibleCols = table ? table.querySelectorAll('thead th:not([style*="display: none"]):not([style*="display:none"])').length : 0;
-        const pageContent = document.querySelector('.page-content');
-
-        if (visibleCols > 6) {
-            if (pageContent) pageContent.classList.add('print-landscape');
-            console.log('[Print] Switched to landscape mode (' + visibleCols + ' columns)');
-        } else {
-            if (pageContent) pageContent.classList.remove('print-landscape');
-        }
-
-        // Small delay to let CSS class apply
-        await new Promise(r => setTimeout(r, 100));
-
-        window.print();
-        // إزالة كلاس الطباعة الأفقية بعد الانتهاء
-        setTimeout(() => {
-            const reportContainer = document.querySelector('.page-content');
-            if (reportContainer) reportContainer.classList.remove('print-landscape');
-        }, 100);
     } finally {
         if (btn) {
             btn.disabled = false;

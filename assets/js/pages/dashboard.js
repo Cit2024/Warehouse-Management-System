@@ -363,15 +363,16 @@ function renderItemsSummary(items) {
 
 // ========== Print ==========
 function handleDirectPrint() {
-    const stats = {
-        totalItems: allItems.length,
-        totalUnits: allItems.reduce((s, i) => s + (i.current_quantity || 0), 0),
-        totalValue: allItems.reduce((s, i) => s + ((i.current_quantity || 0) * (i.unit_price || 0)), 0),
-        lowStock: allItems.filter(i => (i.current_quantity || 0) <= (i.min_order_qty || 0)).length
-    };
-    window.printReport.printDashboardSummary(stats, allItems, {
-        title: 'تقرير حالة المخزون'
-    });
+    // Use unified PrintReport component when available
+    if (window.printReport && typeof window.printReport.printInventoryTable === 'function') {
+        window.printReport.printInventoryTable(allItems, {
+            title: 'تقرير حالة المخزون',
+            subtitle: 'ملخص شامل لجميع الأصناف والرصيد الحالي'
+        });
+    } else {
+        console.warn('[Dashboard] PrintReport component not available, falling back to raw print');
+        window.print();
+    }
 }
 
 // ========== Init ==========

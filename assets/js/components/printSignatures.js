@@ -17,15 +17,15 @@ class PrintSignatures {
      */
     static html(roles = ['المستلم', 'أمين المخزن', 'المدير']) {
         const boxes = roles.map(role => `
-            <div class="print-signature-box">
-                <span class="sig-role">${this.escapeHtml(role)}</span>
-                <span class="sig-name">الاسم</span>
-                <span class="sig-signature">التوقيع</span>
+            <div class="print-sig-box">
+                <div class="print-sig-border"></div>
+                <span class="print-sig-role">${this.escapeHtml(role)}</span>
+                <span class="print-sig-name">الاسم : <span class="print-sig-dots"></span></span>
+                <span class="print-sig-signature">التوقيع : <span class="print-sig-dots"></span></span>
             </div>
         `).join('');
 
-        return `<div class="print-signatures print-only">${boxes}</div>
-        `.trim();
+        return `<div class="print-signatures print-only">${boxes}</div>`.trim();
     }
 
     /**

@@ -623,39 +623,39 @@
     }
 
     .badge-category.cat-electronics {
-        background: #DBEAFE !important;
-        color: #1E40AF !important;
-        border: 0.5pt solid #93C5FD !important;
+        background: none !important;
+        color: #000 !important;
+        border: 0.5pt solid #888 !important;
     }
     .badge-category.cat-stationery {
-        background: #FEF3C7 !important;
-        color: #92400E !important;
-        border: 0.5pt solid #FCD34D !important;
+        background: none !important;
+        color: #000 !important;
+        border: 0.5pt solid #888 !important;
     }
     .badge-category.cat-network {
-        background: #D1FAE5 !important;
-        color: #065F46 !important;
-        border: 0.5pt solid #6EE7B7 !important;
+        background: none !important;
+        color: #000 !important;
+        border: 0.5pt solid #888 !important;
     }
     .badge-category.cat-safety {
-        background: #FEE2E2 !important;
-        color: #991B1B !important;
-        border: 0.5pt solid #FCA5A5 !important;
+        background: none !important;
+        color: #000 !important;
+        border: 0.5pt solid #888 !important;
     }
     .badge-category.cat-tools {
-        background: #F3E8FF !important;
-        color: #6B21A8 !important;
-        border: 0.5pt solid #D8B4FE !important;
+        background: none !important;
+        color: #000 !important;
+        border: 0.5pt solid #888 !important;
     }
     .badge-category.cat-ink {
-        background: #E0F2FE !important;
-        color: #0C4A6E !important;
-        border: 0.5pt solid #7DD3FC !important;
+        background: none !important;
+        color: #000 !important;
+        border: 0.5pt solid #888 !important;
     }
     .badge-category.cat-default {
-        background: #F1F5F9 !important;
-        color: #475569 !important;
-        border: 0.5pt solid #CBD5E1 !important;
+        background: none !important;
+        color: #000 !important;
+        border: 0.5pt solid #888 !important;
     }
 
     /* ===================================================== */
@@ -673,15 +673,16 @@
     }
 
     .badge-status.status-available {
-        background: #D1FAE5 !important;
-        color: #047857 !important;
-        border: 0.5pt solid #6EE7B7 !important;
+        background: none !important;
+        color: #000 !important;
+        border: 0.5pt solid #888 !important;
     }
 
     .badge-status.status-low {
-        background: #FEE2E2 !important;
-        color: #DC2626 !important;
-        border: 0.5pt solid #FCA5A5 !important;
+        background: none !important;
+        color: #000 !important;
+        border: 0.5pt solid #888 !important;
+        font-weight: 700 !important;
     }
 
     /* ===================================================== */
@@ -730,94 +731,123 @@
     .badge {
         font-size: 8.5pt !important;
         padding: 3pt 6pt !important;
+        background: none !important;
+        color: #000 !important;
+        border: 0.5pt solid #888 !important;
     }
 
     .badge-available {
-        background: #D1FAE5 !important;
-        color: #047857 !important;
-        border: 0.5pt solid #6EE7B7 !important;
+        border-color: #666 !important;
     }
 
     .badge-low {
-        background: #FEE2E2 !important;
-        color: #DC2626 !important;
-        border: 0.5pt solid #FCA5A5 !important;
+        border-color: #666 !important;
+        font-weight: 700 !important;
     }
 
     .badge-supplier {
-        background: #DBEAFE !important;
-        color: #1E40AF !important;
-        border: 0.5pt solid #93C5FD !important;
+        border-color: #666 !important;
     }
 
     /* ===================================================== */
-    /* FOOTER - Signatures anchored to page bottom           */
+    /* FOOTER - Signatures                                   */
+    /* NO pseudo-elements -- use real HTML for Arabic text   */
     /* ===================================================== */
     .print-signatures,
     .print-signatures.print-only {
         display: flex !important;
         justify-content: space-between !important;
         position: fixed !important;
-        bottom: 18mm !important;
-        left: 15mm !important;
-        right: 15mm !important;
+        bottom: 10mm !important;
+        left: 12mm !important;
+        right: 12mm !important;
         margin: 0 !important;
         page-break-before: avoid !important;
         z-index: 10 !important;
     }
 
-    .print-signature-box {
-        width: 28% !important;
+    .print-sig-box {
+        width: 30% !important;
         text-align: center !important;
-        padding-top: 4pt !important;
-        border-top: 1pt solid #000 !important;
-        font-size: 8.5pt !important;
-        line-height: 1.8 !important;
-        color: #333 !important;
-        position: relative !important;
     }
 
-    /* Role name -- first line below the border */
+    /* Top border line */
+    .print-sig-border {
+        border-top: 0.8pt solid #000 !important;
+        margin-bottom: 2pt !important;
+    }
+
+    /* Role name -- first line below border */
+    .print-sig-role {
+        display: block !important;
+        font-size: 8pt !important;
+        font-weight: 700 !important;
+        color: #000 !important;
+        margin-bottom: 4pt !important;
+        padding-top: 2pt !important;
+    }
+
+    /* Name line: "الاسم : ..............." */
+    .print-sig-name {
+        display: block !important;
+        font-size: 7.5pt !important;
+        color: #444 !important;
+        margin-bottom: 3pt !important;
+        direction: rtl !important;
+        text-align: center !important;
+    }
+
+    /* Signature line: "التوقيع : ..............." */
+    .print-sig-signature {
+        display: block !important;
+        font-size: 7.5pt !important;
+        color: #444 !important;
+        direction: rtl !important;
+        text-align: center !important;
+    }
+
+    /* Dotted underline for writing space -- applied via child span */
+    .print-sig-dots {
+        display: inline-block !important;
+        width: 60% !important;
+        border-bottom: 0.5pt dotted #999 !important;
+        margin-right: 2pt !important;
+        height: 10pt !important;
+        vertical-align: bottom !important;
+    }
+
+    /* Legacy signature box support until all pages migrate */
+    .print-signature-box {
+        width: 30% !important;
+        text-align: center !important;
+        padding-top: 4pt !important;
+        border-top: 0.8pt solid #000 !important;
+        font-size: 8pt !important;
+        line-height: 1.8 !important;
+        color: #333 !important;
+    }
+
     .print-signature-box .sig-role {
         display: block !important;
-        font-size: 9pt !important;
+        font-size: 8pt !important;
         font-weight: 700 !important;
         color: #000 !important;
         margin-bottom: 4pt !important;
     }
 
-    /* Name line -- with dotted underline for writing */
-    .print-signature-box .sig-name {
-        display: block !important;
-        font-size: 8pt !important;
-        font-weight: 500 !important;
-        color: #444 !important;
-        margin-bottom: 2pt !important;
-    }
-
-    .print-signature-box .sig-name::after {
-        content: ': ' !important;
-        display: inline !important;
-        border-bottom: 0.5pt dotted #999 !important;
-        margin: 2pt 4pt 0 4pt !important;
-        height: 8pt !important;
-    }
-
-    /* Signature line -- with dotted underline for writing */
+    .print-signature-box .sig-name,
     .print-signature-box .sig-signature {
         display: block !important;
-        font-size: 8pt !important;
-        font-weight: 500 !important;
+        font-size: 7.5pt !important;
         color: #444 !important;
         margin-bottom: 2pt !important;
+        direction: rtl !important;
+        text-align: center !important;
     }
 
+    .print-signature-box .sig-name::after,
     .print-signature-box .sig-signature::after {
-        content: ': ' !important;
-        display: inline !important;
-        border-bottom: 0.5pt dotted #999 !important;
-        margin: 2pt 4pt 0 4pt !important;
-        height: 8pt !important;
+        content: none !important;
     }
 
     /* ===================================================== */

@@ -96,15 +96,15 @@
                     <table id="reportTable">
                         <thead id="reportTableHead">
                             <tr>
-                                <th class="sortable" onclick="sortTable('reportTable', 0)">رقم الصنف <span class="sort-icon">↕</span></th>
-                                <th class="sortable" onclick="sortTable('reportTable', 1)">اسم الصنف <span class="sort-icon">↕</span></th>
-                                <th class="sortable" onclick="sortTable('reportTable', 2)">التصنيف <span class="sort-icon">↕</span></th>
-                                <th class="sortable" onclick="sortTable('reportTable', 3)">الوحدة <span class="sort-icon">↕</span></th>
-                                <th class="sortable" onclick="sortTable('reportTable', 4)">الرصيد <span class="sort-icon">↕</span></th>
-                                <th class="sortable" onclick="sortTable('reportTable', 5)">الحد الأدنى <span class="sort-icon">↕</span></th>
-                                <th class="sortable" onclick="sortTable('reportTable', 6)">سعر الوحدة <span class="sort-icon">↕</span></th>
-                                <th class="sortable" onclick="sortTable('reportTable', 7)">القيمة <span class="sort-icon">↕</span></th>
-                                <th class="sortable" onclick="sortTable('reportTable', 8)">الحالة <span class="sort-icon">↕</span></th>
+                                <th class="sortable" data-column="item_id" onclick="sortTable('reportTable', 0)">رقم الصنف <span class="sort-icon">↕</span></th>
+                                <th class="sortable" data-column="item_name" onclick="sortTable('reportTable', 1)">اسم الصنف <span class="sort-icon">↕</span></th>
+                                <th class="sortable" data-column="category" onclick="sortTable('reportTable', 2)">التصنيف <span class="sort-icon">↕</span></th>
+                                <th class="sortable" data-column="unit" onclick="sortTable('reportTable', 3)">الوحدة <span class="sort-icon">↕</span></th>
+                                <th class="sortable" data-column="quantity" onclick="sortTable('reportTable', 4)">الرصيد <span class="sort-icon">↕</span></th>
+                                <th class="sortable" data-column="min_qty" onclick="sortTable('reportTable', 5)">الحد الأدنى <span class="sort-icon">↕</span></th>
+                                <th class="sortable" data-column="price" onclick="sortTable('reportTable', 6)">سعر الوحدة <span class="sort-icon">↕</span></th>
+                                <th class="sortable" data-column="value" onclick="sortTable('reportTable', 7)">القيمة <span class="sort-icon">↕</span></th>
+                                <th class="sortable" data-column="status" onclick="sortTable('reportTable', 8)">الحالة <span class="sort-icon">↕</span></th>
                             </tr>
                         </thead>
                         <tbody id="reportTableBody">

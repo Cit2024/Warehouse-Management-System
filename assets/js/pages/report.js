@@ -43,6 +43,28 @@ const Nums = {
     }
 };
 
+// ========== Category badge helper ==========
+function getCategoryClass(category) {
+    const cat = (category || '').toLowerCase();
+    if (cat.includes('إلكترون') || cat.includes('electronic')) return 'cat-electronics';
+    if (cat.includes('قرطاس') || cat.includes('station')) return 'cat-stationery';
+    if (cat.includes('شبك') || cat.includes('network')) return 'cat-network';
+    if (cat.includes('سلامة') || cat.includes('safety')) return 'cat-safety';
+    if (cat.includes('عدة') || cat.includes('أدوات') || cat.includes('tool')) return 'cat-tools';
+    if (cat.includes('حبر') || cat.includes('طباع') || cat.includes('ink')) return 'cat-ink';
+    return 'cat-default';
+}
+
+// ========== Consistent number formatter ==========
+function fmtNumber(num, digits = 2) {
+    const n = parseFloat(num);
+    if (isNaN(n)) return digits === 0 ? '0' : '0.' + '0'.repeat(digits);
+    return n.toLocaleString('ar-LY', {
+        minimumFractionDigits: digits,
+        maximumFractionDigits: digits
+    });
+}
+
 // ========== Column Visibility (اختيار الأعمدة + الإعدادات المحفوظة) ==========
 let hiddenColumns = new Set();
 const COLUMN_PRESETS_KEY = 'reportColumnPresets';
@@ -98,16 +120,23 @@ async function printReport() {
         });
         printLayout.setDates(now);
 
-        // Auto-detect landscape: if more than 6 columns, use landscape
+        // Auto-detect landscape: if more than 6 columns visible, use landscape
         const table = document.getElementById('reportTable');
-        const colCount = table ? table.querySelectorAll('thead th:not([style*="display: none"])').length : 0;
-        const reportContainer = document.querySelector('.page-content');
-        if (colCount > 6 && reportContainer) {
-            reportContainer.classList.add('print-landscape');
+        const visibleCols = table ? table.querySelectorAll('thead th:not([style*="display: none"]):not([style*="display:none"])').length : 0;
+        const pageContent = document.querySelector('.page-content');
+
+        if (visibleCols > 6) {
+            if (pageContent) pageContent.classList.add('print-landscape');
+            console.log('[Print] Switched to landscape mode (' + visibleCols + ' columns)');
+        } else {
+            if (pageContent) pageContent.classList.remove('print-landscape');
         }
 
+        // Small delay to let CSS class apply
+        await new Promise(r => setTimeout(r, 100));
+
         window.print();
-        // إزالة كلاس الطباعة الأفقية بعد الانتهاء بدلاً من إعادة تحميل الصفحة
+        // إزالة كلاس الطباعة الأفقية بعد الانتهاء
         setTimeout(() => {
             const reportContainer = document.querySelector('.page-content');
             if (reportContainer) reportContainer.classList.remove('print-landscape');
@@ -193,7 +222,7 @@ function renderStockTable(items) {
     const tbody = document.getElementById('reportTableBody');
     if (!items || items.length === 0) {
         tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 40px;">لا توجد بيانات للعرض</td></tr>';
-        updateStats(0, '0.00 د.ل');
+        updateStats(0, '0 د.ل');
         return;
     }
 
@@ -208,20 +237,24 @@ function renderStockTable(items) {
         totalValue += value;
         const isLow = qty <= minQty;
 
+        const catClass = getCategoryClass(item.category);
+        const statusClass = isLow ? 'status-low' : 'status-available';
+        const statusText = isLow ? 'منخفض' : 'متوفر';
+
         return `<tr>
             <td><span class="item-id">${item.item_id || '-'}</span></td>
-            <td style="font-weight: 600;">${item.item_name || 'غير معروف'}</td>
-            <td><span class="badge badge-supplier">${item.category || 'غير مصنف'}</span></td>
+            <td style="font-weight: 700;">${item.item_name || 'غير معروف'}</td>
+            <td><span class="badge-category ${catClass}">${item.category || 'غير مصنف'}</span></td>
             <td>${item.unit || 'قطعة'}</td>
-            <td style="font-weight: 700;">${Nums.fmtInt(qty)}</td>
-            <td>${Nums.fmtInt(minQty)}</td>
-            <td>${Nums.fmt(price)} د.ل</td>
-            <td style="font-weight: 600;">${Nums.fmt(value)} د.ل</td>
-            <td><span class="badge ${isLow ? 'badge-low' : 'badge-available'}">${isLow ? 'منخفض' : 'متوفر'}</span></td>
+            <td class="td-number">${fmtNumber(qty, 0)}</td>
+            <td class="td-number">${fmtNumber(minQty, 0)}</td>
+            <td class="td-price">${fmtNumber(price)} د.ل</td>
+            <td class="td-price">${fmtNumber(value)} د.ل</td>
+            <td><span class="badge-status ${statusClass}">${statusText}</span></td>
         </tr>`;
     }).join('');
 
-    updateStats(items.length, Nums.fmt(totalValue) + ' د.ل');
+    updateStats(items.length, fmtNumber(totalValue) + ' د.ل');
 }
 
 async function generateItemsBaseReport() {

@@ -107,7 +107,7 @@ function addRow() {
     const priceInput = document.getElementById('itemPrice');
 
     const itemId = parseInt(itemSelect.value);
-    const qty = parseFloat(qtyInput.value);
+    const qty = parseFloat(qtyInput.value) || 0;
     const price = parseFloat(priceInput.value) || 0;
 
     if (!itemId || !qty || qty <= 0) {
@@ -246,8 +246,8 @@ function executePrint(choice) {
                     item_id: row.itemId,
                     item_name: row.itemName,
                     unit: row.unit || fullItem.unit,
-                    quantity: row.quantity,
-                    price: row.price
+                    quantity: parseFloat(row.quantity) || 0,
+                    price: parseFloat(row.price) || 0
                 };
             })
         };

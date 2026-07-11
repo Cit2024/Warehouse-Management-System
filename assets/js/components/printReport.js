@@ -50,7 +50,7 @@ class PrintReport {
 <style>
 @page {
     size: A4 ${options.landscape ? 'landscape' : 'portrait'};
-    margin: 12mm 10mm 18mm 10mm;
+    margin: 10mm 10mm 35mm 10mm;  /* Increased bottom margin to 35mm for signatures */
 }
 * {
     margin: 0;
@@ -280,19 +280,19 @@ body {
     unicode-bidi: embed;
 }
 
-/* ===== SIGNATURES -- Fixed at bottom, separate lines ===== */
+/* ===== SIGNATURES -- Fixed at bottom, compact ===== */
 .print-signatures {
     display: flex;
     justify-content: space-between;
     position: fixed;
-    bottom: 12mm;
+    bottom: 8mm;
     left: 12mm;
     right: 12mm;
     margin: 0;
     page-break-before: avoid;
 }
 .print-sig-box {
-    width: 28%;
+    width: 30%;
     text-align: center;
 }
 .print-sig-role {
@@ -300,43 +300,47 @@ body {
     font-size: 8pt;
     font-weight: 700;
     color: #000;
-    margin-bottom: 3pt;
+    margin-bottom: 2pt;
     padding-top: 2pt;
     border-top: 0.8pt solid #000;
 }
-/* Name line: label + dotted line */
 .print-sig-name {
     display: block;
-    font-size: 7.5pt;
-    color: #444;
-    margin-bottom: 2pt;
+    font-size: 7pt;
+    color: #555;
+    margin-bottom: 1pt;
+    direction: rtl;
+    text-align: center;
+    line-height: 1.3;
 }
 .print-sig-name .label {
     display: inline;
 }
 .print-sig-name .line {
     display: inline-block;
-    width: 70%;
+    width: 55%;
     border-bottom: 0.5pt dotted #999;
     margin-right: 2pt;
-    height: 10pt;
+    height: 8pt;
     vertical-align: bottom;
 }
-/* Signature line: label + dotted line */
 .print-sig-signature {
     display: block;
-    font-size: 7.5pt;
-    color: #444;
+    font-size: 7pt;
+    color: #555;
+    direction: rtl;
+    text-align: center;
+    line-height: 1.3;
 }
 .print-sig-signature .label {
     display: inline;
 }
 .print-sig-signature .line {
     display: inline-block;
-    width: 65%;
+    width: 50%;
     border-bottom: 0.5pt dotted #999;
     margin-right: 2pt;
-    height: 10pt;
+    height: 8pt;
     vertical-align: bottom;
 }
 
@@ -456,7 +460,7 @@ body {
             landscape: colCount > 6
         });
 
-        this.openPrintWindow(doc);
+        this.openPrintWindow(doc, colCount > 6);
     }
 
     // ============================================================
@@ -535,7 +539,7 @@ body {
         tableHtml += this.buildSignaturesHtml(sigRoles);
 
         const doc = this.buildPrintDocument(tableHtml, { title, landscape: false });
-        this.openPrintWindow(doc);
+        this.openPrintWindow(doc, false);
     }
 
     // ============================================================
@@ -603,7 +607,7 @@ body {
         summaryHtml += this.buildSignaturesHtml(['المستلم', 'أمين المخزن', 'المدير']);
 
         const doc = this.buildPrintDocument(summaryHtml, { title, landscape: summaryItems.length > 5 });
-        this.openPrintWindow(doc);
+        this.openPrintWindow(doc, summaryItems.length > 5);
     }
 
     // ============================================================
@@ -634,13 +638,22 @@ body {
     // ============================================================
     // Open print window
     // ============================================================
-    openPrintWindow(htmlContent) {
+    openPrintWindow(htmlContent, isLandscape = false) {
         // Close previous window if exists
         if (this.printWindow && !this.printWindow.closed) {
             this.printWindow.close();
         }
 
-        this.printWindow = window.open('', '_blank', 'width=900,height=700');
+        // A4 dimensions at 96 DPI
+        const A4_WIDTH = 794;
+        const A4_HEIGHT = 1123;
+
+        const width = isLandscape ? A4_HEIGHT + 40 : A4_WIDTH + 40;  // +40 for scrollbar
+        const height = isLandscape ? A4_WIDTH + 60 : A4_HEIGHT + 60; // +60 for window chrome
+
+        const features = `width=${width},height=${height},resizable=yes,scrollbars=yes`;
+        this.printWindow = window.open('', '_blank', features);
+
         if (!this.printWindow) {
             if (typeof showToast === 'function') {
                 showToast('تم حظر النافذة المنبثقة -- يرجى السماح بالنوافذ المنبثقة', 'error');
@@ -654,15 +667,16 @@ body {
         this.printWindow.document.close();
 
         // Wait for content to load then print
-        this.printWindow.onload = () => {
-            this.printWindow.print();
-        };
-        // Fallback if onload doesn't fire
-        setTimeout(() => {
+        const doPrint = () => {
             if (this.printWindow && !this.printWindow.closed) {
                 this.printWindow.print();
             }
-        }, 500);
+        };
+
+        if (this.printWindow.onload) {
+            this.printWindow.onload = doPrint;
+        }
+        setTimeout(doPrint, 800); // Longer delay for complex tables
     }
 
     // ============================================================

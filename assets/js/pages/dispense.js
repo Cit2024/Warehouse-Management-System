@@ -114,7 +114,7 @@ function addRow() {
     const itemSelect = document.getElementById('itemSelect');
     const qtyInput = document.getElementById('itemQty');
     const itemId = parseInt(itemSelect.value);
-    const qty = parseFloat(qtyInput.value);
+    const qty = parseFloat(qtyInput.value) || 0;
 
     if (!itemId || !qty || qty <= 0) { showToast('الرجاء اختيار صنف وإدخال كمية صحيحة', 'warning'); return; }
 
@@ -223,7 +223,7 @@ function executePrint(choice) {
                     item_id: row.itemId,
                     item_name: row.itemName,
                     unit: row.unit || fullItem.unit,
-                    quantity: row.quantity
+                    quantity: parseFloat(row.quantity) || 0
                 };
             })
         };

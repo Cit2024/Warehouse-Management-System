@@ -219,15 +219,15 @@ async function deleteItem(id, name) {
 
 // ========== Print ==========
 function printItems() {
-    const dateEl = document.getElementById('printDateValue');
-    if (dateEl) {
-        dateEl.textContent = new Date().toLocaleDateString('ar-LY', { year: 'numeric', month: 'long', day: 'numeric' });
+    if (window.printReport && typeof window.printReport.printInventoryTable === 'function') {
+        window.printReport.printInventoryTable(allItems, {
+            title: 'قائمة الأصناف والمخزون',
+            subtitle: 'جميع الأصناف المسجلة في المنظومة'
+        });
+    } else {
+        console.warn('PrintReport component not available, falling back to raw print');
+        window.print();
     }
-
-    const countEl = document.getElementById('printRecordCount');
-    if (countEl) countEl.textContent = allItems.length;
-
-    window.print();
 }
 
 // ========== Helpers ==========

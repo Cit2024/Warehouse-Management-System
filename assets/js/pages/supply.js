@@ -246,7 +246,7 @@ function executePrint(choice) {
                     item_id: row.itemId,
                     item_name: row.itemName,
                     unit: row.unit || fullItem.unit,
-                    quantity: row.qty,
+                    quantity: row.quantity,
                     price: row.price
                 };
             })

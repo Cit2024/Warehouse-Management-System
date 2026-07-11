@@ -94,7 +94,7 @@ function onReportTypeChange() {
 }
 
 // ========== MAIN PRINT FUNCTION ==========
-async function printReport() {
+async function handlePrintReport() {
     const btn = document.getElementById('printReportBtn');
     if (btn) {
         btn.disabled = true;

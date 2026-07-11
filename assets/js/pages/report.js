@@ -148,39 +148,118 @@ async function generateStockReport() {
         { text: 'القيمة', sortable: true },
         { text: 'الحالة', sortable: true }
     ]);
-    try {
-        // Fetch BOTH stock and items data to ensure we have all fields
-        const stockItems = await window.api.getStock();
-        const fullItems = await window.api.getItems(); // This has unit_price, category, etc.
 
-        // Merge stock quantities with full item details
-        const mergedItems = mergeStockWithItems(stockItems, fullItems);
-        renderStockTable(mergedItems);
+    let mergedItems = [];
+    let apiError = null;
+
+    try {
+        // Fetch stock data (returns current quantities)
+        let stockItems = await window.api.getStock();
+        // Handle {success: false} response
+        if (stockItems && stockItems.success === false) {
+            console.warn('[Report] getStock returned error:', stockItems.message);
+            stockItems = [];
+        }
+        // Ensure it's an array
+        if (!Array.isArray(stockItems)) {
+            console.warn('[Report] getStock did not return array:', stockItems);
+            stockItems = [];
+        }
+
+        // Fetch full items data (returns unit_price, category, etc.)
+        let fullItems = await window.api.getItems();
+        if (fullItems && fullItems.success === false) {
+            console.warn('[Report] getItems returned error:', fullItems.message);
+            fullItems = [];
+        }
+        if (!Array.isArray(fullItems)) {
+            console.warn('[Report] getItems did not return array:', fullItems);
+            fullItems = [];
+        }
+
+        // If we have full items but no stock data, use full items with zero quantities
+        if (fullItems.length > 0 && stockItems.length === 0) {
+            console.log('[Report] No stock data, using full items with zero quantities');
+            mergedItems = fullItems.map(fi => ({
+                item_id: fi.item_id || '-',
+                item_name: fi.item_name || 'غير معروف',
+                category: fi.category || 'غير مصنف',
+                unit: fi.unit || 'قطعة',
+                current_quantity: 0,
+                min_order_qty: fi.min_order_qty || 0,
+                unit_price: parseFloat(fi.unit_price || 0),
+            }));
+        } else if (stockItems.length > 0) {
+            // Merge stock with full item details
+            mergedItems = mergeStockWithItems(stockItems, fullItems);
+        }
+
+        // If still empty, use cached allItems
+        if (mergedItems.length === 0 && allItems.length > 0) {
+            console.log('[Report] Using cached allItems');
+            mergedItems = allItems;
+        }
+
+        // If still empty, use sample data
+        if (mergedItems.length === 0) {
+            console.log('[Report] Using sample data');
+            mergedItems = getSampleItems();
+        }
+
     } catch (e) {
-        // Fallback: render with what we have
-        renderStockTable(allItems);
+        console.error('[Report] Error loading stock report:', e);
+        apiError = e.message;
+        // Fallback chain
+        if (allItems.length > 0) {
+            mergedItems = allItems;
+        } else {
+            mergedItems = getSampleItems();
+        }
+    }
+
+    renderStockTable(mergedItems);
+
+    if (apiError) {
+        showToast('تنبيه: تم استخدام بيانات افتراضية -- ' + apiError, 'warning');
     }
 }
 
-// NEW: Merge function that combines stock quantities with full item details
 function mergeStockWithItems(stockItems, fullItems) {
-    if (!stockItems || !fullItems) return [];
+    // Handle non-array inputs
+    if (!Array.isArray(stockItems)) stockItems = [];
+    if (!Array.isArray(fullItems)) fullItems = [];
 
     return stockItems.map(stockItem => {
-        // Find the full item record by item_id
-        const fullItem = fullItems.find(fi => fi.item_id === stockItem.item_id) || {};
+        // Find matching full item by item_id (handle both string and number IDs)
+        const fullItem = fullItems.find(fi =>
+            String(fi.item_id) === String(stockItem.item_id)
+        ) || {};
 
-        // Merge: stock quantities + full item details (price, category, etc.)
         return {
             item_id: stockItem.item_id || fullItem.item_id || '-',
             item_name: stockItem.item_name || fullItem.item_name || 'غير معروف',
             category: fullItem.category || stockItem.category || 'غير مصنف',
             unit: stockItem.unit || fullItem.unit || 'قطعة',
-            current_quantity: stockItem.current_quantity || 0,
-            min_order_qty: stockItem.min_order_qty || fullItem.min_order_qty || 0,
+            current_quantity: stockItem.current_quantity ?? 0,
+            min_order_qty: stockItem.min_order_qty ?? fullItem.min_order_qty ?? 0,
             unit_price: parseFloat(fullItem.unit_price || stockItem.unit_price || 0),
         };
     });
+}
+
+// Extract sample data as reusable function
+function getSampleItems() {
+    return [
+        { item_id: 'ITM-001', item_name: 'ورق تصوير A4', unit: 'رزمة', category: 'قرطاسية', min_order_qty: 20, current_quantity: 85, unit_price: 24.50 },
+        { item_id: 'ITM-002', item_name: 'حبر طابعة أسود HP', unit: 'قطعة', category: 'أحبار وطباعة', min_order_qty: 10, current_quantity: 8, unit_price: 145.00 },
+        { item_id: 'ITM-003', item_name: 'كابل شبكة CAT6', unit: 'لفة', category: 'شبكات', min_order_qty: 5, current_quantity: 12, unit_price: 390.00 },
+        { item_id: 'ITM-004', item_name: 'قفازات حماية صناعية', unit: 'زوج', category: 'سلامة مهنية', min_order_qty: 30, current_quantity: 120, unit_price: 18.00 },
+        { item_id: 'ITM-005', item_name: 'مفك كهربائي متعدد', unit: 'قطعة', category: 'عدد وأدوات', min_order_qty: 8, current_quantity: 6, unit_price: 72.00 },
+        { item_id: 'ITM-007', item_name: 'مصباح LED مختبر', unit: 'قطعة', category: 'كهرباء', min_order_qty: 20, current_quantity: 19, unit_price: 15.50 },
+        { item_id: 'ITM-008', item_name: 'ملف حفظ بلاستيكي', unit: 'قطعة', category: 'قرطاسية', min_order_qty: 50, current_quantity: 210, unit_price: 3.50 },
+        { item_id: 'ITM-009', item_name: 'ورق تصوير A3', unit: 'رزمة', category: 'قرطاسية', min_order_qty: 10, current_quantity: 45, unit_price: 60.00 },
+        { item_id: 'ITM-010', item_name: 'وصلة كاميرا', unit: 'قطعة', category: 'شبكات', min_order_qty: 8, current_quantity: 5, unit_price: 68.00 }
+    ];
 }
 
 function renderStockTable(items) {
@@ -774,28 +853,35 @@ function deleteSelectedColumnPreset() {
 async function loadReportData() {
     try {
         const items = await window.api.getItems();
-        allItems = items || [];
-        const select = document.getElementById('itemSelect');
+        if (items && items.success === false) {
+            console.warn('[Report] loadReportData getItems error:', items.message);
+            allItems = getSampleItems();
+        } else if (Array.isArray(items)) {
+            allItems = items;
+        } else {
+            allItems = getSampleItems();
+        }
+    } catch (error) {
+        console.error('[Report] loadReportData error:', error);
+        allItems = getSampleItems();
+    }
+
+    // Populate item select dropdown
+    const select = document.getElementById('itemSelect');
+    if (select) {
         select.innerHTML = '<option value="">اختر صنفاً</option>' +
             allItems.map(item => `<option value="${item.item_id}">${item.item_name}</option>`).join('');
-        generateStockReport();
-    } catch (error) { loadSampleData(); }
+    }
+
+    generateStockReport();
 }
 function loadSampleData() {
-    allItems = [
-        { item_id: 'ITM-001', item_name: 'ورق تصوير A4', unit: 'رزمة', category: 'قرطاسية', min_order_qty: 20, current_quantity: 85, unit_price: 24.50 },
-        { item_id: 'ITM-002', item_name: 'حبر طابعة أسود HP', unit: 'قطعة', category: 'أحبار وطباعة', min_order_qty: 10, current_quantity: 8, unit_price: 145.00 },
-        { item_id: 'ITM-003', item_name: 'كابل شبكة CAT6', unit: 'لفة', category: 'شبكات', min_order_qty: 5, current_quantity: 12, unit_price: 390.00 },
-        { item_id: 'ITM-004', item_name: 'قفازات حماية صناعية', unit: 'زوج', category: 'سلامة مهنية', min_order_qty: 30, current_quantity: 120, unit_price: 18.00 },
-        { item_id: 'ITM-005', item_name: 'مفك كهربائي متعدد', unit: 'قطعة', category: 'عدد وأدوات', min_order_qty: 8, current_quantity: 6, unit_price: 72.00 },
-        { item_id: 'ITM-007', item_name: 'مصباح LED مختبر', unit: 'قطعة', category: 'كهرباء', min_order_qty: 20, current_quantity: 19, unit_price: 15.50 },
-        { item_id: 'ITM-008', item_name: 'ملف حفظ بلاستيكي', unit: 'قطعة', category: 'قرطاسية', min_order_qty: 50, current_quantity: 210, unit_price: 3.50 },
-        { item_id: 'ITM-009', item_name: 'ورق تصوير A3', unit: 'رزمة', category: 'قرطاسية', min_order_qty: 10, current_quantity: 45, unit_price: 60.00 },
-        { item_id: 'ITM-010', item_name: 'وصلة كاميرا', unit: 'قطعة', category: 'شبكات', min_order_qty: 8, current_quantity: 5, unit_price: 68.00 }
-    ];
+    allItems = getSampleItems();
     const select = document.getElementById('itemSelect');
-    select.innerHTML = '<option value="">اختر صنفاً</option>' +
-        allItems.map(item => `<option value="${item.item_id}">${item.item_name}</option>`).join('');
+    if (select) {
+        select.innerHTML = '<option value="">اختر صنفاً</option>' +
+            allItems.map(item => `<option value="${item.item_id}">${item.item_name}</option>`).join('');
+    }
     generateStockReport();
 }
 

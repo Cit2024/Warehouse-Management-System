@@ -1068,21 +1068,6 @@ ipcMain.handle('get-merged-backups', async () => {
   }
 });
 
-// 3. التحقق من حالة الاتصال بالإنترنت (اختياري)
-ipcMain.handle('check-internet', async () => {
-  try {
-    const { exec } = require('child_process');
-    const util = require('util');
-    const execPromise = util.promisify(exec);
-
-    // محاولة ping لـ GitHub
-    await execPromise('ping -c 1 github.com', { timeout: 5000 });
-    return { online: true };
-  } catch (error) {
-    return { online: false };
-  }
-});
-
 // ==========================================
 // دوال التخزين التلقائي المجدول
 // ==========================================

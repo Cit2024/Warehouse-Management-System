@@ -15,32 +15,24 @@ document.addEventListener('DOMContentLoaded', () => {
 async function loadItemsData() {
     try {
         let items = await window.api.getItems();
+        let apiError = null;
         if (items && items.success === false) {
-            showToast(items.message || 'حدث خطأ في جلب الأصناف', 'error');
+            apiError = items.message || 'حدث خطأ في جلب الأصناف';
             items = [];
         }
         allItems = items || [];
         updateStats(allItems);
         populateCategoryFilter(allItems);
-        renderItemsTable(allItems);
+        renderItemsTable(allItems, apiError);
+        if (apiError) showToast(apiError, 'error');
     } catch (error) {
         console.error('Error loading items:', error);
-        showToast('حدث خطأ في جلب بيانات الأصناف', 'error');
-        loadSampleData();
+        allItems = [];
+        updateStats(allItems);
+        populateCategoryFilter(allItems);
+        renderItemsTable(allItems, 'حدث خطأ أثناء جلب بيانات الأصناف');
+        showToast('حدث خطأ أثناء جلب بيانات الأصناف', 'error');
     }
-}
-
-function loadSampleData() {
-    allItems = [
-        { item_id: 1, item_name: 'ورق تصوير A4', unit: 'رزمة', category: 'قرطاسية', min_order_qty: 20, current_quantity: 85, unit_price: 24.50 },
-        { item_id: 2, item_name: 'حبر طابعة أسود HP', unit: 'قطعة', category: 'أحبار وطباعة', min_order_qty: 10, current_quantity: 8, unit_price: 145.00 },
-        { item_id: 3, item_name: 'كابل شبكة CAT6', unit: 'لفة', category: 'شبكات', min_order_qty: 5, current_quantity: 12, unit_price: 390.00 },
-        { item_id: 4, item_name: 'قفازات حماية صناعية', unit: 'زوج', category: 'سلامة مهنية', min_order_qty: 30, current_quantity: 120, unit_price: 18.00 },
-        { item_id: 5, item_name: 'مفك كهربائي متعدد', unit: 'قطعة', category: 'عدد وأدوات', min_order_qty: 8, current_quantity: 6, unit_price: 72.00 }
-    ];
-    updateStats(allItems);
-    populateCategoryFilter(allItems);
-    renderItemsTable(allItems);
 }
 
 function updateStats(items) {
@@ -75,20 +67,25 @@ function populateCategoryFilter(items) {
 }
 
 // ========== Table Rendering ==========
-function renderItemsTable(items) {
+// errorMessage يميّز بين "لا توجد أصناف بعد" (نتيجة سليمة) و"تعذّر الجلب" (فشل)
+// — يجب ألا يبدو الاثنان متطابقين للمستخدم.
+function renderItemsTable(items, errorMessage = null) {
     const tbody = document.getElementById('itemsTableBody');
     const countEl = document.getElementById('itemsCount');
 
     if (countEl) countEl.textContent = (items ? items.length : 0) + ' صنف مسجل';
 
     if (!items || items.length === 0) {
+        const icon = errorMessage ? 'fa-triangle-exclamation' : 'fa-inbox';
+        const title = errorMessage ? 'تعذّر تحميل الأصناف' : 'لا توجد أصناف حالياً';
+        const desc = errorMessage || 'قم بإضافة صنف جديد للبدء';
         tbody.innerHTML = `
             <tr>
                 <td colspan="9">
                     <div class="empty-state">
-                        <div class="empty-state-icon"><i class="fas fa-inbox"></i></div>
-                        <h3>لا توجد أصناف حالياً</h3>
-                        <p>قم بإضافة صنف جديد للبدء</p>
+                        <div class="empty-state-icon"><i class="fas ${icon}"></i></div>
+                        <h3>${title}</h3>
+                        <p>${escapeHtml(desc)}</p>
                     </div>
                 </td>
             </tr>

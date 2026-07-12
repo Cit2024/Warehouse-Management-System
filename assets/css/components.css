@@ -594,6 +594,21 @@ dialog.modal-content::backdrop {
     font-size: 16px;
 }
 
+/* --- Report Empty / Error Row --- */
+.report-message-row {
+    text-align: center;
+    padding: 40px;
+    color: var(--text-secondary);
+}
+
+.report-message-row i {
+    margin-inline-end: var(--space-2);
+}
+
+.report-message-error {
+    color: var(--danger);
+}
+
 /* --- Voided Transactions --- */
 /* الحالة تُنقل بالشارة النصية والأيقونة؛ التظليل مجرد تأكيد بصري إضافي */
 .row-voided {

@@ -45,8 +45,8 @@ async function loadDashboardData() {
         updateSidebarBadge(allItems.length);
     } catch (error) {
         console.error('Error loading dashboard:', error);
-        // Use sample data for preview
-        loadSampleData();
+        showToast('تعذّر تحميل بيانات لوحة التحكم', 'error');
+        showDashboardLoadError();
     }
 }
 
@@ -60,25 +60,30 @@ function countMovementsThisMonth(history) {
     }).length;
 }
 
-function loadSampleData() {
-    const sampleItems = [
-        { item_id: 'ITM-001', item_name: 'ورق تصوير A4', unit: 'رزمة', category: 'قرطاسية', min_order_qty: 20, current_quantity: 85, unit_price: 24.50 },
-        { item_id: 'ITM-002', item_name: 'حبر طابعة أسود HP', unit: 'قطعة', category: 'أحبار وطباعة', min_order_qty: 10, current_quantity: 8, unit_price: 145.00 },
-        { item_id: 'ITM-003', item_name: 'كابل شبكة CAT6', unit: 'لفة', category: 'شبكات', min_order_qty: 5, current_quantity: 12, unit_price: 390.00 },
-        { item_id: 'ITM-004', item_name: 'قفازات حماية صناعية', unit: 'زوج', category: 'سلامة مهنية', min_order_qty: 30, current_quantity: 120, unit_price: 18.00 },
-        { item_id: 'ITM-005', item_name: 'مفك كهربائي متعدد', unit: 'قطعة', category: 'عدد وأدوات', min_order_qty: 8, current_quantity: 6, unit_price: 72.00 },
-        { item_id: 'ITM-007', item_name: 'مصباح LED مختبر', unit: 'قطعة', category: 'كهرباء', min_order_qty: 20, current_quantity: 19, unit_price: 15.50 },
-        { item_id: 'ITM-008', item_name: 'ملف حفظ بلاستيكي', unit: 'قطعة', category: 'قرطاسية', min_order_qty: 50, current_quantity: 210, unit_price: 3.50 },
-        { item_id: 'ITM-009', item_name: 'ورق تصوير A3', unit: 'رزمة', category: 'قرطاسية', min_order_qty: 10, current_quantity: 45, unit_price: 60.00 },
-        { item_id: 'ITM-010', item_name: 'وصلة كاميرا', unit: 'قطعة', category: 'شبكات', min_order_qty: 8, current_quantity: 5, unit_price: 68.00 }
-    ];
-    allItems = sampleItems;
-    updateStats(sampleItems, 4);
-    renderItemsSummary(sampleItems);
-    renderLowStockAlerts(sampleItems);
-    renderChart(sampleItems);
-    updateSidebarBadge(sampleItems.length);
-    renderSampleMovements();
+// عند فشل تحميل البيانات (لا اتصال، خطأ في القاعدة، ...) نعرض حالة خطأ صريحة
+// بدل بيانات مختلقة — أرقام وهمية على لوحة التحكم يمكن أن تُتخذ قرارات بناءً
+// عليها، وهو ما تحذّر منه PRODUCT.md صراحةً ("Trust Through Verification").
+function showDashboardLoadError() {
+    ['statTotalItems', 'statTotalUnits', 'statInventoryValue', 'statLowStock', 'statMonthlyMovements'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = '—';
+    });
+
+    const errorHtml = (message) => `
+        <div class="empty-state" style="padding: 24px;">
+            <div class="empty-state-icon"><i class="fas fa-triangle-exclamation"></i></div>
+            <p>${message}</p>
+        </div>
+    `;
+
+    const itemsSummary = document.getElementById('itemsSummary');
+    if (itemsSummary) itemsSummary.innerHTML = errorHtml('تعذّر تحميل بيانات الأصناف. حاول تحديث الصفحة.');
+
+    const lowStockList = document.getElementById('lowStockList');
+    if (lowStockList) lowStockList.innerHTML = errorHtml('تعذّر تحميل التنبيهات.');
+
+    const recentMovements = document.getElementById('recentMovements');
+    if (recentMovements) recentMovements.innerHTML = errorHtml('تعذّر تحميل الحركات الأخيرة.');
 }
 
 function updateStats(items, monthlyMovements = 0) {
@@ -199,36 +204,6 @@ function renderLowStockAlerts(items) {
             <div class="alert-item-status">منخفض</div>
         `;
         fragment.appendChild(alertItem);
-    });
-    container.innerHTML = '';
-    container.appendChild(fragment);
-}
-
-// يُستخدم فقط في مسار البيانات التجريبية (عند فشل الاتصال بقاعدة البيانات) لعرض نموذج توضيحي
-function renderSampleMovements() {
-    const container = document.getElementById('recentMovements');
-    const movements = [
-        { type: 'dispense', id: 'صرف-2026-002', date: '2026-06-12', entity: 'مكتب الشؤون الإدارية', value: '332,50 د.ل' },
-        { type: 'dispense', id: 'صرف-2026-001', date: '2026-06-10', entity: 'قسم الهندسة الكهربائية', value: '504,00 د.ل' },
-        { type: 'supply', id: 'توريد-2026-002', date: '2026-06-07', entity: 'مكتبة مصراتة الحديثة', value: '1.575,00 د.ل' },
-        { type: 'supply', id: 'توريد-2026-001', date: '2026-06-02', entity: 'شركة المدار للتجهيزات', value: '3.740,00 د.ل' }
-    ];
-
-    const fragment = document.createDocumentFragment();
-    movements.forEach(m => {
-        const activityItem = document.createElement('div');
-        activityItem.className = 'activity-item';
-        activityItem.innerHTML = `
-            <div class="activity-icon ${m.type}">
-                <i class="fas fa-arrow-${m.type === 'supply' ? 'down' : 'up'}"></i>
-            </div>
-            <div class="activity-content">
-                <div class="activity-title">${m.id}</div>
-                <div class="activity-meta">${m.date} · ${m.entity}</div>
-            </div>
-            <div class="activity-value">${m.value}</div>
-        `;
-        fragment.appendChild(activityItem);
     });
     container.innerHTML = '';
     container.appendChild(fragment);

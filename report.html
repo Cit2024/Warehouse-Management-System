@@ -51,6 +51,12 @@
                                 <option value="">اختر صنفاً</option>
                             </select>
                         </div>
+                        <div class="form-group" id="receiptSelectGroup" style="flex: 1; min-width: 220px; margin-bottom: 0; display: none;">
+                            <label>الإذن</label>
+                            <select class="filter-select" id="receiptSelect" onchange="generateReport()" style="width: 100%;">
+                                <option value="">اختر إذناً</option>
+                            </select>
+                        </div>
                         <div class="form-group checkbox-group" id="includeVoidedGroup" style="margin-bottom: 0; display: none;">
                             <input type="checkbox" id="includeVoided" onchange="generateReport()">
                             <label for="includeVoided">عرض الأذونات الملغاة</label>

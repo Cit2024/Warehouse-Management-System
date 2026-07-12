@@ -1,6 +1,6 @@
 /**
  * Report Page Logic
- * Handles report generation, printing, column visibility, and sample data.
+ * Handles report generation, printing, and column visibility.
  */
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -47,6 +47,20 @@ const Nums = {
     }
 };
 
+// ========== Empty / error row (never fabricated data) ==========
+// An empty result and a failed query must never look the same: empty is a
+// silent, neutral state; a failure is announced with an icon and real text
+// (never colour alone, per PRODUCT.md), and never papered over with invented
+// numbers that could end up on a printed official document.
+function reportMessageRow(colspan, message, isError = false) {
+    const icon = isError ? 'fa-triangle-exclamation' : 'fa-inbox';
+    const cls = isError ? 'report-message-row report-message-error' : 'report-message-row';
+    return `<tr><td colspan="${colspan}" class="${cls}">
+        <i class="fas ${icon}" aria-hidden="true"></i>
+        <span>${escapeHtml(message)}</span>
+    </td></tr>`;
+}
+
 // ========== Category badge helper ==========
 function getCategoryClass(category) {
     const cat = (category || '').toLowerCase();
@@ -82,20 +96,53 @@ function setDefaultDates() {
 }
 
 // ========== Report Type Change ==========
-function onReportTypeChange() {
+async function onReportTypeChange() {
     const type = document.getElementById('reportType').value;
     const needsItem = type === 'item_card';
     const needsDates = ['stock', 'items_base', 'lowstock', 'inventory_count', 'movements_log', 'item_card'].includes(type);
+    const needsReceipt = type === 'supply_receipt' || type === 'dispense_receipt';
 
     document.getElementById('itemSelectGroup').style.display = needsItem ? 'block' : 'none';
     document.getElementById('dateFromGroup').style.display = needsDates ? 'block' : 'none';
     document.getElementById('dateToGroup').style.display = needsDates ? 'block' : 'none';
 
+    const receiptGroup = document.getElementById('receiptSelectGroup');
+    if (receiptGroup) receiptGroup.style.display = needsReceipt ? 'block' : 'none';
+
     // خيار عرض الأذونات الملغاة يخص سجل الحركات وحده
     const voidedGroup = document.getElementById('includeVoidedGroup');
     if (voidedGroup) voidedGroup.style.display = (type === 'movements_log') ? 'flex' : 'none';
     hiddenColumns = new Set(); // كل نوع تقرير له أعمدة مختلفة، فنبدأ من جديد بكل الأعمدة ظاهرة
+
+    // القائمة يجب أن تُملأ قبل أن يحاول التقرير قراءة قيمتها
+    if (needsReceipt) {
+        await loadReceiptOptions(type === 'supply_receipt' ? 'In' : 'Out');
+    }
     generateReport();
+}
+
+// تعبئة قائمة الأذونات الحقيقية (توريد أو صرف) لاختيار إذن لعرضه وطباعته.
+// كانت هذه القائمة غير موجودة أصلاً؛ تبويبا "إذن توريد"/"إذن صرف" كانا يعرضان
+// دائماً إذناً وهمياً ثابتاً بدل السماح باختيار إذن حقيقي.
+async function loadReceiptOptions(transactionType) {
+    const select = document.getElementById('receiptSelect');
+    if (!select) return;
+    select.innerHTML = '<option value="">جاري التحميل...</option>';
+    try {
+        const history = await window.api.getTransactionsHistory({ includeVoided: false });
+        const list = Array.isArray(history) ? history.filter(t => t.transaction_type === transactionType) : [];
+        if (list.length === 0) {
+            select.innerHTML = '<option value="">لا توجد أذونات مسجلة</option>';
+            return;
+        }
+        select.innerHTML = '<option value="">اختر إذناً</option>' + list.map(t => {
+            const dateStr = t.transaction_date ? new Date(t.transaction_date).toLocaleDateString('ar-LY') : '-';
+            return `<option value="${t.transaction_id}">#${t.transaction_id} — ${dateStr} — ${escapeHtml(t.entity_name || 'غير محدد')}</option>`;
+        }).join('');
+    } catch (error) {
+        console.error('[Report] تعذّر تحميل قائمة الأذونات:', error);
+        select.innerHTML = '<option value="">تعذّر تحميل القائمة</option>';
+    }
 }
 
 // ========== MAIN PRINT FUNCTION ==========
@@ -139,12 +186,20 @@ async function handlePrintReport() {
             }
 
             case 'supply_receipt': {
+                if (!currentReportData || currentReportData.length === 0) {
+                    showToast('يرجى اختيار إذن توريد أولاً', 'warning');
+                    return;
+                }
                 const supplyData = buildSupplyReceiptData();
                 window.printReport.printReceipt(supplyData, { type: 'supply' });
                 break;
             }
 
             case 'dispense_receipt': {
+                if (!currentReportData || currentReportData.length === 0) {
+                    showToast('يرجى اختيار إذن صرف أولاً', 'warning');
+                    return;
+                }
                 const dispenseData = buildDispenseReceiptData();
                 window.printReport.printReceipt(dispenseData, { type: 'dispense' });
                 break;
@@ -303,27 +358,16 @@ async function generateStockReport(expectedId) {
             mergedItems = mergeStockWithItems(stockItems, fullItems);
         }
 
-        // If still empty, use cached allItems
+        // If still empty, fall back to the cached items list (a real fetch
+        // from earlier in the session), never to invented data.
         if (mergedItems.length === 0 && allItems.length > 0) {
             console.log('[Report] Using cached allItems');
             mergedItems = allItems;
         }
 
-        // If still empty, use sample data
-        if (mergedItems.length === 0) {
-            console.log('[Report] Using sample data');
-            mergedItems = getSampleItems();
-        }
-
     } catch (e) {
         console.error('[Report] Error loading stock report:', e);
-        apiError = e.message;
-        // Fallback chain
-        if (allItems.length > 0) {
-            mergedItems = allItems;
-        } else {
-            mergedItems = getSampleItems();
-        }
+        apiError = e.message || 'حدث خطأ أثناء جلب بيانات المخزون';
     }
 
     if (reportGenerationId !== expectedId) {
@@ -344,11 +388,8 @@ async function generateStockReport(expectedId) {
         { text: 'الحالة', sortable: true }
     ]);
 
-    renderStockTable(mergedItems);
-
-    if (apiError) {
-        showToast('تنبيه: تم استخدام بيانات افتراضية -- ' + apiError, 'warning');
-    }
+    renderStockTable(mergedItems, apiError);
+    if (apiError) showToast(apiError, 'error');
 }
 
 function mergeStockWithItems(stockItems, fullItems) {
@@ -374,25 +415,11 @@ function mergeStockWithItems(stockItems, fullItems) {
     });
 }
 
-// Extract sample data as reusable function
-function getSampleItems() {
-    return [
-        { item_id: 'ITM-001', item_name: 'ورق تصوير A4', unit: 'رزمة', category: 'قرطاسية', min_order_qty: 20, current_quantity: 85, unit_price: 24.50 },
-        { item_id: 'ITM-002', item_name: 'حبر طابعة أسود HP', unit: 'قطعة', category: 'أحبار وطباعة', min_order_qty: 10, current_quantity: 8, unit_price: 145.00 },
-        { item_id: 'ITM-003', item_name: 'كابل شبكة CAT6', unit: 'لفة', category: 'شبكات', min_order_qty: 5, current_quantity: 12, unit_price: 390.00 },
-        { item_id: 'ITM-004', item_name: 'قفازات حماية صناعية', unit: 'زوج', category: 'سلامة مهنية', min_order_qty: 30, current_quantity: 120, unit_price: 18.00 },
-        { item_id: 'ITM-005', item_name: 'مفك كهربائي متعدد', unit: 'قطعة', category: 'عدد وأدوات', min_order_qty: 8, current_quantity: 6, unit_price: 72.00 },
-        { item_id: 'ITM-007', item_name: 'مصباح LED مختبر', unit: 'قطعة', category: 'كهرباء', min_order_qty: 20, current_quantity: 19, unit_price: 15.50 },
-        { item_id: 'ITM-008', item_name: 'ملف حفظ بلاستيكي', unit: 'قطعة', category: 'قرطاسية', min_order_qty: 50, current_quantity: 210, unit_price: 3.50 },
-        { item_id: 'ITM-009', item_name: 'ورق تصوير A3', unit: 'رزمة', category: 'قرطاسية', min_order_qty: 10, current_quantity: 45, unit_price: 60.00 },
-        { item_id: 'ITM-010', item_name: 'وصلة كاميرا', unit: 'قطعة', category: 'شبكات', min_order_qty: 8, current_quantity: 5, unit_price: 68.00 }
-    ];
-}
-
-function renderStockTable(items) {
+function renderStockTable(items, errorMessage = null) {
     const tbody = document.getElementById('reportTableBody');
+    currentReportData = [];
     if (!items || items.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 40px;">لا توجد بيانات للعرض</td></tr>';
+        tbody.innerHTML = reportMessageRow(9, errorMessage || 'لا توجد أصناف مسجلة بعد', !!errorMessage);
         updateStats(0, '0 د.ل');
         return;
     }
@@ -430,10 +457,12 @@ function renderStockTable(items) {
 
 async function generateItemsBaseReport(expectedId) {
     let items = [];
+    let apiError = null;
     try {
         items = await window.api.getItems();
         if (items && items.success === false) {
             console.warn('[Report] getItems returned error:', items.message);
+            apiError = items.message || 'تعذّر جلب بيانات الأصناف';
             items = [];
         }
         if (!Array.isArray(items)) {
@@ -442,7 +471,7 @@ async function generateItemsBaseReport(expectedId) {
         }
     } catch (e) {
         console.error('[Report] Error loading items base report:', e);
-        items = [];
+        apiError = e.message || 'حدث خطأ أثناء جلب بيانات الأصناف';
     }
 
     if (reportGenerationId !== expectedId) {
@@ -450,8 +479,8 @@ async function generateItemsBaseReport(expectedId) {
         return;
     }
 
-    if (!items || items.length === 0) {
-        items = allItems.length > 0 ? allItems : getSampleItems();
+    if (!apiError && (!items || items.length === 0) && allItems.length > 0) {
+        items = allItems; // نسخة مخزّنة من جلب سابق ناجح، وليست بيانات وهمية
     }
 
     setReportMeta('دليل الأصناف الأساسي', 'بيانات الأصناف الأساسية بدون كميات أو قيم');
@@ -462,15 +491,18 @@ async function generateItemsBaseReport(expectedId) {
         { text: 'التصنيف', sortable: true },
         { text: 'الحد الأدنى', sortable: true }
     ]);
-    renderItemsBaseTable(items);
+    renderItemsBaseTable(items, apiError);
+    if (apiError) showToast(apiError, 'error');
 }
 
-function renderItemsBaseTable(items) {
-    if (!items || items.length === 0) {
-        showToast('fail to get data to display', 'error');
-    }
+function renderItemsBaseTable(items, errorMessage = null) {
     const tbody = document.getElementById('reportTableBody');
-    currentReportData = items;
+    currentReportData = items || [];
+    if (!items || items.length === 0) {
+        tbody.innerHTML = reportMessageRow(5, errorMessage || 'لا توجد أصناف مسجلة بعد', !!errorMessage);
+        updateStats(0, '0 صنف');
+        return;
+    }
     tbody.innerHTML = items.map(item => `
         <tr>
             <td><span class="item-id">${item.item_id}</span></td>
@@ -485,10 +517,12 @@ function renderItemsBaseTable(items) {
 
 async function generateInventoryCountReport(expectedId) {
     let items = [];
+    let apiError = null;
     try {
         items = await window.api.getStock();
         if (items && items.success === false) {
             console.warn('[Report] getStock returned error:', items.message);
+            apiError = items.message || 'تعذّر جلب بيانات المخزون';
             items = [];
         }
         if (!Array.isArray(items)) {
@@ -497,16 +531,12 @@ async function generateInventoryCountReport(expectedId) {
         }
     } catch (e) {
         console.error('[Report] Error loading inventory count report:', e);
-        items = [];
+        apiError = e.message || 'حدث خطأ أثناء جلب بيانات المخزون';
     }
 
     if (reportGenerationId !== expectedId) {
         console.log('[Report] Stale generateInventoryCountReport ignored');
         return;
-    }
-
-    if (!items || items.length === 0) {
-        items = allItems.length > 0 ? allItems : getSampleItems();
     }
 
     setReportMeta('تقرير الجرد الفعلي', 'مقارنة الرصيد الحالي بالرصيد الفعلي الممسوح');
@@ -519,15 +549,18 @@ async function generateInventoryCountReport(expectedId) {
         { text: 'الرصيد الفعلي', sortable: false },
         { text: 'حالة الجرد', sortable: true }
     ]);
-    renderInventoryCountTable(items);
+    renderInventoryCountTable(items, apiError);
+    if (apiError) showToast(apiError, 'error');
 }
 
-function renderInventoryCountTable(items) {
-    if (!items || items.length === 0) {
-        showToast('fail to get data to display', 'error');
-    }
+function renderInventoryCountTable(items, errorMessage = null) {
     const tbody = document.getElementById('reportTableBody');
-    currentReportData = items;
+    currentReportData = items || [];
+    if (!items || items.length === 0) {
+        tbody.innerHTML = reportMessageRow(7, errorMessage || 'لا توجد أصناف في المخزون بعد', !!errorMessage);
+        updateStats(0, 'جرد حسب الفعلي');
+        return;
+    }
     tbody.innerHTML = items.map((item, index) => {
         const current = item.current_quantity || 0;
         return `<tr>
@@ -555,11 +588,7 @@ function updateCountStatus(input) {
 }
 
 async function generateSupplyReceiptReport(expectedId) {
-    if (reportGenerationId !== expectedId) {
-        console.log('[Report] Stale generateSupplyReceiptReport ignored');
-        return;
-    }
-    setReportMeta('إذن توريد', 'عرض تفاصيل إذن توريد نموذجي');
+    setReportMeta('إذن توريد', 'اختر إذن توريد من القائمة أعلاه لعرض تفاصيله');
     setTableHeaders([
         { text: 'رقم الصنف', sortable: true },
         { text: 'اسم الصنف', sortable: true },
@@ -568,46 +597,75 @@ async function generateSupplyReceiptReport(expectedId) {
         { text: 'سعر الوحدة', sortable: true },
         { text: 'الإجمالي', sortable: true }
     ]);
-    renderSupplyReceipt(null);
+
+    const receiptId = document.getElementById('receiptSelect')?.value;
+    if (!receiptId) {
+        if (reportGenerationId !== expectedId) return;
+        currentReportData = [];
+        document.getElementById('reportTableBody').innerHTML =
+            reportMessageRow(6, 'اختر إذن توريد من القائمة أعلاه لعرض تفاصيله');
+        updateStats(0, '-');
+        return;
+    }
+
+    let receipt = null;
+    let apiError = null;
+    try {
+        const result = await window.api.getSupplyReceipt(parseInt(receiptId, 10));
+        if (result && result.success) {
+            receipt = result.receipt;
+        } else {
+            apiError = (result && result.message) || 'تعذّر جلب بيانات الإذن';
+        }
+    } catch (e) {
+        console.error('[Report] Error loading supply receipt:', e);
+        apiError = 'حدث خطأ أثناء جلب بيانات الإذن';
+    }
+
+    if (reportGenerationId !== expectedId) {
+        console.log('[Report] Stale generateSupplyReceiptReport ignored');
+        return;
+    }
+
+    if (apiError || !receipt) {
+        currentReportData = [];
+        document.getElementById('reportTableBody').innerHTML = reportMessageRow(6, apiError || 'تعذّر جلب بيانات الإذن', true);
+        updateStats(0, '-');
+        if (apiError) showToast(apiError, 'error');
+        return;
+    }
+
+    renderSupplyReceipt(receipt);
 }
 
 function renderSupplyReceipt(receipt) {
     const tbody = document.getElementById('reportTableBody');
-    const sampleReceipt = receipt || {
-        transaction_id: 1,
-        date: '2026-06-02',
-        supplier: 'شركة المدار للتجهيزات',
-        store: 'المخزن الرئيسي',
-        notes: 'توريد مستلزمات مكتبية',
-        items: [
-            { item_id: 'ITM-001', item_name: 'ورق تصوير A4', unit: 'رزمة', quantity: 50, price: 24.50 },
-            { item_id: 'ITM-008', item_name: 'ملف حفظ بلاستيكي', unit: 'قطعة', quantity: 100, price: 3.50 },
-            { item_id: 'ITM-002', item_name: 'حبر طابعة أسود HP', unit: 'قطعة', quantity: 10, price: 145.00 }
-        ]
-    };
-    currentReportData = sampleReceipt.items;
+    const items = receipt.items || [];
+    currentReportData = items;
     let totalValue = 0;
-    const rows = sampleReceipt.items.map(item => {
+    const rows = items.map(item => {
         const lineTotal = (item.quantity || 0) * (item.price || 0);
         totalValue += lineTotal;
         return `<tr>
             <td><span class="item-id">${item.item_id}</span></td>
-            <td style="font-weight: 600;">${item.item_name}</td>
-            <td>${item.unit}</td>
+            <td style="font-weight: 600;">${escapeHtml(item.item_name)}</td>
+            <td>${escapeHtml(item.unit)}</td>
             <td style="font-weight: 700;">${item.quantity}</td>
             <td>${(item.price || 0).toLocaleString('ar-LY', {minimumFractionDigits: 2})} د.ل</td>
             <td style="font-weight: 600;">${lineTotal.toLocaleString('ar-LY', {minimumFractionDigits: 2})} د.ل</td>
         </tr>`;
     }).join('');
 
+    const dateStr = receipt.date ? new Date(receipt.date).toLocaleDateString('ar-LY') : '-';
+
     tbody.innerHTML = `
         <tr><td colspan="6" style="padding: 16px; background: var(--bg-hover); border-bottom: 1px solid var(--border-color);">
             <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; font-size: 13px;">
-                <div><strong>رقم الحركة:</strong> إذن-توريد-#${sampleReceipt.transaction_id}</div>
-                <div><strong>التاريخ:</strong> ${sampleReceipt.date}</div>
-                <div><strong>المورد:</strong> ${sampleReceipt.supplier}</div>
-                <div><strong>المخزن:</strong> ${sampleReceipt.store}</div>
-                <div style="grid-column: span 2;"><strong>ملاحظات:</strong> ${sampleReceipt.notes || '-'}</div>
+                <div><strong>رقم الحركة:</strong> إذن-توريد-#${receipt.transaction_id}</div>
+                <div><strong>التاريخ:</strong> ${dateStr}</div>
+                <div><strong>المورد:</strong> ${escapeHtml(receipt.supplier || 'غير محدد')}</div>
+                <div><strong>المخزن:</strong> ${escapeHtml(receipt.store || 'غير محدد')}</div>
+                <div style="grid-column: span 2;"><strong>ملاحظات:</strong> ${escapeHtml(receipt.notes || '-')}</div>
             </div>
         </td></tr>
         ${rows}
@@ -619,75 +677,103 @@ function renderSupplyReceipt(receipt) {
             ${PrintSignatures.html(['المورد', 'أمين المخزن', 'مدير الإدارة / الاعتماد'])}
         </td></tr>
     `;
-    updateStats(sampleReceipt.items.length, totalValue.toLocaleString('ar-LY', {minimumFractionDigits: 2}) + ' د.ل');
+    updateStats(items.length, totalValue.toLocaleString('ar-LY', {minimumFractionDigits: 2}) + ' د.ل');
 }
 
 async function generateDispenseReceiptReport(expectedId) {
-    if (reportGenerationId !== expectedId) {
-        console.log('[Report] Stale generateDispenseReceiptReport ignored');
-        return;
-    }
-    setReportMeta('إذن صرف مخزني', 'عرض تفاصيل إذن صرف نموذجي');
+    setReportMeta('إذن صرف مخزني', 'اختر إذن صرف من القائمة أعلاه لعرض تفاصيله');
     setTableHeaders([
         { text: 'رقم الصنف', sortable: true },
         { text: 'اسم الصنف', sortable: true },
         { text: 'الوحدة', sortable: true },
         { text: 'الكمية المصروفة', sortable: true }
     ]);
-    renderDispenseReceipt(null);
+
+    const receiptId = document.getElementById('receiptSelect')?.value;
+    if (!receiptId) {
+        if (reportGenerationId !== expectedId) return;
+        currentReportData = [];
+        document.getElementById('reportTableBody').innerHTML =
+            reportMessageRow(4, 'اختر إذن صرف من القائمة أعلاه لعرض تفاصيله');
+        updateStats(0, '-');
+        return;
+    }
+
+    let receipt = null;
+    let apiError = null;
+    try {
+        const result = await window.api.getDispenseReceipt(parseInt(receiptId, 10));
+        if (result && result.success) {
+            receipt = result.receipt;
+        } else {
+            apiError = (result && result.message) || 'تعذّر جلب بيانات الإذن';
+        }
+    } catch (e) {
+        console.error('[Report] Error loading dispense receipt:', e);
+        apiError = 'حدث خطأ أثناء جلب بيانات الإذن';
+    }
+
+    if (reportGenerationId !== expectedId) {
+        console.log('[Report] Stale generateDispenseReceiptReport ignored');
+        return;
+    }
+
+    if (apiError || !receipt) {
+        currentReportData = [];
+        document.getElementById('reportTableBody').innerHTML = reportMessageRow(4, apiError || 'تعذّر جلب بيانات الإذن', true);
+        updateStats(0, '-');
+        if (apiError) showToast(apiError, 'error');
+        return;
+    }
+
+    renderDispenseReceipt(receipt);
 }
 
 function renderDispenseReceipt(receipt) {
     const tbody = document.getElementById('reportTableBody');
-    const sampleReceipt = receipt || {
-        transaction_id: 1,
-        date: '2026-06-10',
-        requester: 'قسم الهندسة الكهربائية',
-        store: 'المخزن الرئيسي',
-        reason: 'احتياجات المعمل',
-        items: [
-            { item_id: 'ITM-005', item_name: 'مفك كهربائي متعدد', unit: 'قطعة', quantity: 2 },
-            { item_id: 'ITM-007', item_name: 'مصباح LED مختبر', unit: 'قطعة', quantity: 5 }
-        ]
-    };
-    currentReportData = sampleReceipt.items;
-    const rows = sampleReceipt.items.map(item => `
+    const items = receipt.items || [];
+    currentReportData = items;
+    const rows = items.map(item => `
         <tr>
             <td><span class="item-id">${item.item_id}</span></td>
-            <td style="font-weight: 600;">${item.item_name}</td>
-            <td>${item.unit}</td>
+            <td style="font-weight: 600;">${escapeHtml(item.item_name)}</td>
+            <td>${escapeHtml(item.unit)}</td>
             <td style="font-weight: 700; color: var(--danger);">- ${item.quantity}</td>
         </tr>
     `).join('');
 
+    const dateStr = receipt.date ? new Date(receipt.date).toLocaleDateString('ar-LY') : '-';
+
     tbody.innerHTML = `
         <tr><td colspan="4" style="padding: 16px; background: var(--bg-hover); border-bottom: 1px solid var(--border-color);">
             <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; font-size: 13px;">
-                <div><strong>رقم الحركة:</strong> إذن-صرف-#${sampleReceipt.transaction_id}</div>
-                <div><strong>التاريخ:</strong> ${sampleReceipt.date}</div>
-                <div><strong>الجهة الطالبة:</strong> ${sampleReceipt.requester}</div>
-                <div><strong>المخزن:</strong> ${sampleReceipt.store}</div>
-                <div style="grid-column: span 2;"><strong>سبب الصرف:</strong> ${sampleReceipt.reason || '-'}</div>
+                <div><strong>رقم الحركة:</strong> إذن-صرف-#${receipt.transaction_id}</div>
+                <div><strong>التاريخ:</strong> ${dateStr}</div>
+                <div><strong>الجهة الطالبة:</strong> ${escapeHtml(receipt.requester || 'غير محدد')}</div>
+                <div><strong>المخزن:</strong> ${escapeHtml(receipt.store || 'غير محدد')}</div>
+                <div style="grid-column: span 2;"><strong>سبب الصرف:</strong> ${escapeHtml(receipt.reason || '-')}</div>
             </div>
         </td></tr>
         ${rows}
         <tr><td colspan="4" style="padding: 0; border: none;">
             <div class="print-grand-total">
                 <span>عدد الأصناف المصروفة</span>
-                <span class="total-value">${sampleReceipt.items.length} صنف</span>
+                <span class="total-value">${items.length} صنف</span>
             </div>
             ${PrintSignatures.html(['المستلم (الجهة الطالبة)', 'أمين المخزن', 'مدير الإدارة / الاعتماد'])}
         </td></tr>
     `;
-    updateStats(sampleReceipt.items.length, sampleReceipt.items.length + ' صنف');
+    updateStats(items.length, items.length + ' صنف');
 }
 
 async function generateLowStockReport(expectedId) {
     let items = [];
+    let apiError = null;
     try {
         items = await window.api.getStock();
         if (items && items.success === false) {
             console.warn('[Report] getStock returned error:', items.message);
+            apiError = items.message || 'تعذّر جلب بيانات المخزون';
             items = [];
         }
         if (!Array.isArray(items)) {
@@ -696,16 +782,12 @@ async function generateLowStockReport(expectedId) {
         }
     } catch (e) {
         console.error('[Report] Error loading low stock report:', e);
-        items = [];
+        apiError = e.message || 'حدث خطأ أثناء جلب بيانات المخزون';
     }
 
     if (reportGenerationId !== expectedId) {
         console.log('[Report] Stale generateLowStockReport ignored');
         return;
-    }
-
-    if (!items || items.length === 0) {
-        items = allItems.length > 0 ? allItems : getSampleItems();
     }
 
     setReportMeta('الأصناف منخفضة الرصيد', 'أصناف وصلت أو قاربت على الحد الأدنى');
@@ -715,16 +797,20 @@ async function generateLowStockReport(expectedId) {
         { text: 'الرصيد الحالي', sortable: true }, { text: 'الحد الأدنى', sortable: true },
         { text: 'النقص', sortable: true }, { text: 'الحالة', sortable: true }
     ]);
+    // صفر أصناف منخفضة هو النتيجة الجيدة، وليس فشلاً — لا يجوز أن يبدوا متطابقين
     const low = items.filter(i => (i.current_quantity || 0) <= (i.min_order_qty || 0));
-    renderLowStockTable(low);
+    renderLowStockTable(low, apiError);
+    if (apiError) showToast(apiError, 'error');
 }
 
-function renderLowStockTable(items) {
-    if (!items || items.length === 0) {
-        showToast('fail to get data to display', 'error');
-    }
+function renderLowStockTable(items, errorMessage = null) {
     const tbody = document.getElementById('reportTableBody');
-    currentReportData = items;
+    currentReportData = items || [];
+    if (!items || items.length === 0) {
+        tbody.innerHTML = reportMessageRow(8, errorMessage || 'لا توجد أصناف منخفضة الرصيد حالياً', !!errorMessage);
+        updateStats(0, '0 صنف');
+        return;
+    }
     tbody.innerHTML = items.map(item => {
         const qty = item.current_quantity || 0;
         const minQty = item.min_order_qty || 0;
@@ -745,11 +831,11 @@ function renderLowStockTable(items) {
 
 async function generateMovementsReport(expectedId, dateFrom, dateTo) {
     let transactions = [];
-    let useSample = false;
+    let apiError = null;
     try {
         transactions = await window.api.getTransactionsHistory({ includeVoided: shouldIncludeVoided() });
         if (transactions && transactions.success === false) {
-            showToast(transactions.message || 'حدث خطأ في جلب سجل الحركات', 'error');
+            apiError = transactions.message || 'حدث خطأ في جلب سجل الحركات';
             transactions = [];
         }
         if (!Array.isArray(transactions)) {
@@ -758,7 +844,7 @@ async function generateMovementsReport(expectedId, dateFrom, dateTo) {
         }
     } catch (e) {
         console.error('[Report] Error loading movements report:', e);
-        useSample = true;
+        apiError = e.message || 'حدث خطأ أثناء جلب سجل الحركات';
     }
 
     if (reportGenerationId !== expectedId) {
@@ -774,11 +860,8 @@ async function generateMovementsReport(expectedId, dateFrom, dateTo) {
         { text: 'إجراء', sortable: false }
     ]);
 
-    if (useSample) {
-        renderSampleMovements();
-    } else {
-        renderMovementsTable(transactions);
-    }
+    renderMovementsTable(transactions, apiError);
+    if (apiError) showToast(apiError, 'error');
 }
 
 function shouldIncludeVoided() {
@@ -786,13 +869,15 @@ function shouldIncludeVoided() {
     return !!(toggle && toggle.checked);
 }
 
-function renderMovementsTable(transactions) {
-    if (!transactions || transactions.length === 0) {
-        showToast('fail to get data to display', 'error');
-    }
+function renderMovementsTable(transactions, errorMessage = null) {
     const tbody = document.getElementById('reportTableBody');
+    currentReportData = transactions || [];
+    if (!transactions || transactions.length === 0) {
+        tbody.innerHTML = reportMessageRow(7, errorMessage || 'لا توجد حركات مسجلة بعد', !!errorMessage);
+        updateStats(0, '0 د.ل');
+        return;
+    }
     let totalValue = 0;
-    currentReportData = transactions;
     tbody.innerHTML = transactions.map(t => {
         const isSupply = t.transaction_type === 'In';
         const isVoided = t.is_deleted === 1;
@@ -859,15 +944,6 @@ async function voidTransactionRow(transactionId) {
             showToast('حدث خطأ أثناء إلغاء الإذن', 'error');
         }
     });
-}
-
-function renderSampleMovements() {
-    renderMovementsTable([
-        { transaction_id: 4, transaction_type: 'Out', transaction_date: '2026-06-12', entity_name: 'مكتب الشؤون الإدارية', store_name: 'المخزن الرئيسي', total_value: 332.50 },
-        { transaction_id: 3, transaction_type: 'Out', transaction_date: '2026-06-10', entity_name: 'قسم الهندسة الكهربائية', store_name: 'المخزن الرئيسي', total_value: 504.00 },
-        { transaction_id: 2, transaction_type: 'In', transaction_date: '2026-06-07', entity_name: 'مكتبة مصراتة الحديثة', store_name: 'المخزن الرئيسي', total_value: 1575.00 },
-        { transaction_id: 1, transaction_type: 'In', transaction_date: '2026-06-02', entity_name: 'شركة المدار للتجهيزات', store_name: 'المخزن الرئيسي', total_value: 3740.00 }
-    ]);
 }
 
 async function generateItemCardReport(expectedId) {
@@ -949,11 +1025,12 @@ function renderItemCardTable(movements) {
 
 async function generateSuppliersReport(expectedId) {
     let entities = [];
-    let useSample = false;
+    let apiError = null;
     try {
         entities = await window.api.getAllEntities();
         if (entities && entities.success === false) {
             console.warn('[Report] getAllEntities returned error:', entities.message);
+            apiError = entities.message || 'تعذّر جلب قائمة الجهات';
             entities = [];
         }
         if (!Array.isArray(entities)) {
@@ -962,7 +1039,7 @@ async function generateSuppliersReport(expectedId) {
         }
     } catch (e) {
         console.error('[Report] Error loading suppliers report:', e);
-        useSample = true;
+        apiError = e.message || 'حدث خطأ أثناء جلب قائمة الجهات';
     }
 
     if (reportGenerationId !== expectedId) {
@@ -977,44 +1054,29 @@ async function generateSuppliersReport(expectedId) {
         { text: 'العنوان', sortable: true }
     ]);
 
-    if (useSample) {
-        renderSampleSuppliers();
-    } else {
-        renderSuppliersTable(entities);
-    }
+    renderSuppliersTable(entities, apiError);
+    if (apiError) showToast(apiError, 'error');
 }
 
-function renderSuppliersTable(entities) {
-    if (!entities || entities.length === 0) {
-        entities = [
-            { code: 'SUP-001', entity_name: 'شركة المدار للتجهيزات', entity_type: 'Supplier', phone: '051-2345678', address: 'مصراتة - المنطقة الصناعية' },
-            { code: 'SUP-002', entity_name: 'مكتبة مصراتة الحديثة', entity_type: 'Supplier', phone: '052-3456789', address: 'مصراتة - وسط المدينة' },
-            { code: 'ENT-001', entity_name: 'قسم الهندسة الكهربائية', entity_type: 'Department', phone: '', address: 'الكلية - المبنى الرئيسي' },
-            { code: 'ENT-002', entity_name: 'مكتب الشؤون الإدارية', entity_type: 'Department', phone: '', address: 'الكلية - الإدارة' }
-        ];
-    }
+function renderSuppliersTable(entities, errorMessage = null) {
     const tbody = document.getElementById('reportTableBody');
-    currentReportData = entities;
+    currentReportData = entities || [];
+    if (!entities || entities.length === 0) {
+        tbody.innerHTML = reportMessageRow(5, errorMessage || 'لا توجد جهات مسجلة بعد', !!errorMessage);
+        updateStats(0, '0 جهة');
+        return;
+    }
     tbody.innerHTML = entities.map(e => {
         const typeBadge = e.entity_type === 'Supplier' ? '<span class="badge badge-supplier">مورد</span>' : '<span class="badge badge-dept">جهة</span>';
         return `<tr>
             <td><span class="item-id">${e.code || e.entity_id}</span></td>
-            <td style="font-weight: 600;">${e.entity_name}</td>
+            <td style="font-weight: 600;">${escapeHtml(e.entity_name)}</td>
             <td>${typeBadge}</td>
-            <td>${e.phone || '-'}</td>
-            <td>${e.address || '-'}</td>
+            <td>${escapeHtml(e.phone || '-')}</td>
+            <td>${escapeHtml(e.address || '-')}</td>
         </tr>`;
     }).join('');
     updateStats(entities.length, entities.length + ' جهة');
-}
-
-function renderSampleSuppliers() {
-    renderSuppliersTable([
-        { code: 'SUP-001', entity_name: 'شركة المدار للتجهيزات', entity_type: 'Supplier', phone: '051-2345678', address: 'مصراتة - المنطقة الصناعية' },
-        { code: 'SUP-002', entity_name: 'مكتبة مصراتة الحديثة', entity_type: 'Supplier', phone: '052-3456789', address: 'مصراتة - وسط المدينة' },
-        { code: 'ENT-001', entity_name: 'قسم الهندسة الكهربائية', entity_type: 'Department', phone: '', address: 'الكلية - المبنى الرئيسي' },
-        { code: 'ENT-002', entity_name: 'مكتب الشؤون الإدارية', entity_type: 'Department', phone: '', address: 'الكلية - الإدارة' }
-    ]);
 }
 
 // ========== Helpers ==========
@@ -1226,35 +1288,28 @@ async function loadReportData() {
         const items = await window.api.getItems();
         if (items && items.success === false) {
             console.warn('[Report] loadReportData getItems error:', items.message);
-            allItems = getSampleItems();
+            showToast(items.message || 'تعذّر جلب قائمة الأصناف', 'error');
+            allItems = [];
         } else if (Array.isArray(items)) {
             allItems = items;
         } else {
-            allItems = getSampleItems();
+            allItems = [];
         }
     } catch (error) {
         console.error('[Report] loadReportData error:', error);
-        allItems = getSampleItems();
+        showToast('حدث خطأ أثناء جلب قائمة الأصناف', 'error');
+        allItems = [];
     }
 
     // Populate item select dropdown
     const select = document.getElementById('itemSelect');
     if (select) {
         select.innerHTML = '<option value="">اختر صنفاً</option>' +
-            allItems.map(item => `<option value="${item.item_id}">${item.item_name}</option>`).join('');
+            allItems.map(item => `<option value="${item.item_id}">${escapeHtml(item.item_name)}</option>`).join('');
     }
 
     // Render the report that matches the currently selected report type
     await generateReport();
-}
-function loadSampleData() {
-    allItems = getSampleItems();
-    const select = document.getElementById('itemSelect');
-    if (select) {
-        select.innerHTML = '<option value="">اختر صنفاً</option>' +
-            allItems.map(item => `<option value="${item.item_id}">${item.item_name}</option>`).join('');
-    }
-    generateReport();
 }
 
 document.addEventListener('keydown', (e) => {

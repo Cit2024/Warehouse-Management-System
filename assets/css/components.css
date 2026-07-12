@@ -594,6 +594,38 @@ dialog.modal-content::backdrop {
     font-size: 16px;
 }
 
+/* --- Database Health Banner --- */
+/* Status is carried by the icon and the text, never by colour alone. */
+.db-health-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-4);
+    margin: 0 0 var(--space-5);
+    padding: var(--space-4) var(--space-5);
+    background: var(--danger-bg);
+    border: 1px solid var(--danger);
+    border-radius: var(--card-radius);
+    color: var(--danger);
+}
+
+.db-health-icon {
+    font-size: 24px;
+    line-height: 1.2;
+    flex-shrink: 0;
+}
+
+.db-health-banner strong {
+    display: block;
+    margin-bottom: var(--space-2);
+    font-size: var(--font-body);
+}
+
+.db-health-banner p {
+    margin: 0 0 4px;
+    font-size: var(--font-small);
+    line-height: 1.6;
+}
+
 /* --- Empty State --- */
 .empty-state {
     text-align: center;

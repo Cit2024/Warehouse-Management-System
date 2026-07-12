@@ -3,6 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 const { app } = require('electron');
+const { migrateRemoveReceiptNumber, checkIntegrity } = require('./migrations');
 
 // ============================================================
 // LAZY DATABASE INITIALIZATION
@@ -81,42 +82,17 @@ function initializeDatabase() {
 
     const db = getDb();
 
-    // Migration: remove receipt_number column from existing databases
-    try {
-        const tableInfo = db.prepare("PRAGMA table_info(transactions)").all();
-        const hasReceiptNumber = tableInfo.some(col => col.name === 'receipt_number');
-        if (hasReceiptNumber) {
-            console.log('[DB] Migrating: removing receipt_number column...');
-            db.exec(`
-                BEGIN TRANSACTION;
-                DROP VIEW IF EXISTS view_current_stock;
-                CREATE TABLE transactions_new (
-                    transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    transaction_type TEXT CHECK(transaction_type IN ('In', 'Out', 'Opening_Balance')) NOT NULL,
-                    transaction_date DATETIME NOT NULL,
-                    store_id INTEGER NOT NULL,
-                    entity_id INTEGER,
-                    created_by INTEGER,
-                    notes TEXT,
-                    is_deleted INTEGER DEFAULT 0,
-                    FOREIGN KEY (store_id) REFERENCES stores(store_id) ON DELETE RESTRICT,
-                    FOREIGN KEY (entity_id) REFERENCES entities(entity_id) ON DELETE RESTRICT,
-                    FOREIGN KEY (created_by) REFERENCES users(user_id) ON DELETE RESTRICT
-                );
-                INSERT INTO transactions_new
-                    (transaction_id, transaction_type, transaction_date, store_id, entity_id, created_by, notes, is_deleted)
-                SELECT
-                    transaction_id, transaction_type, transaction_date, store_id, entity_id, created_by, notes, is_deleted
-                FROM transactions;
-                DROP TABLE transactions;
-                ALTER TABLE transactions_new RENAME TO transactions;
-                COMMIT;
-            `);
-            console.log('[DB] Migration complete.');
-        }
-    } catch (e) {
-        console.error('[DB] Migration warning:', e.message);
+    // A leaked transaction would make every write this session silently roll back
+    // on quit (better-sqlite3 shadows it with a SAVEPOINT rather than failing).
+    // Losing a day of receipts quietly is worse than refusing to start.
+    if (db.inTransaction) {
+        throw new Error('[DB] القاعدة في حالة معاملة مفتوحة غير متوقعة — تم إيقاف التشغيل لحماية البيانات.');
     }
+
+    // Migration: remove receipt_number column from existing databases.
+    // Failures must surface — the previous version swallowed them and continued
+    // on a half-migrated schema.
+    migrateRemoveReceiptNumber(db);
 
     const init = db.transaction(() => {
 
@@ -266,6 +242,7 @@ module.exports = new Proxy({}, {
         if (prop === 'initializeDatabase') return initializeDatabase;
         if (prop === 'hashPassword') return hashPassword;
         if (prop === 'getDbPath') return getDbPath;
+        if (prop === 'checkIntegrity') return () => checkIntegrity(getDb());
 
         const db = getDb();
         const value = db[prop];
@@ -280,3 +257,4 @@ module.exports.reopenDb = reopenDb;
 module.exports.initializeDatabase = initializeDatabase;
 module.exports.hashPassword = hashPassword;
 module.exports.getDbPath = getDbPath;
+module.exports.checkIntegrity = () => checkIntegrity(getDb());

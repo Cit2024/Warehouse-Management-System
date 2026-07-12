@@ -375,10 +375,47 @@ function handleDirectPrint() {
     }
 }
 
+// ========== فحص سلامة البيانات ==========
+// يُحذّر المستخدم إذا اكتُشف تلف خلّفته المهاجرة القديمة، قبل أن يبني حركات
+// جديدة فوق أرصدة خاطئة. لا نحذف الأذونات اليتيمة: هي الدليل على ما حدث.
+async function checkDatabaseHealth() {
+    try {
+        const health = await window.api.getDbHealth();
+        if (!health || health.success === false || health.isHealthy) return;
+
+        const problems = [];
+        if (health.orphanHeaders > 0) {
+            problems.push(`${health.orphanHeaders} إذن بدون أصناف (فُقدت سطوره)`);
+        }
+        if (health.negativeStockItems.length > 0) {
+            const names = health.negativeStockItems.map(i => `«${i.item_name}»`).join('، ');
+            problems.push(`${health.negativeStockItems.length} صنف برصيد سالب: ${names}`);
+        }
+
+        const banner = document.createElement('div');
+        banner.className = 'db-health-banner';
+        banner.setAttribute('role', 'alert');
+        banner.innerHTML = `
+            <span class="db-health-icon" aria-hidden="true"><i class="fas fa-triangle-exclamation"></i></span>
+            <div>
+                <strong>تحذير: تم اكتشاف تلف في البيانات</strong>
+                <p>${problems.join(' — ')}.</p>
+                <p>يُرجى استرجاع نسخة احتياطية سابقة <strong>قبل</strong> تسجيل أي حركات جديدة، وإلا ستُبنى الحركات الجديدة فوق أرصدة خاطئة.</p>
+            </div>
+        `;
+
+        const content = document.querySelector('main.content');
+        if (content) content.insertAdjacentElement('afterbegin', banner);
+    } catch (error) {
+        console.error('تعذّر فحص سلامة البيانات:', error);
+    }
+}
+
 // ========== Init ==========
 window.addEventListener('DOMContentLoaded', () => {
     const session = checkSession();
     if (session) {
+        checkDatabaseHealth();
         loadDashboardData();
     }
 });

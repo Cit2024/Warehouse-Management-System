@@ -91,6 +91,18 @@ function verifyPassword(password, storedHash) {
 // ==========================================
 // العمليات الخلفية (Backend) - الاتصال بقاعدة البيانات
 // ==========================================
+
+// فحص سلامة البيانات — يكشف الأضرار التي خلّفتها المهاجرة القديمة
+// (أذونات فقدت سطورها بسبب CASCADE، أو أصناف برصيد سالب)
+ipcMain.handle('get-db-health', async () => {
+  try {
+    return db.checkIntegrity();
+  } catch (error) {
+    console.error('[get-db-health] خطأ في فحص سلامة البيانات:', error);
+    return { success: false, message: 'تعذّر فحص سلامة البيانات', error: error.message };
+  }
+});
+
 // 1. جلب الأصناف من الجدول (فقط التي لم يتم حذفها منطقياً)
 ipcMain.handle('get-items', async () => {
   try {

@@ -2,6 +2,7 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('api', {
     login: (credentials) => ipcRenderer.invoke('login', credentials),
+    getDbHealth: () => ipcRenderer.invoke('get-db-health'),
     getItems: () => ipcRenderer.invoke('get-items'),
     addItem: (itemData) => ipcRenderer.invoke('add-item', itemData),
     updateItem: (itemData) => ipcRenderer.invoke('update-item', itemData),

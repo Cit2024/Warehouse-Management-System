@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const GitManager = require('./gitManager.js');
+const { validateReceiptItems, assertNoNegativeStock } = require('./database/stock.js');
 const Database = require('better-sqlite3');
 const git = require('isomorphic-git');
 const http = require('isomorphic-git/http/node'); // بروتوكول الاتصال لـ Push/Pull
@@ -364,13 +365,22 @@ ipcMain.handle('login', async (event, credentials) => {
 ipcMain.handle('save-supply-receipt', async (event, receiptData) => {
   // نستخدم transaction() الخاصة بـ better-sqlite3 لضمان حفظ كل البيانات أو التراجع عنها في حال حدوث خطأ
   const insertReceipt = db.transaction((data) => {
-    // 1. حفظ رأس الإذن (Transaction Master)
+    // 1. التحقق من صحة السطور: كميات موجبة، أسعار غير سالبة، أصناف موجودة.
+    //    إذن التوريد لا يمكن أن يجعل الرصيد سالباً، فلا حاجة لفحص الأرصدة هنا.
+    const totals = validateReceiptItems(db, data.items, { requirePrice: true });
+
+    // نحتفظ بسعر كل صنف بعد الدمج (آخر سعر مذكور للصنف في نفس الإذن)
+    const prices = new Map();
+    for (const item of data.items) {
+      prices.set(Number(item.itemId), Number(item.price));
+    }
+
+    // 2. حفظ رأس الإذن (Transaction Master)
     const stmtMaster = db.prepare(`
-      INSERT INTO transactions (transaction_type, transaction_date, store_id, entity_id, created_by, notes) 
+      INSERT INTO transactions (transaction_type, transaction_date, store_id, entity_id, created_by, notes)
       VALUES ('In', ?, ?, ?, ?, ?)
     `);
 
-    // ملاحظة: وضعنا 1 كرقم افتراضي للمستخدم (created_by) حتى يتم برمجة نظام تسجيل الدخول لاحقاً
     const info = stmtMaster.run(
       data.date,
       data.storeId,
@@ -380,14 +390,14 @@ ipcMain.handle('save-supply-receipt', async (event, receiptData) => {
     );
     const newTransactionId = info.lastInsertRowid;
 
-    // 2. حفظ سطور الإذن (Transaction Details)
+    // 3. حفظ سطور الإذن (Transaction Details)
     const stmtDetails = db.prepare(`
-      INSERT INTO transaction_details (transaction_id, item_id, quantity, unit_price) 
+      INSERT INTO transaction_details (transaction_id, item_id, quantity, unit_price)
       VALUES (?, ?, ?, ?)
     `);
 
-    for (const item of data.items) {
-      stmtDetails.run(newTransactionId, item.itemId, item.quantity, item.price);
+    for (const [itemId, quantity] of totals) {
+      stmtDetails.run(newTransactionId, itemId, quantity, prices.get(itemId));
     }
 
     return newTransactionId;
@@ -397,8 +407,8 @@ ipcMain.handle('save-supply-receipt', async (event, receiptData) => {
     const newId = insertReceipt(receiptData);
     return { success: true, message: 'تم حفظ إذن التوريد بنجاح', transaction_id: newId };
   } catch (error) {
-    console.error('خطأ في حفظ الإذن:', error);
-    return { success: false, message: 'حدث خطأ أثناء الحفظ: ' + error.message };
+    console.error('خطأ في حفظ إذن التوريد:', error);
+    return { success: false, message: error.message };
   }
 });
 // ==========================================
@@ -453,13 +463,16 @@ ipcMain.handle('get-stock', async () => {
 // حفظ إذن الصرف
 ipcMain.handle('save-dispense-receipt', async (event, receiptData) => {
   const insertReceipt = db.transaction((data) => {
-    // 1. حفظ رأس الإذن (نوع الحركة: Out)
+    // 1. التحقق من صحة السطور قبل أي كتابة (كميات موجبة، أصناف موجودة،
+    //    ودمج السطور المكرّرة لنفس الصنف — الخادم لا يثق بحراسة الواجهة)
+    const totals = validateReceiptItems(db, data.items);
+
+    // 2. حفظ رأس الإذن (نوع الحركة: Out)
     const stmtMaster = db.prepare(`
-      INSERT INTO transactions (transaction_type, transaction_date, store_id, entity_id, created_by, notes) 
+      INSERT INTO transactions (transaction_type, transaction_date, store_id, entity_id, created_by, notes)
       VALUES ('Out', ?, ?, ?, ?, ?)
     `);
 
-    // نستخدم ID المستخدم 1 مؤقتاً (يمكنك لاحقاً جلبه من الجلسة session)
     const info = stmtMaster.run(
       data.date,
       data.storeId,
@@ -469,25 +482,32 @@ ipcMain.handle('save-dispense-receipt', async (event, receiptData) => {
     );
     const newTransactionId = info.lastInsertRowid;
 
-    // 2. حفظ سطور الإذن
+    // 3. حفظ سطور الإذن
     const stmtDetails = db.prepare(`
-      INSERT INTO transaction_details (transaction_id, item_id, quantity, unit_price) 
+      INSERT INTO transaction_details (transaction_id, item_id, quantity, unit_price)
       VALUES (?, ?, ?, 0) -- السعر 0 لأن هذا إذن صرف وليس فاتورة شراء
     `);
 
-    for (const item of data.items) {
-      stmtDetails.run(newTransactionId, item.itemId, item.quantity);
+    for (const [itemId, quantity] of totals) {
+      stmtDetails.run(newTransactionId, itemId, quantity);
     }
+
+    // 4. لا يجوز أن يترك الصرف رصيداً سالباً.
+    //    الفحص هنا (بعد الكتابة وداخل المعاملة) يرى السطور غير المُثبّتة، فيحسب
+    //    الرصيد الحقيقي بدل لقطة قديمة من الواجهة، ويشمل السطور المكرّرة تلقائياً.
+    //    الحارس الوحيد سابقاً كان في dispense.js مقارنةً برصيد مأخوذ عند فتح
+    //    الصفحة — فنافذتان مفتوحتان كانتا كافيتين لجعل الرصيد سالباً.
+    assertNoNegativeStock(db, totals.keys());
 
     return newTransactionId;
   });
 
   try {
-    const newId = insertReceipt(receiptData);
+    insertReceipt(receiptData);
     return { success: true, message: 'تم حفظ إذن الصرف بنجاح' };
   } catch (error) {
-    console.error('خطأ في حفظ الإذن:', error);
-    return { success: false, message: 'حدث خطأ أثناء الحفظ: ' + error.message };
+    console.error('خطأ في حفظ إذن الصرف:', error);
+    return { success: false, message: error.message };
   }
 });
 // ==========================================
@@ -576,7 +596,10 @@ ipcMain.handle('get-item-transactions', async (event, itemId) => {
     let balance = 0;
     return rows.map(r => {
       const qty = r.quantity || 0;
-      balance += r.transaction_type === 'In' ? qty : -qty;
+      // 'Out' فقط يُنقص الرصيد. الصيغة السابقة (`=== 'In' ? qty : -qty`) كانت
+      // تعامل Opening_Balance كصرف، بينما view_current_stock يعدّه توريداً —
+      // فكانت بطاقة الصنف وتقرير المخزون يعرضان رصيدين مختلفين لنفس الصنف.
+      balance += r.transaction_type === 'Out' ? -qty : qty;
       return { ...r, running_balance: balance };
     });
   } catch (error) {

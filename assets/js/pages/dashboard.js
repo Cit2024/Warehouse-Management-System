@@ -9,7 +9,6 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 let allItems = [];
-let inventoryChart = null;
 
 // Table sorting helpers (parseArabNumber / sortTable) are provided by common.js
 
@@ -40,9 +39,10 @@ async function loadDashboardData() {
         updateStats(allItems, countMovementsThisMonth(history));
         renderItemsSummary(allItems);
         renderLowStockAlerts(allItems);
-        renderChart(allItems);
+        renderCategoryValueList(allItems);
         renderRecentMovements(history);
         updateSidebarBadge(allItems.length);
+        renderRoleBadge();
     } catch (error) {
         console.error('Error loading dashboard:', error);
         showToast('تعذّر تحميل بيانات لوحة التحكم', 'error');
@@ -84,6 +84,35 @@ function showDashboardLoadError() {
 
     const recentMovements = document.getElementById('recentMovements');
     if (recentMovements) recentMovements.innerHTML = errorHtml('تعذّر تحميل الحركات الأخيرة.');
+
+    const categoryValueList = document.getElementById('categoryValueList');
+    if (categoryValueList) categoryValueList.innerHTML = errorHtml('تعذّر تحميل بيانات التصنيفات.');
+}
+
+// يعرض دور المستخدم الحالي (مسؤول / أمين مخزن / مستعرض) في رأس الصفحة —
+// يساعد المستخدم على تذكّر صلاحياته الحالية دون الحاجة لتذكّرها (Recognition
+// Rather Than Recall). كان هذا العنصر موجوداً في الصفحة وفارغاً دائماً؛
+// أصناف .role-badge.viewer/.admin/.storekeeper معرّفة في layout.css ولم تُستخدم قط.
+const ROLE_BADGE_INFO = {
+    Admin: { text: 'مسؤول', icon: 'fa-user-shield', cssClass: 'admin' },
+    Store_Keeper: { text: 'أمين مخزن', icon: 'fa-user-gear', cssClass: 'storekeeper' },
+    Viewer: { text: 'مستعرض (قراءة فقط)', icon: 'fa-eye', cssClass: 'viewer' }
+};
+
+function renderRoleBadge() {
+    const container = document.getElementById('roleBadgeContainer');
+    if (!container) return;
+
+    const session = checkSession();
+    const info = session && ROLE_BADGE_INFO[session.role];
+    if (!info) { container.innerHTML = ''; return; }
+
+    container.innerHTML = `
+        <span class="role-badge ${info.cssClass}">
+            <i class="fas ${info.icon}" aria-hidden="true"></i>
+            ${escapeHtml(info.text)}
+        </span>
+    `;
 }
 
 function updateStats(items, monthlyMovements = 0) {
@@ -104,74 +133,60 @@ function updateSidebarBadge(count) {
     if (badge) badge.textContent = count;
 }
 
-function renderChart(items) {
-    const ctx = document.getElementById('inventoryChart');
-    if (!ctx) return;
+// أهم التصنيفات من حيث القيمة — قائمة نصية بسيطة بدل رسم بياني تفاعلي.
+// نفس البيانات، بلا حاجة لقراءة محاور أو تلميحات (tooltips) أو خبرة سابقة
+// بالرسوم البيانية؛ تُقرأ بالكامل خلال ثوانٍ. تخدم "الوضوح أولاً" في
+// PRODUCT.md مباشرة، بدل عرض تحليلي لا يقود لأي إجراء.
+function renderCategoryValueList(items) {
+    const container = document.getElementById('categoryValueList');
+    if (!container) return;
 
-    // Group by category
-    const categoryData = {};
+    const totals = {};
     items.forEach(item => {
         const value = (item.current_quantity || 0) * (item.unit_price || 0);
-        categoryData[item.category] = (categoryData[item.category] || 0) + value;
+        const category = item.category || 'غير مصنف';
+        totals[category] = (totals[category] || 0) + value;
     });
 
-    const labels = Object.keys(categoryData);
-    const data = Object.values(categoryData);
+    const rows = Object.entries(totals)
+        .filter(([, value]) => value > 0)
+        .sort((a, b) => b[1] - a[1]);
 
-    if (inventoryChart) {
-        inventoryChart.destroy();
+    if (rows.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state" style="padding: 24px;">
+                <div class="empty-state-icon"><i class="fas fa-chart-simple"></i></div>
+                <p>لا توجد بيانات كافية لعرض التصنيفات بعد</p>
+            </div>
+        `;
+        return;
     }
 
-    inventoryChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'القيمة (د.ل)',
-                data: data,
-                backgroundColor: 'rgba(255, 107, 0, 0.8)',
-                borderColor: 'rgba(255, 107, 0, 1)',
-                borderWidth: 0,
-                borderRadius: 8,
-                borderSkipped: false,
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return context.parsed.y.toLocaleString('ar-LY') + ' د.ل';
-                        }
-                    }
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        callback: function(value) {
-                            return value.toLocaleString('ar-LY');
-                        }
-                    },
-                    grid: {
-                        color: 'rgba(0,0,0,0.05)'
-                    }
-                },
-                x: {
-                    grid: {
-                        display: false
-                    },
-                    ticks: {
-                        font: { size: 11 }
-                    }
-                }
-            }
-        }
-    });
+    const TOP_N = 5;
+    const top = rows.slice(0, TOP_N);
+    const rest = rows.slice(TOP_N);
+    const maxValue = top[0][1];
+    const fmt = (v) => v.toLocaleString('ar-LY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    let html = top.map(([category, value]) => {
+        const pct = maxValue > 0 ? Math.round((value / maxValue) * 100) : 0;
+        return `
+            <div class="category-value-row">
+                <div class="category-value-label">
+                    <span class="category-value-name">${escapeHtml(category)}</span>
+                    <span class="category-value-amount">${fmt(value)} د.ل</span>
+                </div>
+                <div class="category-value-bar"><div class="category-value-fill" style="width: ${pct}%;"></div></div>
+            </div>
+        `;
+    }).join('');
+
+    if (rest.length > 0) {
+        const restTotal = rest.reduce((sum, [, value]) => sum + value, 0);
+        html += `<div class="category-value-more">و${rest.length} تصنيفات أخرى بقيمة ${fmt(restTotal)} د.ل</div>`;
+    }
+
+    container.innerHTML = html;
 }
 
 function renderLowStockAlerts(items) {

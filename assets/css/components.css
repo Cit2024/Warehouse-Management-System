@@ -1017,11 +1017,68 @@ dialog.modal-content::backdrop {
     color: var(--warning);
 }
 
-/* --- Chart Container --- */
-.chart-container {
-    position: relative;
-    height: 260px;
-    width: 100%;
+/* --- Category Value List --- */
+/* قائمة نصية بديلة عن رسم بياني: نفس البيانات، بلا حاجة لقراءة محاور أو
+   تلميحات تفاعلية. أسهل للمستخدم غير التقني وأسرع قراءةً. */
+.category-value-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.category-value-row {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.category-value-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--space-3);
+}
+
+.category-value-name {
+    font-weight: var(--weight-semibold);
+    color: var(--text-primary);
+    font-size: var(--font-body);
+}
+
+.category-value-amount {
+    color: var(--text-secondary);
+    font-size: var(--font-body);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.category-value-bar {
+    height: 8px;
+    background: var(--bg-hover);
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.category-value-fill {
+    height: 100%;
+    background: var(--primary);
+    border-radius: 999px;
+    transition: width var(--transition-base);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .category-value-fill {
+        transition: none;
+    }
+}
+
+.category-value-more {
+    margin-top: var(--space-1);
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--border-subtle);
+    font-size: var(--font-label);
+    color: var(--text-muted);
+    text-align: center;
 }
 
 /* --- Responsive Form Grid --- */

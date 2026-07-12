@@ -23,13 +23,23 @@
         </div>
 
         <div class="page-content">
-            <!-- Alert Banner -->
-            <div class="alert alert-warning" id="alertBanner" style="display: none;">
+            <!-- النسخ الاحتياطي المحلي يعمل تلقائياً؛ المزامنة السحابية معطّلة في هذا الإصدار -->
+            <div class="alert alert-info" id="localBackupNotice">
+                <span><i class="fas fa-shield-halved"></i></span>
+                <span>
+                    <strong>النسخ الاحتياطي المحلي مُفعّل تلقائياً.</strong>
+                    تُحفظ نسخة من قاعدة البيانات على هذا الجهاز بشكل دوري، ويمكنك استرجاع أي نسخة من القائمة أدناه،
+                    أو تصدير نسخة إلى ملف خارجي. المزامنة السحابية معطّلة مؤقتاً في هذا الإصدار.
+                </span>
+            </div>
+
+            <!-- Alert Banner (سحابي — مخفي) -->
+            <div class="alert alert-warning" id="alertBanner" style="display: none;" hidden>
                 <span><i class="fas fa-exclamation-triangle"></i></span>
                 <span>النظام غير متصل بالمستودع السحابي حالياً. يرجى إعداد الروابط أدناه لتفادي فقدان بيانات المخزن.</span>
             </div>
 
-            <div id="settingsLockedState" class="locked-state">
+            <div id="settingsLockedState" class="locked-state" style="display: none;" hidden>
                 <div class="locked-icon">🔒</div>
                 <h4 class="locked-title">الإعدادات السحابية محفوظة ومحمية</h4>
                 <p class="locked-text">لا يمكن عرض أو تعديل الروابط ورموز الوصول حمايةً للبيانات.</p>
@@ -38,8 +48,8 @@
                 </button>
             </div>
 
-            <!-- Cloud Settings Panel -->
-            <div id="cloudSettingsForm" class="panel settings-panel" style="display: none;">
+            <!-- Cloud Settings Panel (معطّل في هذا الإصدار — راجع CLOUD_SYNC_ENABLED في main.js) -->
+            <div id="cloudSettingsForm" class="panel settings-panel" style="display: none;" hidden>
                 <div class="panel-header">
                     <div>
                         <div class="panel-title"><i class="fas fa-cloud"></i> إعدادات التخزين السحابي (GitHub Backup)</div>
@@ -55,7 +65,7 @@
                         <div class="form-group">
                             <label>رمز الوصول الدائم (Personal Access Token)</label>
                             <input type="password" id="accessToken" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" required>
-                            <div class="help-text">يتم تشفير هذا الرمز وحفظه محلياً ولا يتم مشاركته.</div>
+                            <div class="help-text">يُحفظ هذا الرمز في ملف إعدادات محلي على هذا الجهاز دون تشفير. لا تستخدم رمزاً بصلاحيات أوسع مما يلزم.</div>
                         </div>
                         <div class="form-group">
                             <label>معدل النسخ التلقائي</label>

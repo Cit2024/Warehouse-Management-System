@@ -8,25 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     layout.init();
 });
 
-let isOnline = false;
-
 // Session helpers are provided by common.js
-
-async function checkInternetConnection() {
-    try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
-        await fetch('https://api.github.com', { signal: controller.signal, mode: 'no-cors' });
-        clearTimeout(timeoutId);
-        isOnline = true; updateConnectionStatus(true); return true;
-    } catch (error) { isOnline = false; updateConnectionStatus(false); return false; }
-}
-
-function updateConnectionStatus(online) {
-    const statusText = document.getElementById('statusText');
-    if (online) { statusText.textContent = 'متصل بالإنترنت'; statusText.className = 'status-badge status-online'; }
-    else { statusText.textContent = 'غير متصل (وضع غير متصل)'; statusText.className = 'status-badge status-offline'; }
-}
 
 // المزامنة السحابية معطّلة في هذا الإصدار، فنعرض النسخ المحلية فقط.
 // (الدوال السحابية ما زالت موجودة في main.js خلف CLOUD_SYNC_ENABLED.)
@@ -90,9 +72,13 @@ async function restoreDatabase() {
     const commitId = document.getElementById('cloudBackupsSelect').value;
     if (!commitId) { showToast('يرجى اختيار نسخة أولاً', 'warning'); return; }
 
-    if (!confirm('⚠️ استرجاع هذه النسخة سيمسح البيانات الحالية ويستبدلها بالكامل.\n\nهل أنت متأكد من المتابعة؟')) {
-        return;
-    }
+    const confirmed = await confirmModal({
+        title: 'استرجاع نسخة احتياطية',
+        message: 'استرجاع هذه النسخة سيمسح البيانات الحالية ويستبدلها بالكامل. هل أنت متأكد من المتابعة؟',
+        confirmLabel: 'استرجاع',
+        danger: true
+    });
+    if (!confirmed) return;
 
     promptForPassword(async () => {
         const btn = document.getElementById('restoreBtn');
@@ -125,23 +111,3 @@ window.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('syncAndShowBtn').addEventListener('click', syncAndShowBackups);
     syncAndShowBackups();
 });
-
-// Save settings
-async function saveSettings() {
-    const btn = document.getElementById('saveBtn');
-    const originalText = btn.innerHTML;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...';
-    btn.disabled = true;
-
-    const result = await window.api.saveSettings({
-        repoUrl: document.getElementById('repoUrl').value.trim(),
-        accessToken: document.getElementById('accessToken').value.trim(),
-        backupFrequency: document.getElementById('backupFrequency').value
-    });
-
-    if (result.success) {
-        showToast(result.message, 'success');
-        document.getElementById('alertBanner').style.display = 'none';
-    } else { showToast(result.message, 'error'); }
-    btn.innerHTML = originalText; btn.disabled = false;
-}

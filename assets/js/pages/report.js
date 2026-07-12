@@ -83,9 +83,8 @@ function fmtNumber(num, digits = 2) {
     });
 }
 
-// ========== Column Visibility (اختيار الأعمدة + الإعدادات المحفوظة) ==========
+// ========== Column Visibility ==========
 let hiddenColumns = new Set();
-const COLUMN_PRESETS_KEY = 'reportColumnPresets';
 
 // ========== Date Defaults ==========
 function setDefaultDates() {
@@ -1119,18 +1118,10 @@ function applyColumnVisibility() {
     });
 }
 
-function getAllColumnPresets() {
-    try {
-        return JSON.parse(localStorage.getItem(COLUMN_PRESETS_KEY)) || {};
-    } catch (e) { return {}; }
-}
-
-function getColumnPresetsForType(reportType) {
-    const all = getAllColumnPresets();
-    return all[reportType] || [];
-}
-
-// فتح نافذة اختيار الأعمدة، مبنية على رأس الجدول الحالي المعروض على الشاشة
+// فتح نافذة اختيار الأعمدة، مبنية على رأس الجدول الحالي المعروض على الشاشة.
+// كانت هذه النافذة تحمل نظام "إعدادات محفوظة" كاملاً (حفظ/تحميل/حذف باسم) —
+// تعقيد جدول بيانات لا تحتاجه مهمة "أظهر/أخفِ أعمدة واطبع" — فأُزيل، وبقيت
+// قائمة الاختيار المباشرة فقط.
 function openColumnsModal() {
     const thead = document.getElementById('reportTableHead');
     const ths = thead ? thead.querySelectorAll('th') : [];
@@ -1142,28 +1133,21 @@ function openColumnsModal() {
     const existing = document.getElementById('columnsModal');
     if (existing) existing.remove();
 
-    const reportType = document.getElementById('reportType').value;
-
     const checkboxesHtml = Array.from(ths).map((th, i) => {
         const label = th.textContent.replace(/[↕↑↓]/g, '').trim();
         const checked = hiddenColumns.has(i) ? '' : 'checked';
         return `
-            <label style="display:flex; align-items:center; gap:10px; padding:8px 4px; border-bottom:1px solid var(--border-color);">
+            <label style="display:flex; align-items:center; gap:10px; padding:8px 4px; border-bottom:1px solid var(--border-subtle);">
                 <input type="checkbox" data-col-index="${i}" ${checked} style="width:18px;height:18px;">
                 <span>${label}</span>
             </label>`;
     }).join('');
 
-    const presets = getColumnPresetsForType(reportType);
-    const presetsOptionsHtml = presets.length
-        ? presets.map(p => `<option value="${p.name}">${p.name}</option>`).join('')
-        : '<option value="">لا توجد إعدادات محفوظة لهذا التقرير</option>';
-
     const modalHtml = `
         <div class="modal" id="columnsModal" role="dialog" aria-modal="true" aria-labelledby="columnsModalTitle" hidden>
             <div class="modal-content" style="max-width:440px;">
                 <div class="modal-header">
-                    <h3 class="modal-title" id="columnsModalTitle">🧮 اختيار أعمدة التقرير</h3>
+                    <h3 class="modal-title" id="columnsModalTitle"><i class="fas fa-table-columns"></i> اختيار أعمدة التقرير</h3>
                     <button class="modal-close" aria-label="إغلاق" onclick="closeColumnsModal()">
                         <i class="fas fa-times"></i>
                     </button>
@@ -1172,21 +1156,12 @@ function openColumnsModal() {
                     <p style="color:#666; font-size:13px; margin-bottom:15px;">
                         حدد الأعمدة التي تريد ظهورها في الجدول والطباعة.
                     </p>
-                    <div id="columnsCheckboxList" style="max-height:280px; overflow-y:auto; margin-bottom:16px;">
+                    <div id="columnsCheckboxList" style="max-height:280px; overflow-y:auto;">
                         ${checkboxesHtml}
-                    </div>
-                    <div style="border-top:1px solid var(--border-color); padding-top:12px;">
-                        <label style="font-size:13px; color:#666;">الإعدادات المحفوظة لهذا التقرير</label>
-                        <div style="display:flex; gap:8px; margin-top:8px;">
-                            <select id="presetSelect" class="filter-select" style="flex:1;">${presetsOptionsHtml}</select>
-                            <button class="btn btn-secondary" onclick="loadSelectedColumnPreset()" title="تحميل">تحميل</button>
-                            <button class="btn btn-secondary" onclick="deleteSelectedColumnPreset()" title="حذف الإعداد المحدد">🗑️</button>
-                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-secondary" onclick="closeColumnsModal()">إغلاق</button>
-                    <button class="btn btn-success" onclick="saveColumnsPreset()">حفظ باسم جديد</button>
                     <button class="btn btn-primary" onclick="applyColumnsFromModal()">تطبيق</button>
                 </div>
             </div>
@@ -1203,7 +1178,7 @@ function closeColumnsModal() {
     if (modal) modal.hidden = true;
 }
 
-// قراءة الاختيارات من المودال وتطبيقها على الجدول المعروض دون حفظ
+// قراءة الاختيارات من المودال وتطبيقها على الجدول المعروض
 function applyColumnsFromModal() {
     const checks = document.querySelectorAll('#columnsCheckboxList input[type="checkbox"]');
     hiddenColumns = new Set();
@@ -1213,73 +1188,6 @@ function applyColumnsFromModal() {
     applyColumnVisibility();
     closeColumnsModal();
     showToast('تم تحديث أعمدة التقرير', 'success');
-}
-
-// حفظ الاختيار الحالي كإعداد جديد باسم يحدده المستخدم
-// كانت هذه الدالة تستخدم window.prompt، وهو غير مُنفّذ في Electron أصلاً:
-// يعود بلا شيء بصمت، فكان الزر يبدو عاملاً ولا يحفظ شيئاً على الإطلاق.
-async function saveColumnsPreset() {
-    const name = await promptForText({
-        title: 'حفظ إعداد الأعمدة',
-        label: 'اسم الإعداد',
-        placeholder: 'مثال: تقرير الجرد المختصر'
-    });
-    if (!name || !name.trim()) return;
-    const trimmedName = name.trim();
-
-    const checks = document.querySelectorAll('#columnsCheckboxList input[type="checkbox"]');
-    const hidden = [];
-    checks.forEach(c => {
-        if (!c.checked) hidden.push(parseInt(c.dataset.colIndex, 10));
-    });
-
-    const reportType = document.getElementById('reportType').value;
-    const all = getAllColumnPresets();
-    if (!all[reportType]) all[reportType] = [];
-    // استبدال أي إعداد سابق بنفس الاسم لهذا نوع التقرير
-    all[reportType] = all[reportType].filter(p => p.name !== trimmedName);
-    all[reportType].push({ name: trimmedName, hidden });
-    localStorage.setItem(COLUMN_PRESETS_KEY, JSON.stringify(all));
-
-    hiddenColumns = new Set(hidden);
-    applyColumnVisibility();
-    closeColumnsModal();
-    showToast('تم حفظ إعداد الأعمدة باسم "' + trimmedName + '"', 'success');
-}
-
-// تحميل إعداد محفوظ وتطبيقه فوراً على الجدول والمودال
-function loadSelectedColumnPreset() {
-    const select = document.getElementById('presetSelect');
-    const name = select ? select.value : '';
-    if (!name) return;
-
-    const reportType = document.getElementById('reportType').value;
-    const preset = getColumnPresetsForType(reportType).find(p => p.name === name);
-    if (!preset) return;
-
-    hiddenColumns = new Set(preset.hidden);
-    document.querySelectorAll('#columnsCheckboxList input[type="checkbox"]').forEach(c => {
-        c.checked = !hiddenColumns.has(parseInt(c.dataset.colIndex, 10));
-    });
-    applyColumnVisibility();
-    showToast('تم تطبيق إعداد "' + name + '"', 'success');
-}
-
-// حذف إعداد محفوظ لهذا نوع التقرير
-function deleteSelectedColumnPreset() {
-    const select = document.getElementById('presetSelect');
-    const name = select ? select.value : '';
-    if (!name) return;
-    if (!confirm('هل تريد حذف الإعداد "' + name + '"؟')) return;
-
-    const reportType = document.getElementById('reportType').value;
-    const all = getAllColumnPresets();
-    if (all[reportType]) {
-        all[reportType] = all[reportType].filter(p => p.name !== name);
-        localStorage.setItem(COLUMN_PRESETS_KEY, JSON.stringify(all));
-    }
-    showToast('تم حذف الإعداد', 'success');
-    openColumnsModal(); // إعادة فتح المودال لعرض القائمة المحدثة
 }
 
 // ========== Load Data ==========

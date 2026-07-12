@@ -134,7 +134,7 @@ class Sidebar {
                         </div>
                         <div class="sidebar-brand-text">
                             <div class="sidebar-brand-title">إدارة المخازن</div>
-                            <div class="sidebar-brand-subtitle">كلية التقنية الصناعية</div>
+                            <div class="sidebar-brand-subtitle">كلية التقنية الصناعية - مصراتة</div>
                         </div>
                     </div>
                 </div>

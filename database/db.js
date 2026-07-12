@@ -3,7 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 const { app } = require('electron');
-const { migrateRemoveReceiptNumber, checkIntegrity } = require('./migrations');
+const { migrateRemoveReceiptNumber, migrateAddVoidColumns, checkIntegrity } = require('./migrations');
 
 // ============================================================
 // LAZY DATABASE INITIALIZATION
@@ -143,6 +143,9 @@ function initializeDatabase() {
         `);
 
         // 5. Transactions table
+        // أعمدة الإلغاء (void_*) في آخر القائمة كي يتطابق هيكل القواعد الجديدة
+        // مع القواعد القديمة التي تُضاف إليها الأعمدة عبر ALTER TABLE — التفريغ
+        // النصي ينسخ sqlite_master.sql حرفياً، فاختلاف الترتيب يعني نسختين مختلفتين.
         db.exec(`
             CREATE TABLE IF NOT EXISTS transactions (
                 transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -153,11 +156,20 @@ function initializeDatabase() {
                 created_by INTEGER,
                 notes TEXT,
                 is_deleted INTEGER DEFAULT 0,
+                void_reason TEXT,
+                voided_by INTEGER,
+                voided_at DATETIME,
                 FOREIGN KEY (store_id) REFERENCES stores(store_id) ON DELETE RESTRICT,
                 FOREIGN KEY (entity_id) REFERENCES entities(entity_id) ON DELETE RESTRICT,
                 FOREIGN KEY (created_by) REFERENCES users(user_id) ON DELETE RESTRICT
             );
         `);
+
+        // القواعد القائمة: إضافة أعمدة الإلغاء عبر ALTER TABLE ADD COLUMN.
+        // هذه عملية على البيانات الوصفية فقط — لا إعادة بناء للجدول، ولا حذف
+        // ضمني، ولا CASCADE. (لهذا لا نضع مفتاحاً خارجياً على voided_by: إضافته
+        // كانت ستستلزم إعادة بناء الجدول.)
+        migrateAddVoidColumns(db);
 
         // 6. Transaction details table
         db.exec(`

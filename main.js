@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const GitManager = require('./gitManager.js');
-const { validateReceiptItems, assertNoNegativeStock } = require('./database/stock.js');
+const { validateReceiptItems, assertNoNegativeStock, voidTransaction } = require('./database/stock.js');
 const Database = require('better-sqlite3');
 const git = require('isomorphic-git');
 const http = require('isomorphic-git/http/node'); // بروتوكول الاتصال لـ Push/Pull
@@ -510,6 +510,28 @@ ipcMain.handle('save-dispense-receipt', async (event, receiptData) => {
     return { success: false, message: error.message };
   }
 });
+
+// ==========================================
+// إلغاء إذن (تصحيح الأخطاء)
+// ==========================================
+// عمود is_deleted كان موجوداً في transactions وكل الاستعلامات ترشّح عليه، لكن
+// لا شيء في التطبيق كان يضبطه على 1 — أي أن إذناً أُدخل بخطأ كان دائماً نهائياً،
+// ولا سبيل لتصحيحه إلا باسترجاع نسخة احتياطية كاملة.
+ipcMain.handle('void-transaction', async (event, payload) => {
+  try {
+    const run = db.transaction(() => voidTransaction(db, payload || {}));
+    const result = run();
+    return {
+      success: true,
+      message: 'تم إلغاء الإذن بنجاح، وأُعيد احتساب الأرصدة.',
+      transaction_id: result.transactionId
+    };
+  } catch (error) {
+    console.error('[void-transaction] خطأ في إلغاء الإذن:', error);
+    return { success: false, message: error.message };
+  }
+});
+
 // ==========================================
 // دوال إدارة الجهات والموردين (Entities)
 // ==========================================
@@ -556,11 +578,17 @@ ipcMain.handle('delete-entity', async (event, entityId) => {
 // ==========================================
 
 // جلب سجل الحركات (أذونات التوريد والصرف)
-ipcMain.handle('get-transactions-history', async () => {
+// includeVoided: يعرض الأذونات الملغاة أيضاً — بدونه تصير أعمدة التدقيق
+// (void_reason/voided_at) للكتابة فقط، ويختفي الإلغاء بلا أثر مرئي.
+ipcMain.handle('get-transactions-history', async (event, options = {}) => {
   try {
+    const includeVoided = options && options.includeVoided === true;
+
     const query = `
       SELECT t.transaction_id, t.transaction_type, t.transaction_date,
              e.entity_name, s.store_name,
+             t.is_deleted, t.void_reason, t.voided_at,
+             u.full_name AS voided_by_name,
              COALESCE((
                SELECT SUM(td.quantity * td.unit_price)
                FROM transaction_details td
@@ -569,8 +597,9 @@ ipcMain.handle('get-transactions-history', async () => {
       FROM transactions t
       LEFT JOIN entities e ON t.entity_id = e.entity_id
       LEFT JOIN stores s ON t.store_id = s.store_id
-      WHERE t.is_deleted = 0
-      ORDER BY t.transaction_date DESC
+      LEFT JOIN users u ON t.voided_by = u.user_id
+      ${includeVoided ? '' : 'WHERE t.is_deleted = 0'}
+      ORDER BY t.transaction_date DESC, t.transaction_id DESC
     `;
     return db.prepare(query).all();
   } catch (error) {

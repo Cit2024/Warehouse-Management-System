@@ -594,6 +594,34 @@ dialog.modal-content::backdrop {
     font-size: 16px;
 }
 
+/* --- Voided Transactions --- */
+/* الحالة تُنقل بالشارة النصية والأيقونة؛ التظليل مجرد تأكيد بصري إضافي */
+.row-voided {
+    background: var(--bg-hover);
+}
+
+.row-voided td:not(:last-child) {
+    text-decoration: line-through;
+    color: var(--text-secondary);
+}
+
+.void-reason {
+    margin-top: 4px;
+    font-size: var(--font-small);
+    color: var(--text-secondary);
+}
+
+.checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.checkbox-group label {
+    margin: 0;
+    white-space: nowrap;
+}
+
 /* --- Database Health Banner --- */
 /* Status is carried by the icon and the text, never by colour alone. */
 .db-health-banner {

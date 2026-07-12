@@ -90,6 +90,10 @@ function onReportTypeChange() {
     document.getElementById('itemSelectGroup').style.display = needsItem ? 'block' : 'none';
     document.getElementById('dateFromGroup').style.display = needsDates ? 'block' : 'none';
     document.getElementById('dateToGroup').style.display = needsDates ? 'block' : 'none';
+
+    // خيار عرض الأذونات الملغاة يخص سجل الحركات وحده
+    const voidedGroup = document.getElementById('includeVoidedGroup');
+    if (voidedGroup) voidedGroup.style.display = (type === 'movements_log') ? 'flex' : 'none';
     hiddenColumns = new Set(); // كل نوع تقرير له أعمدة مختلفة، فنبدأ من جديد بكل الأعمدة ظاهرة
     generateReport();
 }
@@ -124,7 +128,10 @@ async function handlePrintReport() {
             case 'movements_log': {
                 const dateFrom = document.getElementById('dateFrom').value;
                 const dateTo = document.getElementById('dateTo').value;
-                window.printReport.printMovementsTable(currentReportData, {
+                // الأذونات الملغاة لا تُطبع: المستند المطبوع رسمي، وطباعة إذن ملغى
+                // دون تمييز تجعله يبدو سارياً. تظهر على الشاشة فقط للتدقيق.
+                const printable = (currentReportData || []).filter(t => t.is_deleted !== 1);
+                window.printReport.printMovementsTable(printable, {
                     title: reportName,
                     dateRange: `${dateFrom} إلى ${dateTo}`
                 });
@@ -740,7 +747,7 @@ async function generateMovementsReport(expectedId, dateFrom, dateTo) {
     let transactions = [];
     let useSample = false;
     try {
-        transactions = await window.api.getTransactionsHistory();
+        transactions = await window.api.getTransactionsHistory({ includeVoided: shouldIncludeVoided() });
         if (transactions && transactions.success === false) {
             showToast(transactions.message || 'حدث خطأ في جلب سجل الحركات', 'error');
             transactions = [];
@@ -763,7 +770,8 @@ async function generateMovementsReport(expectedId, dateFrom, dateTo) {
     setTableHeaders([
         { text: 'رقم الحركة', sortable: true }, { text: 'النوع', sortable: true },
         { text: 'التاريخ', sortable: true }, { text: 'الجهة / المورد', sortable: true },
-        { text: 'المخزن', sortable: true }, { text: 'القيمة', sortable: true }
+        { text: 'المخزن', sortable: true }, { text: 'القيمة', sortable: true },
+        { text: 'إجراء', sortable: false }
     ]);
 
     if (useSample) {
@@ -771,6 +779,11 @@ async function generateMovementsReport(expectedId, dateFrom, dateTo) {
     } else {
         renderMovementsTable(transactions);
     }
+}
+
+function shouldIncludeVoided() {
+    const toggle = document.getElementById('includeVoided');
+    return !!(toggle && toggle.checked);
 }
 
 function renderMovementsTable(transactions) {
@@ -782,19 +795,70 @@ function renderMovementsTable(transactions) {
     currentReportData = transactions;
     tbody.innerHTML = transactions.map(t => {
         const isSupply = t.transaction_type === 'In';
+        const isVoided = t.is_deleted === 1;
         const typeBadge = isSupply ? '<span class="badge badge-supply"><i class="fas fa-arrow-down"></i> توريد</span>' : '<span class="badge badge-dispense"><i class="fas fa-arrow-up"></i> صرف</span>';
         const dateStr = new Date(t.transaction_date).toLocaleDateString('ar-LY');
-        const val = t.total_value || 0; totalValue += val;
-        return `<tr>
+        const val = t.total_value || 0;
+        // الأذونات الملغاة لا تُحتسب في إجمالي القيمة — هي خارج الدفتر أصلاً
+        if (!isVoided) totalValue += val;
+
+        // الحالة لا تُنقل باللون وحده: شارة نصية + أيقونة (PRODUCT.md)
+        const actionCell = isVoided
+            ? `<span class="badge badge-low"><i class="fas fa-ban"></i> ملغى</span>
+               <div class="void-reason">${escapeHtml(t.void_reason || '')}</div>`
+            : `<button type="button" class="btn btn-sm btn-danger"
+                       onclick="voidTransactionRow(${t.transaction_id})">إلغاء الإذن</button>`;
+
+        return `<tr${isVoided ? ' class="row-voided"' : ''}>
             <td style="font-weight: 600; font-family: monospace;">#${t.transaction_id || '-'}</td>
             <td>${typeBadge}</td>
             <td>${dateStr}</td>
-            <td>${t.entity_name || 'غير محدد'}</td>
-            <td>${t.store_name || 'المخزن الرئيسي'}</td>
+            <td>${escapeHtml(t.entity_name || 'غير محدد')}</td>
+            <td>${escapeHtml(t.store_name || 'المخزن الرئيسي')}</td>
             <td style="font-weight: 600;">${val.toLocaleString('ar-LY', {minimumFractionDigits: 2})} د.ل</td>
+            <td class="no-print">${actionCell}</td>
         </tr>`;
     }).join('');
     updateStats(transactions.length, totalValue.toLocaleString('ar-LY', {minimumFractionDigits: 2}) + ' د.ل');
+}
+
+// إلغاء إذن: إجراء مدمّر (يُعيد احتساب الأرصدة)، فيمر ببوابة كلمة المرور
+// نفسها المستخدمة في النسخ الاحتياطي والاسترجاع.
+async function voidTransactionRow(transactionId) {
+    const reason = await promptForText({
+        title: 'إلغاء إذن',
+        message: `سيتم إلغاء الإذن رقم #${transactionId} وإعادة احتساب الأرصدة. لا يمكن التراجع عن هذا الإجراء — التصحيح يتم بإعادة إدخال الإذن.`,
+        label: 'سبب الإلغاء (مطلوب)',
+        placeholder: 'مثال: أُدخل الإذن بكمية خاطئة'
+    });
+
+    if (reason === null) return; // أُلغي من المستخدم
+
+    if (!reason.trim()) {
+        showToast('يجب إدخال سبب الإلغاء', 'error');
+        return;
+    }
+
+    promptForPassword(async () => {
+        try {
+            const session = checkSession();
+            const result = await window.api.voidTransaction({
+                transactionId,
+                reason,
+                voidedBy: session ? session.userId : null
+            });
+
+            if (result && result.success) {
+                showToast(result.message, 'success');
+                generateReport(); // إعادة التحميل لتعكس الأرصدة الجديدة
+            } else {
+                showToast((result && result.message) || 'تعذّر إلغاء الإذن', 'error');
+            }
+        } catch (error) {
+            console.error('خطأ في إلغاء الإذن:', error);
+            showToast('حدث خطأ أثناء إلغاء الإذن', 'error');
+        }
+    });
 }
 
 function renderSampleMovements() {
@@ -1090,8 +1154,14 @@ function applyColumnsFromModal() {
 }
 
 // حفظ الاختيار الحالي كإعداد جديد باسم يحدده المستخدم
-function saveColumnsPreset() {
-    const name = prompt('أدخل اسماً لهذا الإعداد لتتمكن من استرجاعه بسرعة لاحقاً:');
+// كانت هذه الدالة تستخدم window.prompt، وهو غير مُنفّذ في Electron أصلاً:
+// يعود بلا شيء بصمت، فكان الزر يبدو عاملاً ولا يحفظ شيئاً على الإطلاق.
+async function saveColumnsPreset() {
+    const name = await promptForText({
+        title: 'حفظ إعداد الأعمدة',
+        label: 'اسم الإعداد',
+        placeholder: 'مثال: تقرير الجرد المختصر'
+    });
     if (!name || !name.trim()) return;
     const trimmedName = name.trim();
 

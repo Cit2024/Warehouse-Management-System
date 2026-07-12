@@ -86,6 +86,41 @@ function migrateRemoveReceiptNumber(db) {
 }
 
 /**
+ * إضافة أعمدة الإلغاء إلى جدول transactions في القواعد القائمة.
+ *
+ * ALTER TABLE ADD COLUMN عملية على البيانات الوصفية فقط: لا تُعيد بناء الجدول،
+ * ولا تُنفّذ حذفاً ضمنياً، ولا تُفعّل CASCADE — أي أنها لا تحمل الخطر الذي دمّر
+ * بيانات المستخدمين في مهاجرة receipt_number.
+ *
+ * is_deleted وحده لا يكفي: بدونه لا يمكن التمييز بين إلغاء متعمّد وخلل برمجي،
+ * ومغزى دفتر الحسابات هو إمكانية التدقيق.
+ *
+ * @returns {string[]} الأعمدة التي أُضيفت فعلاً
+ */
+function migrateAddVoidColumns(db) {
+    const existing = db.prepare('PRAGMA table_info(transactions)').all().map((col) => col.name);
+
+    const wanted = [
+        { name: 'void_reason', ddl: 'ALTER TABLE transactions ADD COLUMN void_reason TEXT' },
+        { name: 'voided_by', ddl: 'ALTER TABLE transactions ADD COLUMN voided_by INTEGER' },
+        { name: 'voided_at', ddl: 'ALTER TABLE transactions ADD COLUMN voided_at DATETIME' }
+    ];
+
+    const added = [];
+    for (const column of wanted) {
+        if (!existing.includes(column.name)) {
+            db.exec(column.ddl);
+            added.push(column.name);
+        }
+    }
+
+    if (added.length > 0) {
+        console.log(`[DB] Added void audit columns: ${added.join(', ')}`);
+    }
+    return added;
+}
+
+/**
  * فحص سلامة البيانات — يكشف الأضرار التي خلّفتها المهاجرة القديمة.
  *
  * orphanHeaders: أذونات بلا أي أصناف. التطبيق لا يمكنه إنتاج هذا إطلاقاً —
@@ -130,4 +165,4 @@ function checkIntegrity(db) {
     };
 }
 
-module.exports = { migrateRemoveReceiptNumber, checkIntegrity };
+module.exports = { migrateRemoveReceiptNumber, migrateAddVoidColumns, checkIntegrity };

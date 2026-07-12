@@ -51,6 +51,10 @@
                                 <option value="">اختر صنفاً</option>
                             </select>
                         </div>
+                        <div class="form-group checkbox-group" id="includeVoidedGroup" style="margin-bottom: 0; display: none;">
+                            <input type="checkbox" id="includeVoided" onchange="generateReport()">
+                            <label for="includeVoided">عرض الأذونات الملغاة</label>
+                        </div>
                         <button type="button" class="btn btn-secondary" onclick="openColumnsModal()" title="اختيار الأعمدة الظاهرة في التقرير">
                             <i class="fas fa-columns"></i>
                             <span>الأعمدة</span>

@@ -97,4 +97,74 @@ function assertNoNegativeStock(db, itemIds) {
     throw new Error(`الكمية المتاحة لا تكفي: ${details}. يرجى مراجعة الأرصدة.`);
 }
 
-module.exports = { aggregateByItem, validateReceiptItems, assertNoNegativeStock };
+/**
+ * إلغاء إذن (توريد أو صرف).
+ *
+ * القاعدة: **لا يجوز لأي إلغاء أن يترك رصيد صنف سالباً.**
+ *   - إلغاء إذن صرف مسموح دائماً: هو يُعيد البضاعة إلى المخزن.
+ *   - إلغاء إذن توريد مرفوض إذا كانت البضاعة قد صُرفت بالفعل، لأن ذلك يسحب من
+ *     المخزن بضاعة غير موجودة. البديل — السماح بالرصيد السالب — يُعيد نفس الخلل
+ *     الذي أُصلح في مسار الصرف، ويجعل الدفتر يصف مخزناً مستحيلاً واقعياً.
+ *     الرسالة تُخبر المستخدم بالتصرّف الصحيح: إلغاء إذن الصرف المقابل أولاً.
+ *
+ * لا يوجد "تراجع عن الإلغاء": في دفتر الحسابات، الإجابة الصادقة هي إعادة إدخال
+ * الإذن.
+ *
+ * تُستدعى داخل db.transaction() — أي رمي خطأ هنا يتراجع عن الإلغاء بالكامل.
+ */
+function voidTransaction(db, { transactionId, reason, voidedBy, voidedAt }) {
+    const id = Number(transactionId);
+    if (!Number.isInteger(id) || id <= 0) {
+        throw new Error('رقم الإذن غير صالح.');
+    }
+
+    const trimmedReason = String(reason || '').trim();
+    if (!trimmedReason) {
+        throw new Error('يجب إدخال سبب الإلغاء.');
+    }
+
+    const header = db.prepare(
+        'SELECT transaction_id, transaction_type, is_deleted FROM transactions WHERE transaction_id = ?'
+    ).get(id);
+
+    if (!header) {
+        throw new Error('لم يتم العثور على الإذن المطلوب.');
+    }
+    if (header.is_deleted === 1) {
+        throw new Error('هذا الإذن ملغى بالفعل.');
+    }
+
+    const affectedItems = db.prepare(
+        'SELECT DISTINCT item_id FROM transaction_details WHERE transaction_id = ?'
+    ).all(id).map((row) => row.item_id);
+
+    const result = db.prepare(`
+        UPDATE transactions
+        SET is_deleted = 1, void_reason = ?, voided_by = ?, voided_at = ?
+        WHERE transaction_id = ? AND is_deleted = 0
+    `).run(trimmedReason, voidedBy || null, voidedAt || new Date().toISOString(), id);
+
+    if (result.changes !== 1) {
+        throw new Error('تعذّر إلغاء الإذن.');
+    }
+
+    // الرصيد الآن يستبعد هذا الإذن (view_current_stock يرشّح is_deleted = 0).
+    // إن كان الإلغاء قد جعل أي صنف سالباً، نتراجع عن كل شيء.
+    try {
+        assertNoNegativeStock(db, affectedItems);
+    } catch (shortage) {
+        // إلغاء إذن التوريد يسحب بضاعة من المخزن؛ إن كانت قد صُرفت فالرصيد يصير
+        // سالباً. نُرشد المستخدم إلى التصرّف الصحيح بدل رسالة عجز عامة.
+        if (header.transaction_type === 'In' || header.transaction_type === 'Opening_Balance') {
+            throw new Error(
+                `لا يمكن إلغاء إذن التوريد: تم صرف جزء من هذه الأصناف بالفعل. ${shortage.message} ` +
+                'يجب إلغاء أذونات الصرف المقابلة أولاً.'
+            );
+        }
+        throw shortage;
+    }
+
+    return { transactionId: id, transactionType: header.transaction_type };
+}
+
+module.exports = { aggregateByItem, validateReceiptItems, assertNoNegativeStock, voidTransaction };

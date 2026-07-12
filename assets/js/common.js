@@ -43,6 +43,91 @@ const ComponentLoader = {
     }
 };
 
+// تهريب النصوص القادمة من قاعدة البيانات قبل حقنها في innerHTML.
+// (نسخ متطابقة كانت موجودة في items.js ومكوّنات الطباعة؛ هذه هي النسخة المشتركة.)
+function escapeHtml(text) {
+    if (text == null) return '';
+    return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+/**
+ * نافذة إدخال نصي.
+ *
+ * Electron لا يُنفّذ window.prompt() إطلاقاً (يعود بلا شيء بصمت)، فأي زر يعتمد
+ * عليه يبدو عاملاً ولا يفعل شيئاً. هذه النافذة تتبع نمط promptForPassword نفسه.
+ *
+ * @returns {Promise<string|null>} النص المُدخل، أو null إذا ألغى المستخدم
+ */
+function promptForText({ title, message = '', label, placeholder = '', defaultValue = '' } = {}) {
+    return new Promise((resolve) => {
+        if (document.getElementById('textPromptModal')) {
+            resolve(null);
+            return;
+        }
+
+        const modalHtml = `
+            <div class="modal active" id="textPromptModal" role="dialog" aria-modal="true" aria-labelledby="textPromptTitle">
+                <div class="modal-content modal-sm modal-center">
+                    <div class="modal-body">
+                        <h3 class="modal-title" id="textPromptTitle">${escapeHtml(title || '')}</h3>
+                        ${message ? `<p class="modal-description">${escapeHtml(message)}</p>` : ''}
+                        <div class="form-group">
+                            <label for="textPromptInput">${escapeHtml(label || '')}</label>
+                            <input type="text" id="textPromptInput" class="form-control"
+                                   placeholder="${escapeHtml(placeholder)}"
+                                   value="${escapeHtml(defaultValue)}"
+                                   aria-required="true">
+                        </div>
+                    </div>
+                    <div class="modal-footer modal-footer-center">
+                        <button type="button" class="btn btn-secondary" id="cancelTextPromptBtn">إلغاء</button>
+                        <button type="button" class="btn btn-primary" id="confirmTextPromptBtn">تأكيد</button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        const modal = document.getElementById('textPromptModal');
+        const input = document.getElementById('textPromptInput');
+        const confirmBtn = document.getElementById('confirmTextPromptBtn');
+        const cancelBtn = document.getElementById('cancelTextPromptBtn');
+        const previouslyFocused = document.activeElement;
+
+        input.focus();
+        input.select();
+
+        function close(value) {
+            document.removeEventListener('keydown', handleKeydown);
+            if (modal) modal.remove();
+            if (previouslyFocused && previouslyFocused.focus) previouslyFocused.focus();
+            resolve(value);
+        }
+
+        function handleKeydown(e) {
+            if (e.key === 'Escape') close(null);
+        }
+
+        confirmBtn.addEventListener('click', () => close(input.value));
+        cancelBtn.addEventListener('click', () => close(null));
+        document.addEventListener('keydown', handleKeydown);
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                close(input.value);
+            }
+        });
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) close(null);
+        });
+    });
+}
+
 function showToast(message, type = 'success') {
     const existingToast = document.querySelector('.toast');
     if (existingToast) existingToast.remove();

@@ -34,7 +34,7 @@ window.addEventListener('DOMContentLoaded', () => {
         document.querySelector('main.content').innerHTML = `
             <div class="empty-state" style="padding: 60px;">
                 <div class="empty-state-icon"><i class="fas fa-lock"></i></div>
-                <h3>هذه الصفحة متاحة للمسؤول (Admin) فقط</h3>
+                <h3>هذه الصفحة متاحة للمسؤول فقط</h3>
                 <p><a href="dashboard.html">العودة إلى لوحة التحكم</a></p>
             </div>
         `;
@@ -175,10 +175,15 @@ async function changeUserRole(userId, role) {
 
 // ===== Activate / deactivate =====
 async function toggleUserActive(userId, makeActive) {
-    const confirmMsg = makeActive
-        ? 'تفعيل هذا المستخدم مجدداً؟'
-        : 'إلغاء تفعيل هذا المستخدم؟ لن يتمكن من تسجيل الدخول حتى تُعاد تفعيله.';
-    if (!confirm(confirmMsg)) return;
+    const confirmed = await confirmModal({
+        title: makeActive ? 'تفعيل مستخدم' : 'إلغاء تفعيل مستخدم',
+        message: makeActive
+            ? 'تفعيل هذا المستخدم مجدداً؟'
+            : 'إلغاء تفعيل هذا المستخدم؟ لن يتمكن من تسجيل الدخول حتى تُعاد تفعيله.',
+        confirmLabel: makeActive ? 'تفعيل' : 'إلغاء التفعيل',
+        danger: !makeActive
+    });
+    if (!confirmed) return;
 
     try {
         const result = await window.api.setUserActive({ userId, isActive: makeActive });

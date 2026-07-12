@@ -128,6 +128,65 @@ function promptForText({ title, message = '', label, placeholder = '', defaultVa
     });
 }
 
+/**
+ * نافذة تأكيد — بديل عن confirm() الأصلية، بنفس نمط النوافذ الأخرى في التطبيق
+ * (عنوان، أيقونة، أزرار إلغاء/تأكيد، إغلاق بـ Escape أو النقر على الخلفية).
+ *
+ * @returns {Promise<boolean>} true إذا أكّد المستخدم، false إذا ألغى
+ */
+function confirmModal({ title = 'تأكيد', message = '', confirmLabel = 'تأكيد', danger = false } = {}) {
+    return new Promise((resolve) => {
+        if (document.getElementById('confirmActionModal')) {
+            resolve(false);
+            return;
+        }
+
+        const modalHtml = `
+            <div class="modal active" id="confirmActionModal" role="dialog" aria-modal="true" aria-labelledby="confirmActionTitle">
+                <div class="modal-content modal-sm modal-center">
+                    <div class="modal-body">
+                        <div class="modal-icon" aria-hidden="true">
+                            <i class="fas ${danger ? 'fa-triangle-exclamation' : 'fa-circle-question'}"></i>
+                        </div>
+                        <h3 class="modal-title" id="confirmActionTitle">${escapeHtml(title)}</h3>
+                        <p class="modal-description">${escapeHtml(message)}</p>
+                    </div>
+                    <div class="modal-footer modal-footer-center">
+                        <button type="button" class="btn btn-secondary" id="cancelConfirmActionBtn">إلغاء</button>
+                        <button type="button" class="btn ${danger ? 'btn-danger' : 'btn-primary'}" id="confirmConfirmActionBtn">${escapeHtml(confirmLabel)}</button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        const modal = document.getElementById('confirmActionModal');
+        const confirmBtn = document.getElementById('confirmConfirmActionBtn');
+        const cancelBtn = document.getElementById('cancelConfirmActionBtn');
+        const previouslyFocused = document.activeElement;
+
+        confirmBtn.focus();
+
+        function close(result) {
+            document.removeEventListener('keydown', handleKeydown);
+            if (modal) modal.remove();
+            if (previouslyFocused && previouslyFocused.focus) previouslyFocused.focus();
+            resolve(result);
+        }
+
+        function handleKeydown(e) {
+            if (e.key === 'Escape') close(false);
+        }
+
+        confirmBtn.addEventListener('click', () => close(true));
+        cancelBtn.addEventListener('click', () => close(false));
+        document.addEventListener('keydown', handleKeydown);
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) close(false);
+        });
+    });
+}
+
 function showToast(message, type = 'success') {
     const existingToast = document.querySelector('.toast');
     if (existingToast) existingToast.remove();
@@ -181,17 +240,22 @@ async function handleRestore(event) {
     promptForPassword(async () => handleRestoreInner(event))
 }
 async function handleRestoreInner(event) {
-    
-    const confirmRestore = confirm('⚠️ تحذير هام جداً: استيراد نسخة احتياطية سيقوم بمسح كافة بيانات المخزن الحالية واستبدالها بالنسخة المستوردة.\n\nهل أنت متأكد من رغبتك في المتابعة؟');
+
+    const confirmRestore = await confirmModal({
+        title: 'استرجاع نسخة احتياطية',
+        message: 'تحذير هام جداً: استيراد نسخة احتياطية سيقوم بمسح كافة بيانات المخزن الحالية واستبدالها بالنسخة المستوردة. هل أنت متأكد من رغبتك في المتابعة؟',
+        confirmLabel: 'استرجاع',
+        danger: true
+    });
     if (!confirmRestore) return;
 
     try {
         const result = await window.api.restoreDatabase();
         if (result && !result.success && result.message !== 'تم إلغاء العملية.') {
-            alert('❌ ' + result.message);
+            showToast(result.message, 'error');
         }
     } catch (error) {
-        alert('❌ حدث خطأ غير متوقع أثناء الاستيراد.');
+        showToast('حدث خطأ غير متوقع أثناء الاستيراد.', 'error');
     }
 }
 
@@ -218,9 +282,44 @@ async function handlePdfExport() {
     }
 }
 
+// 4.1 فتح/إغلاق القائمة الجانبية على الشاشات الضيقة (< 768px)
+// كانت القائمة تختفي بالكامل دون أي وسيلة لإعادة فتحها.
+function toggleSidebar(forceState) {
+    const sidebar = document.getElementById('appSidebar');
+    const toggleBtn = document.getElementById('sidebarToggleBtn');
+    if (!sidebar) return;
+
+    const shouldOpen = typeof forceState === 'boolean' ? forceState : !sidebar.classList.contains('open');
+
+    sidebar.classList.toggle('open', shouldOpen);
+    if (toggleBtn) toggleBtn.setAttribute('aria-expanded', String(shouldOpen));
+
+    let backdrop = document.getElementById('sidebarBackdrop');
+    if (shouldOpen) {
+        if (!backdrop) {
+            backdrop = document.createElement('div');
+            backdrop.id = 'sidebarBackdrop';
+            backdrop.className = 'sidebar-backdrop';
+            backdrop.addEventListener('click', () => toggleSidebar(false));
+            document.body.appendChild(backdrop);
+        }
+        backdrop.classList.add('visible');
+    } else if (backdrop) {
+        backdrop.classList.remove('visible');
+    }
+}
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        const sidebar = document.getElementById('appSidebar');
+        if (sidebar && sidebar.classList.contains('open')) toggleSidebar(false);
+    }
+});
+
 // 5. تسجيل الخروج
-function handleLogout() {
-    if (confirm('هل أنت متأكد من تسجيل الخروج؟')) {
+async function handleLogout() {
+    const confirmed = await confirmModal({ title: 'تسجيل الخروج', message: 'هل أنت متأكد من تسجيل الخروج؟', confirmLabel: 'تسجيل الخروج' });
+    if (confirmed) {
         // نُصفّر جلسة العملية الرئيسية أيضاً، وليس فقط جلسة المتصفح: صلاحية
         // الكتابة الفعلية تُفرض هناك، وكانت ستبقى سارية حتى إغلاق التطبيق
         // بالكامل لو اقتصر تسجيل الخروج على مسح localStorage فقط.
@@ -528,28 +627,6 @@ async function changeOwnPassword(event) {
         if (e.target === modal) closeModal();
     });
 }
-function showSettings(){
-    const SETTINGS_PAGE_TIME_LIMIT = 10 * 60 * 100 * 8; 
-    const settings = document.getElementById("cloudSettingsForm");
-    const lock = document.getElementById("settingsLockedState");
-    lock.style.display = "none";
-    settings.style.display = "block"; 
-    setTimeout(() => {
-        console.log("fired.");
-        hideSettings();
-    }, SETTINGS_PAGE_TIME_LIMIT);
-}
-function hideSettings(){
-    const settings = document.getElementById("cloudSettingsForm");
-    const lock = document.getElementById("settingsLockedState");
-    if (settings && lock) {
-        lock.style.display = "block";
-        settings.style.display = "none"; 
-    }
-}
-window.addEventListener("visibilitychange", () => {
-    hideSettings()
-});
 
 
  // نظام تسجيل الخروج التلقائي عند الخمول (10 دقائق)
@@ -563,6 +640,9 @@ function resetIdleTimeout() {
         if (!window.location.href.includes('index.html')) {
             if (window.api && window.api.logout) window.api.logout();
             localStorage.removeItem('userSession');
+            // alert() الأصلية مقصودة هنا وليست إغفالاً: الصفحة تُغادَر مباشرة
+            // بعدها، وalert() الوحيدة التي تضمن قراءة السبب قبل ضياع السياق —
+            // toast غير حاجب كان سيختفي مع تنقّل الصفحة قبل أن يُقرأ.
             alert(' تم تسجيل الخروج تلقائياً للحفاظ على أمان المنظومة بسبب عدم النشاط.');
             window.location.href = 'index.html';
         }

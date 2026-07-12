@@ -97,7 +97,7 @@ async function loadDropdownData() {
 
     } catch (error) {
         console.error(error);
-        alert("حدث خطأ في جلب البيانات.");
+        showToast("حدث خطأ في جلب البيانات.", 'error');
     }
 }
 

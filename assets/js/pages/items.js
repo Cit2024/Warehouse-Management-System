@@ -209,7 +209,13 @@ async function deleteItem(id) {
     const item = allItems.find(i => i.item_id === id);
     const name = item ? item.item_name : '';
 
-    if (confirm(`هل أنت متأكد من حذف الصنف "${name}"؟\nهذا الإجراء لا يمكن التراجع عنه.`)) {
+    const confirmed = await confirmModal({
+        title: 'حذف صنف',
+        message: `هل أنت متأكد من حذف الصنف "${name}"؟ هذا الإجراء لا يمكن التراجع عنه.`,
+        confirmLabel: 'حذف',
+        danger: true
+    });
+    if (confirmed) {
         try {
             await window.api.deleteItem(id);
             showToast(`تم حذف الصنف "${name}" بنجاح`, 'success');

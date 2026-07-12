@@ -132,7 +132,8 @@ async function deleteEntity(id) {
     const session = checkSession();
     if (session && session.role === 'Viewer') { showToast('لا تملك صلاحية الحذف', 'error'); return; }
 
-    if (confirm('هل أنت متأكد من حذف هذه الجهة؟')) {
+    const confirmed = await confirmModal({ title: 'حذف جهة', message: 'هل أنت متأكد من حذف هذه الجهة؟', confirmLabel: 'حذف', danger: true });
+    if (confirmed) {
         try {
             const result = await window.api.deleteEntity(id);
             if (result.success) { loadEntities(); showToast('تم الحذف بنجاح', 'success'); }

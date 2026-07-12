@@ -46,6 +46,8 @@ const createWindow = () => {
   const win = new BrowserWindow({
     width: 1200, // عرض أكبر ليناسب لوحة التحكم
     height: 800,
+    minWidth: 900, // دون هذا العرض تنهار الجداول وأشرطة الأدوات
+    minHeight: 600,
     icon: path.join(__dirname, './assets/icon.png'),
     webPreferences: {
       // ربط ملف الجسر الآمن

@@ -32,6 +32,7 @@ class Header {
 
         return `
             <header class="top-header" id="appTopHeader">
+                <button class="header-btn sidebar-toggle" id="sidebarToggleBtn" onclick="toggleSidebar()" title="القائمة" aria-label="فتح القائمة الجانبية" aria-expanded="false" aria-controls="appSidebar"><i class="fas fa-bars"></i></button>
                 <div class="header-actions">
                     ${refreshButton}
                     <button class="header-btn" onclick="handleLogout()" title="خروج" aria-label="خروج"><i class="fas fa-door-open"></i></button>

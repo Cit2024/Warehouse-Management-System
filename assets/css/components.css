@@ -262,6 +262,20 @@ tbody tr:last-child td {
     color: var(--primary);
 }
 
+/* الرصيد المتاح على صفحة الصرف — الرقم الأهم في هذه الصفحة (يحدّد إن كانت
+   العملية ممكنة أصلاً)، وكان بلا أي تنسيق (نص عادي بلا وزن بصري). */
+.stock-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 14px;
+    border-radius: 20px;
+    background: var(--primary-light);
+    color: var(--primary);
+    font-size: var(--font-body);
+    font-weight: var(--weight-bold);
+    white-space: nowrap;
+}
+
 /* Item ID styling */
 .item-id {
     font-family: 'Courier New', monospace;
@@ -515,19 +529,16 @@ dialog.modal-content::backdrop {
 }
 
 /* --- Toast Notifications --- */
-.toast-container {
+/* showToast() (common.js) appends .toast straight to <body>; no code ever
+   creates a .toast-container element, so the positioning must live on
+   .toast itself, or every toast renders as an in-flow flex child that
+   squeezes the page layout for its 3-second lifetime. */
+.toast {
     position: fixed;
     top: var(--space-5);
     left: 50%;
     transform: translateX(-50%);
-    z-index: 2000;
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2);
-    align-items: center;
-}
-
-.toast {
+    z-index: 2000; /* above modal (1000), below nothing else in this app */
     background: var(--bg-card);
     padding: 14px var(--space-5);
     border-radius: var(--card-radius);
@@ -544,13 +555,16 @@ dialog.modal-content::backdrop {
 }
 
 @keyframes toastSlide {
+    /* .toast's own transform (translateX(-50%)) centers it horizontally;
+       the keyframe must compose that with the vertical slide, or the toast
+       would snap from the left edge to centered the instant the animation ends. */
     from {
         opacity: 0;
-        transform: translateY(-10px);
+        transform: translateX(-50%) translateY(-10px);
     }
     to {
         opacity: 1;
-        transform: translateY(0);
+        transform: translateX(-50%) translateY(0);
     }
 }
 

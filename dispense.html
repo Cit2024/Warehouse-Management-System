@@ -28,23 +28,23 @@
                     <form class="form-grid" onsubmit="event.preventDefault(); saveReceipt();">
                         <!-- Document Header -->
                         <div id="rem2" class="form-group">
-                            <label>تاريخ الصرف</label>
+                            <label for="receiptDate">تاريخ الصرف</label>
                             <input type="date" id="receiptDate" required max="">
                         </div>
                         <div class="form-group">
-                            <label>الجهة الطالبة (القسم/الموظف)</label>
+                            <label for="requesterSelect">الجهة الطالبة (القسم/الموظف)</label>
                             <select id="requesterSelect" required>
                                 <option value="">-- اختر الجهة --</option>
                             </select>
                         </div>
                         <div class="form-group">
-                            <label>المخزن المصروف منه</label>
+                            <label for="storeSelect">المخزن المصروف منه</label>
                             <select id="storeSelect" required>
                                 <option value="">-- اختر المخزن --</option>
                             </select>
                         </div>
                         <div class="form-group" style="grid-column: span 2;">
-                            <label>ملاحظات / سبب الصرف</label>
+                            <label for="receiptNotes">ملاحظات / سبب الصرف</label>
                             <input type="text" id="receiptNotes" placeholder="مثال: عهدة شخصية، احتياج معمل...">
                         </div>
 
@@ -54,14 +54,14 @@
 
                             <div id="itemsSel" style="display: flex; gap: 12px; align-items: flex-end; margin-bottom: 20px; flex-wrap: wrap;">
                                 <div class="form-group" style="flex: 2; min-width: 200px; margin-bottom: 0;">
-                                    <label>الصنف</label>
+                                    <label for="itemSelect">الصنف</label>
                                     <select id="itemSelect" onchange="updateStockBadge()">
                                         <option value="">-- اختر الصنف --</option>
                                     </select>
                                 </div>
                                 <div class="stock-badge" id="stockBadge" style="margin-bottom: 8px;">المتاح: 0</div>
                                 <div class="form-group" style="flex: 1; min-width: 100px; margin-bottom: 0;">
-                                    <label>الكمية المطلوبة</label>
+                                    <label for="itemQty">الكمية المطلوبة</label>
                                     <input type="number" id="itemQty" placeholder="الكمية" min="1">
                                 </div>
                                 <button type="button" class="btn btn-primary" onclick="addRow()">

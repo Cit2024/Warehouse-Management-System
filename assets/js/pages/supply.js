@@ -97,7 +97,7 @@ async function loadDropdownData() {
 
     } catch (error) {
         console.error("خطأ في التحميل الأولي", error);
-        alert("حدث خطأ في جلب البيانات الأساسية.");
+        showToast("حدث خطأ في جلب البيانات الأساسية.", 'error');
     }
 }
 

@@ -150,7 +150,7 @@ function renderTable() {
         return `
             <tr>
                 <td><span class="item-id">${row.itemId}</span></td>
-                <td style="font-weight: 600;">${row.itemName}</td>
+                <td style="font-weight: 600;">${escapeHtml(row.itemName)}</td>
                 <td style="font-weight: 700;">${row.quantity}</td>
                 <td>${row.price.toFixed(2)} د.ل</td>
                 <td style="font-weight: 600;">${row.total.toFixed(2)} د.ل</td>

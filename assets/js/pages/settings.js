@@ -77,7 +77,8 @@ function displayBackups(backups, isOnlineMode) {
         const sText = source === 'cloud' ? 'سحابية' : 'محلية';
         const option = document.createElement('option');
         option.value = b.fullCommitId || b.commitId;
-        option.innerHTML = `${icon} [${sText}] ${b.date} - ${b.message}`;
+        // b.message قد يحتوي اسم ملف اختاره المستخدم عند استيراد نسخة خارجية
+        option.innerHTML = `${icon} [${sText}] ${escapeHtml(b.date)} - ${escapeHtml(b.message)}`;
         fragment.appendChild(option);
     });
     select.appendChild(fragment);

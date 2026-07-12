@@ -441,9 +441,9 @@ function renderStockTable(items, errorMessage = null) {
 
         return `<tr>
             <td><span class="item-id">${item.item_id || '-'}</span></td>
-            <td style="font-weight: 700;">${item.item_name || 'غير معروف'}</td>
-            <td><span class="badge-category ${catClass}">${item.category || 'غير مصنف'}</span></td>
-            <td>${item.unit || 'قطعة'}</td>
+            <td style="font-weight: 700;">${escapeHtml(item.item_name || 'غير معروف')}</td>
+            <td><span class="badge-category ${catClass}">${escapeHtml(item.category || 'غير مصنف')}</span></td>
+            <td>${escapeHtml(item.unit || 'قطعة')}</td>
             <td class="td-number">${fmtNumber(qty, 0)}</td>
             <td class="td-number">${fmtNumber(minQty, 0)}</td>
             <td class="td-price">${fmtNumber(price)} د.ل</td>
@@ -506,9 +506,9 @@ function renderItemsBaseTable(items, errorMessage = null) {
     tbody.innerHTML = items.map(item => `
         <tr>
             <td><span class="item-id">${item.item_id}</span></td>
-            <td style="font-weight: 600;">${item.item_name}</td>
-            <td>${item.unit}</td>
-            <td><span class="badge badge-supplier">${item.category}</span></td>
+            <td style="font-weight: 600;">${escapeHtml(item.item_name)}</td>
+            <td>${escapeHtml(item.unit)}</td>
+            <td><span class="badge badge-supplier">${escapeHtml(item.category)}</span></td>
             <td>${item.min_order_qty || 0}</td>
         </tr>
     `).join('');
@@ -565,9 +565,9 @@ function renderInventoryCountTable(items, errorMessage = null) {
         const current = item.current_quantity || 0;
         return `<tr>
             <td><span class="item-id">${item.item_id}</span></td>
-            <td style="font-weight: 600;">${item.item_name}</td>
-            <td>${item.unit}</td>
-            <td><span class="badge badge-supplier">${item.category}</span></td>
+            <td style="font-weight: 600;">${escapeHtml(item.item_name)}</td>
+            <td>${escapeHtml(item.unit)}</td>
+            <td><span class="badge badge-supplier">${escapeHtml(item.category)}</span></td>
             <td style="font-weight: 700;">${current}</td>
             <td><input type="number" class="filter-select actual-qty" data-index="${index}" data-current="${current}" placeholder="الرصيد الفعلي" min="0" style="min-width: 120px;" oninput="updateCountStatus(this)"></td>
             <td class="count-status">-</td>
@@ -817,9 +817,9 @@ function renderLowStockTable(items, errorMessage = null) {
         const deficit = minQty - qty;
         return `<tr>
             <td><span class="item-id">${item.item_id}</span></td>
-            <td style="font-weight: 600;">${item.item_name}</td>
-            <td><span class="badge badge-supplier">${item.category}</span></td>
-            <td>${item.unit}</td>
+            <td style="font-weight: 600;">${escapeHtml(item.item_name)}</td>
+            <td><span class="badge badge-supplier">${escapeHtml(item.category)}</span></td>
+            <td>${escapeHtml(item.unit)}</td>
             <td style="font-weight: 700; color: var(--danger);">${qty}</td>
             <td>${minQty}</td>
             <td style="font-weight: 700; color: var(--danger);">${deficit > 0 ? '+' + deficit : deficit}</td>
@@ -1015,7 +1015,7 @@ function renderItemCardTable(movements) {
             <td>${dateStr}</td>
             <td><span class="badge ${typeClass}">${typeText}</span></td>
             <td style="font-weight: 600; font-family: monospace;">#${m.transaction_id || '-'}</td>
-            <td>${m.entity_name || '-'}</td>
+            <td>${escapeHtml(m.entity_name || '-')}</td>
             <td style="font-weight: 700;">${m.quantity || 0}</td>
             <td style="font-weight: 700;">${m.running_balance || 0}</td>
         </tr>`;

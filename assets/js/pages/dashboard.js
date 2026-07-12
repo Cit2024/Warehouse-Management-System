@@ -196,10 +196,10 @@ function renderLowStockAlerts(items) {
         const alertItem = document.createElement('div');
         alertItem.className = 'alert-item';
         alertItem.innerHTML = `
-            <div class="alert-item-icon">${(item.item_name || 'غير معروف').charAt(0)}</div>
+            <div class="alert-item-icon">${escapeHtml((item.item_name || 'غير معروف').charAt(0))}</div>
             <div class="alert-item-content">
-                <div class="alert-item-name">${item.item_name || 'غير معروف'}</div>
-                <div class="alert-item-detail">${(item.current_quantity || 0)} ${(item.unit || '')} من حد أدنى ${(item.min_order_qty || 0)}</div>
+                <div class="alert-item-name">${escapeHtml(item.item_name || 'غير معروف')}</div>
+                <div class="alert-item-detail">${(item.current_quantity || 0)} ${escapeHtml(item.unit || '')} من حد أدنى ${(item.min_order_qty || 0)}</div>
             </div>
             <div class="alert-item-status">منخفض</div>
         `;
@@ -233,7 +233,7 @@ function renderRecentMovements(history) {
         const isDispense = t.transaction_type === 'Out';
         const type = isDispense ? 'dispense' : 'supply';
         const title = '#' + t.transaction_id;
-        const entity = t.entity_name || t.store_name || '-';
+        const entity = escapeHtml(t.entity_name || t.store_name || '-');
         const dateLabel = formatMovementDate(t.transaction_date);
         const value = (t.total_value || 0).toLocaleString('ar-LY', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' د.ل';
 
@@ -310,8 +310,8 @@ function renderItemsSummary(items) {
                     <i class="fas fa-box"></i>
                 </div>
                 <div class="activity-content">
-                    <div class="activity-title">${item.item_name}</div>
-                    <div class="activity-meta">${item.category || 'غير مصنف'} · ${item.current_quantity || 0} ${item.unit}</div>
+                    <div class="activity-title">${escapeHtml(item.item_name)}</div>
+                    <div class="activity-meta">${escapeHtml(item.category || 'غير مصنف')} · ${item.current_quantity || 0} ${escapeHtml(item.unit || '')}</div>
                 </div>
                 <div class="activity-value">
                     <span class="badge ${isLow ? 'badge-low' : 'badge-available'}">${isLow ? 'منخفض' : 'متوفر'}</span>
@@ -363,7 +363,7 @@ async function checkDatabaseHealth() {
             problems.push(`${health.orphanHeaders} إذن بدون أصناف (فُقدت سطوره)`);
         }
         if (health.negativeStockItems.length > 0) {
-            const names = health.negativeStockItems.map(i => `«${i.item_name}»`).join('، ');
+            const names = health.negativeStockItems.map(i => `«${escapeHtml(i.item_name)}»`).join('، ');
             problems.push(`${health.negativeStockItems.length} صنف برصيد سالب: ${names}`);
         }
 

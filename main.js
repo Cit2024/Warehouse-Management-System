@@ -10,6 +10,15 @@ let gitManager;
 let db;
 let scheduledBackupInterval = null;
 
+// المزامنة السحابية معطّلة في هذا الإصدار: مسار الرفع كان يستخدم force push
+// عند أي فشل شبكة عابر (وليس فقط عند مستودع فارغ)، مما يعني أن جهازاً واحداً
+// قد يمسح تاريخ النسخ السحابية لبقية الأجهزة. الشيفرة باقية في المستودع
+// وتُعاد بتغيير هذا الثابت وحده بعد إصلاح مسار المزامنة.
+const CLOUD_SYNC_ENABLED = false;
+
+// الجداول التي يجب أن تكون موجودة في أي نسخة احتياطية صالحة لهذه المنظومة
+const REQUIRED_TABLES = ['users', 'stores', 'items', 'entities', 'transactions', 'transaction_details'];
+
 const createWindow = () => {
   const win = new BrowserWindow({
     width: 1200, // عرض أكبر ليناسب لوحة التحكم
@@ -37,9 +46,11 @@ app.whenReady().then(async () => {
   await gitManager.init();
   await startAutoBackupScheduling();
 
-  setInterval(() => {
-    checkAndPushPendingBackups();
-  }, 3600000);
+  if (CLOUD_SYNC_ENABLED) {
+    setInterval(() => {
+      checkAndPushPendingBackups();
+    }, 3600000);
+  }
   const win = createWindow();
 
   // ==========================================
@@ -66,6 +77,44 @@ app.whenReady().then(async () => {
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
 });
+
+// ==========================================
+// دوال مساعدة للاسترجاع
+// ==========================================
+
+// ملفات WAL/SHM تظل تشير إلى القاعدة القديمة؛ لو بقيت بعد الاستبدال قد تُظلّل
+// القاعدة المستوردة ببيانات قديمة.
+function cleanupWalFiles(dbPath) {
+  for (const suffix of ['-wal', '-shm']) {
+    const sidecar = `${dbPath}${suffix}`;
+    try {
+      if (fs.existsSync(sidecar)) fs.unlinkSync(sidecar);
+    } catch (error) {
+      console.warn(`تعذّر حذف ${sidecar}:`, error.message);
+    }
+  }
+}
+
+// نتأكد أن القاعدة المستوردة تُفتح وتحتوي على الجداول المطلوبة قبل إعادة التشغيل.
+// بدون هذا الفحص قد يُعاد تشغيل التطبيق على قاعدة تالفة دون أي طريق للعودة.
+function assertDatabaseOpens(dbPath) {
+  const probe = new Database(dbPath, { readonly: true, fileMustExist: true });
+  try {
+    const integrity = probe.pragma('integrity_check', { simple: true });
+    if (integrity !== 'ok') {
+      throw new Error(`قاعدة البيانات المستوردة تالفة (${integrity})`);
+    }
+    const found = probe.prepare(
+      "SELECT name FROM sqlite_master WHERE type = 'table'"
+    ).all().map(row => row.name);
+    const missing = REQUIRED_TABLES.filter(table => !found.includes(table));
+    if (missing.length > 0) {
+      throw new Error(`جداول مفقودة: ${missing.join('، ')}`);
+    }
+  } finally {
+    probe.close();
+  }
+}
 
 // ==========================================
 // دوال مساعدة لتجزئة كلمات المرور
@@ -655,11 +704,8 @@ ipcMain.handle('restore-database', async (event) => {
       const tables = testDb.prepare("SELECT name FROM sqlite_master WHERE type='table'").all();
       const tableNames = tables.map(t => t.name);
 
-      // 3. نحدد الجداول الأساسية التي يجب أن تكون موجودة في منظومتنا
-      const requiredTables = ['users', 'stores', 'items', 'entities', 'transactions', 'transaction_details'];
-
-      // 4. نتحقق هل كل الجداول المطلوبة موجودة داخل الملف؟
-      const isValidSchema = requiredTables.every(table => tableNames.includes(table));
+      // 3. نتحقق هل كل الجداول المطلوبة موجودة داخل الملف؟
+      const isValidSchema = REQUIRED_TABLES.every(table => tableNames.includes(table));
 
       // 5. نغلق الاتصال المؤقت فوراً
       testDb.close();
@@ -678,28 +724,51 @@ ipcMain.handle('restore-database', async (event) => {
     // ================================================================
 
     // إذا تجاوزنا الفحص بنجاح، نقوم بعملية الاستيراد الفعلية
-    const dataPath = app.getPath('userData');
-    const targetDbPath = path.join(dataPath, 'warehouse_system.sqlite');
+    const targetDbPath = db.getDbPath();
+    const rollbackPath = `${targetDbPath}.bak`;
 
-    // 6. إغلاق الاتصال الحالي بقاعدة البيانات الحقيقية
-    db.close();
+    // 6. إغلاق الاتصال الحالي عبر closeDb() وليس close():
+    //    close() الخام يغلق المقبض لكنه لا يصفّر dbInstance داخل db.js، فيبقى
+    //    التطبيق ممسكاً بمقبض ميت ويفشل كل طلب لاحق حتى يُقتل البرنامج.
+    db.closeDb();
 
-    // 7. نسخ الملف السليم فوق القديم
-    fs.copyFileSync(sourcePath, targetDbPath);
+    try {
+      // 7. نحتفظ بنسخة تراجع من القاعدة الحالية قبل الكتابة فوقها
+      fs.copyFileSync(targetDbPath, rollbackPath);
+      cleanupWalFiles(targetDbPath);
 
-    // 8. توثيق عملية الاستيراد في Git (قبل إعادة التشغيل)
-    //    يقرأ gitManager الملف الجديد الذي نسخناه للتو ويحفظه كـ commit
+      // 8. نسخ الملف السليم فوق القديم
+      fs.copyFileSync(sourcePath, targetDbPath);
+
+      // 9. التحقق من أن القاعدة المستوردة تُفتح فعلاً قبل إعادة التشغيل
+      assertDatabaseOpens(targetDbPath);
+    } catch (restoreError) {
+      // الاستيراد فشل — نُعيد القاعدة الأصلية ونُبقي التطبيق صالحاً للاستخدام
+      console.error('فشل الاستيراد، جاري التراجع:', restoreError);
+      try {
+        if (fs.existsSync(rollbackPath)) {
+          fs.copyFileSync(rollbackPath, targetDbPath);
+        }
+      } catch (rollbackError) {
+        console.error('فشل التراجع أيضاً:', rollbackError);
+      }
+      db.getDb(); // إعادة فتح الاتصال حتى لا يبقى التطبيق معطلاً
+      return { success: false, message: `❌ فشل الاستيراد وتمت إعادة البيانات السابقة: ${restoreError.message}` };
+    }
+
+    // 10. توثيق عملية الاستيراد في Git (قبل إعادة التشغيل)
     if (gitManager) {
       const backupName = path.basename(sourcePath, path.extname(sourcePath));
       await gitManager.commitLocalBackup(`استيراد نسخة احتياطية خارجية: ${backupName}`);
     }
 
-    // 9. إعادة تشغيل التطبيق تلقائياً
+    // 11. إعادة تشغيل التطبيق تلقائياً
     app.relaunch();
     app.exit();
 
   } catch (error) {
     console.error('خطأ في استيراد القاعدة:', error);
+    db.getDb(); // لا نترك التطبيق بمقبض مغلق مهما حدث
     return { success: false, message: 'حدث خطأ غير متوقع أثناء الاستيراد.' };
   }
 });
@@ -760,28 +829,55 @@ ipcMain.handle('get-local-backups', async () => {
 
 // تنفيذ الاسترجاع من Git
 ipcMain.handle('restore-from-git', async (event, commitId) => {
-  try {
-    // 1. إغلاق قاعدة البيانات الحالية لفك الارتباط بالملف
-    db.close();
+  const targetDbPath = db.getDbPath();
+  const rollbackPath = `${targetDbPath}.bak`;
 
-    // 2. أمر الـ GitManager بالاسترجاع
+  try {
+    // 1. نسخة تراجع قبل أي شيء
+    if (fs.existsSync(targetDbPath)) {
+      fs.copyFileSync(targetDbPath, rollbackPath);
+    }
+
+    // 2. إغلاق القاعدة عبر closeDb() لتصفير dbInstance، وليس close() الخام
+    db.closeDb();
+    cleanupWalFiles(targetDbPath);
+
+    // 3. أمر الـ GitManager بالاسترجاع
     const result = await gitManager.restoreFromCommit(commitId);
 
-    if (result.success) {
-      // 3. إعادة تشغيل التطبيق ليقرأ القاعدة الجديدة
-      app.relaunch();
-      app.exit();
-    } else {
+    if (!result.success) {
+      db.getDb(); // نُعيد فتح الاتصال حتى لا يبقى التطبيق معطلاً
       return result;
     }
+
+    // 4. لا نُعيد التشغيل قبل التأكد من أن القاعدة المسترجعة تُفتح فعلاً
+    assertDatabaseOpens(targetDbPath);
+
+    app.relaunch();
+    app.exit();
+
   } catch (error) {
-    console.error('خطأ غير متوقع:', error);
-    return { success: false, message: 'حدث خطأ غير متوقع أثناء استعادة النظام.' };
+    console.error('خطأ غير متوقع أثناء الاسترجاع:', error);
+
+    // التراجع إلى القاعدة السابقة وإبقاء التطبيق صالحاً للاستخدام
+    try {
+      if (fs.existsSync(rollbackPath)) {
+        fs.copyFileSync(rollbackPath, targetDbPath);
+      }
+    } catch (rollbackError) {
+      console.error('فشل التراجع أيضاً:', rollbackError);
+    }
+    db.getDb();
+
+    return { success: false, message: `حدث خطأ أثناء استعادة النظام وتمت إعادة البيانات السابقة: ${error.message}` };
   }
 });
 
 ipcMain.handle('sync-with-cloud', async () => {
   try {
+    if (!CLOUD_SYNC_ENABLED) {
+      return { success: false, message: 'المزامنة السحابية معطّلة في هذا الإصدار. النسخ الاحتياطي المحلي يعمل تلقائياً.' };
+    }
     if (!gitManager) {
       return { success: false, message: 'نظام النسخ الاحتياطي لم يتم تهيئته' };
     }
@@ -1001,6 +1097,7 @@ ipcMain.handle('get-merged-backups', async () => {
       allBackups.set(commit.fullCommitId, {
         fullCommitId: commit.fullCommitId,
         commitId: commit.commitId,
+        timestamp: commit.timestamp,
         date: commit.date,
         message: commit.message,
         source: 'local'
@@ -1010,7 +1107,7 @@ ipcMain.handle('get-merged-backups', async () => {
     // محاولة جلب النسخ السحابية إذا كان هناك اتصال
     try {
       const configPath = path.join(app.getPath('userData'), 'system_config.json');
-      if (fs.existsSync(configPath)) {
+      if (CLOUD_SYNC_ENABLED && fs.existsSync(configPath)) {
         const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
         if (config.repoUrl && config.accessToken) {
           console.log('🌐 جاري جلب النسخ السحابية...');
@@ -1049,6 +1146,7 @@ ipcMain.handle('get-merged-backups', async () => {
                   allBackups.set(commit.oid, {
                     fullCommitId: commit.oid,
                     commitId: commit.oid.substring(0, 7),
+                    timestamp: commit.commit.author.timestamp * 1000,
                     date: new Date(commit.commit.author.timestamp * 1000).toLocaleString('ar-LY'),
                     message: commit.commit.message,
                     source: 'cloud'
@@ -1066,9 +1164,12 @@ ipcMain.handle('get-merged-backups', async () => {
       console.log('⚠️ لا يمكن جلب النسخ السحابية:', cloudError.message);
     }
 
-    // ترتيب حسب التاريخ (الأحدث أولاً)
+    // ترتيب حسب الطابع الزمني الرقمي (الأحدث أولاً).
+    // كان الترتيب سابقاً على حقل date وهو نص محلي (ar-LY)، فكان new Date() عليه
+    // يُنتج Invalid Date والمقارنة NaN — أي أن الترتيب لم يكن يفعل شيئاً، وكان
+    // المستخدم قد يسترجع نسخة قديمة ظناً أنها الأحدث.
     const merged = Array.from(allBackups.values())
-      .sort((a, b) => new Date(b.date) - new Date(a.date));
+      .sort((a, b) => b.timestamp - a.timestamp);
 
     console.log(`📊 تم دمج ${merged.length} نسخة (${merged.filter(b => b.source === 'local').length} محلية، ${merged.filter(b => b.source === 'cloud').length} سحابية)`);
 
@@ -1087,15 +1188,51 @@ function getBackupIntervalMs(days) {
   return days * 24 * 60 * 60 * 1000;
 }
 
+function getLastBackupPath() {
+  return path.join(app.getPath('userData'), 'last_auto_backup.json');
+}
+
+// قراءة وقت آخر نسخة تلقائية. الملف كان يُقرأ ولا يُكتب أبداً، فكانت النتيجة
+// أن كل إقلاع للتطبيق يُشغّل نسخة كاملة بغض النظر عن الدورية المضبوطة.
+function readLastBackupTime() {
+  try {
+    const lastBackupPath = getLastBackupPath();
+    if (!fs.existsSync(lastBackupPath)) return 0;
+    const saved = JSON.parse(fs.readFileSync(lastBackupPath, 'utf8'));
+    const parsed = new Date(saved.lastBackup).getTime();
+    return Number.isFinite(parsed) ? parsed : 0;
+  } catch (error) {
+    console.error('تعذّر قراءة وقت آخر نسخة احتياطية:', error);
+    return 0;
+  }
+}
+
+function stampLastBackupTime() {
+  try {
+    fs.writeFileSync(getLastBackupPath(), JSON.stringify({ lastBackup: new Date().toISOString() }));
+  } catch (error) {
+    console.error('تعذّر تسجيل وقت آخر نسخة احتياطية:', error);
+  }
+}
+
 async function performAutoBackup() {
   console.log('🤖 بدء النسخ الاحتياطي التلقائي...');
   try {
     if (!gitManager) {
       return { success: false, message: 'نظام النسخ الاحتياطي لم يتم تهيئته' };
     }
+
+    // commitLocalBackup تُعيد {success:false} عند الفشل — وهو كائن صادق (truthy).
+    // الفحص القديم `if (!commitResult)` لم يكن يلتقط الفشل إطلاقاً.
     const commitResult = await gitManager.commitLocalBackup('نسخة احتياطية تلقائية دورية');
-    if (!commitResult) {
-      return { success: false, message: 'فشل بالقيام ب local commit' };
+    if (!commitResult || commitResult.success === false) {
+      return { success: false, message: `فشل إنشاء النسخة المحلية: ${commitResult && commitResult.message || 'سبب غير معروف'}` };
+    }
+
+    stampLastBackupTime();
+
+    if (!CLOUD_SYNC_ENABLED) {
+      return { success: true, message: 'تم حفظ نسخة احتياطية محلية', pushed: false };
     }
 
     // قراءة الإعدادات
@@ -1293,45 +1430,40 @@ async function startAutoBackupScheduling() {
   }
 
   try {
+    // النسخ المحلي لا يعتمد على إعدادات السحابة: لو غاب system_config.json
+    // كانت الجدولة تتوقف كلياً، أي لا نسخ احتياطي محلي إطلاقاً على تثبيت جديد.
+    let backupFrequencyDays = 14; // الافتراضي: كل أسبوعين
     const configPath = path.join(app.getPath('userData'), 'system_config.json');
-    if (!fs.existsSync(configPath)) {
-      console.log('⚠️ لا توجد إعدادات، لن يتم تشغيل النسخ الاحتياطي التلقائي');
-      return;
+    if (fs.existsSync(configPath)) {
+      try {
+        const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+        backupFrequencyDays = parseInt(config.backupFrequency) || 14;
+      } catch (configError) {
+        console.warn('تعذّرت قراءة دورية النسخ من الإعدادات، سيُعتمد الافتراضي:', configError.message);
+      }
     }
-
-    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    const backupFrequencyDays = parseInt(config.backupFrequency) || 14; // الافتراضي 14 يوم
 
     const intervalMs = getBackupIntervalMs(backupFrequencyDays);
+    console.log(`⏰ جدولة النسخ الاحتياطي التلقائي كل ${backupFrequencyDays} يوم`);
 
-    console.log(`⏰ بدء جدولة النسخ الاحتياطي التلقائي كل ${backupFrequencyDays} يوم (${intervalMs / (1000 * 60 * 60)} ساعة)`);
-    const lastBackupPath = path.join(app.getPath('userData'), 'last_auto_backup.json');
-    let shouldRunNow = false;
-
-    if (fs.existsSync(lastBackupPath)) {
-      const lastBackup = JSON.parse(fs.readFileSync(lastBackupPath, 'utf8'));
-      const lastBackupTime = new Date(lastBackup.lastBackup);
-      const timeSinceLastBackup = Date.now() - lastBackupTime.getTime();
-
-      if (timeSinceLastBackup >= intervalMs) {
-        console.log('⚠️ مضى وقت طويل على آخر نسخة احتياطية، جاري التنفيذ فوراً...');
-        shouldRunNow = true;
+    // نبضة كل ساعة تقارن الوقت المنقضي، بدل setInterval بفترة طويلة:
+    //   1. خيار "كل شهر" = 2,592,000,000 مللي ثانية، وهو يتجاوز حد Node
+    //      (2^31-1 ≈ 24.8 يوم)، فيُقصّه Node إلى 1 مللي ثانية — أي حلقة نسخ
+    //      متواصلة بدل نسخة شهرية.
+    //   2. التطبيق المكتبي نادراً ما يبقى مفتوحاً 14 يوماً متصلة، فالمؤقّت
+    //      الطويل لم يكن ليُطلَق أصلاً.
+    const TICK_MS = 60 * 60 * 1000; // ساعة
+    const runIfDue = async () => {
+      const elapsed = Date.now() - readLastBackupTime();
+      if (elapsed >= intervalMs) {
+        console.log('⏳ حان موعد النسخة الاحتياطية الدورية...');
+        await performAutoBackup();
       }
-    } else {
-      console.log('📝 لا يوجد سجل سابق، جاري عمل أول نسخة احتياطية...');
-      shouldRunNow = true;
-    }
+    };
 
-    // تنفيذ نسخة فورية إذا لزم الأمر
-    if (shouldRunNow) {
-      // تأخير بسيط لضمان اكتمال تهيئة النظام
-      setTimeout(() => performAutoBackup(), 10000);
-    }
-
-    // بدء الجدولة الدورية
-    scheduledBackupInterval = setInterval(() => {
-      performAutoBackup();
-    }, intervalMs);
+    // فحص أولي بعد تأخير بسيط لضمان اكتمال تهيئة النظام
+    setTimeout(runIfDue, 10000);
+    scheduledBackupInterval = setInterval(runIfDue, TICK_MS);
 
     console.log(`✅ تم تفعيل النسخ الاحتياطي التلقائي (كل ${backupFrequencyDays} يوم)`);
 
@@ -1347,6 +1479,8 @@ async function restartAutoBackupScheduling() {
 
 async function checkAndPushPendingBackups() {
   try {
+    if (!CLOUD_SYNC_ENABLED) return;
+
     const configPath = path.join(app.getPath('userData'), 'system_config.json');
     if (!fs.existsSync(configPath)) return;
 
@@ -1363,9 +1497,11 @@ async function checkAndPushPendingBackups() {
       lastPushTime = pushStatus.lastPush || 0;
     }
 
-    // إذا كان هناك commits جديدة ولم يتم رفعها منذ أكثر من ساعة
+    // إذا كان هناك commits جديدة ولم يتم رفعها منذ أكثر من ساعة.
+    // نستخدم timestamp الرقمي: القراءة من حقل date النصي كانت تُنتج NaN،
+    // والمقارنة NaN > x دائماً false — أي أن هذا المسار لم يكن يرفع شيئاً أبداً.
     if (localCommits.length > 0) {
-      const latestCommitTime = new Date(localCommits[0].date).getTime();
+      const latestCommitTime = localCommits[0].timestamp;
       if (latestCommitTime > lastPushTime && (Date.now() - lastPushTime) > 3600000) {
         console.log('📤 محاولة رفع النسخ المعلقة للسحابة...');
         const pushResult = await gitManager.pushToCloud(config.repoUrl, config.accessToken);

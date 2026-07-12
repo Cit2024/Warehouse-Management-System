@@ -498,6 +498,32 @@ ipcMain.handle('get-transactions-history', async () => {
   }
 });
 
+// جلب حركات صنف محدد (بطاقة حركة صنف)
+ipcMain.handle('get-item-transactions', async (event, itemId) => {
+  try {
+    const rows = db.prepare(`
+      SELECT t.transaction_id, t.transaction_type, t.transaction_date,
+             e.entity_name, s.store_name, td.quantity
+      FROM transaction_details td
+      JOIN transactions t ON t.transaction_id = td.transaction_id
+      LEFT JOIN entities e ON t.entity_id = e.entity_id
+      LEFT JOIN stores s ON t.store_id = s.store_id
+      WHERE td.item_id = ? AND t.is_deleted = 0
+      ORDER BY t.transaction_date ASC, t.transaction_id ASC
+    `).all(itemId);
+
+    let balance = 0;
+    return rows.map(r => {
+      const qty = r.quantity || 0;
+      balance += r.transaction_type === 'In' ? qty : -qty;
+      return { ...r, running_balance: balance };
+    });
+  } catch (error) {
+    console.error('[get-item-transactions] خطأ في جلب حركات الصنف:', error);
+    return { success: false, message: 'حدث خطأ أثناء جلب حركات الصنف', error: error.message };
+  }
+});
+
 // جلب تفاصيل إذن توريد محدد
 ipcMain.handle('get-supply-receipt', async (event, transactionId) => {
   try {

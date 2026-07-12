@@ -388,13 +388,94 @@ body {
     printInventoryTable(items, options = {}) {
         const title = options.title || 'تقرير حالة المخزون';
         const subtitle = options.subtitle || '';
+        const reportType = options.reportType || 'stock';
 
-        const totalValue = (items || []).reduce((sum, item) => {
-            return sum + ((item.current_quantity || 0) * (item.unit_price || 0));
-        }, 0);
+        // ── Column configurations per report type ──
+        const columnConfigs = {
+            stock: {
+                headers: ['رقم الصنف', 'اسم الصنف', 'التصنيف', 'الوحدة', 'الرصيد', 'الحد الأدنى', 'سعر الوحدة', 'القيمة', 'الحالة'],
+                sectionTitle: 'الأصناف',
+                landscape: true,
+                hasPrice: true,
+                renderRow: (item) => {
+                    const qty = item.current_quantity || 0;
+                    const minQty = item.min_order_qty || 0;
+                    const price = item.unit_price || 0;
+                    const value = qty * price;
+                    const isLow = qty <= minQty;
+                    return `<td><span class="print-item-id">${this.escapeHtml(item.item_id || '-')}</span></td>
+                        <td class="bold">${this.escapeHtml(item.item_name || 'غير معروف')}</td>
+                        <td>${this.escapeHtml(item.category || 'غير مصنف')}</td>
+                        <td>${this.escapeHtml(item.unit || 'قطعة')}</td>
+                        <td class="print-num">${this.fmtInt(qty)}</td>
+                        <td class="print-num">${this.fmtInt(minQty)}</td>
+                        <td class="print-price">${this.fmt(price)}</td>
+                        <td class="print-price bold">${this.fmt(value)}</td>
+                        <td><span class="print-badge ${isLow ? 'print-badge-low' : 'print-badge-available'}">${isLow ? 'منخفض' : 'متوفر'}</span></td>`;
+                }
+            },
+            items_base: {
+                headers: ['رقم الصنف', 'اسم الصنف', 'الوحدة', 'التصنيف', 'الحد الأدنى'],
+                sectionTitle: 'الأصناف الأساسية',
+                landscape: false,
+                hasPrice: false,
+                renderRow: (item) => {
+                    return `<td><span class="print-item-id">${this.escapeHtml(item.item_id || '-')}</span></td>
+                        <td class="bold">${this.escapeHtml(item.item_name || 'غير معروف')}</td>
+                        <td>${this.escapeHtml(item.unit || 'قطعة')}</td>
+                        <td>${this.escapeHtml(item.category || 'غير مصنف')}</td>
+                        <td class="print-num">${this.fmtInt(item.min_order_qty || 0)}</td>`;
+                }
+            },
+            lowstock: {
+                headers: ['رقم الصنف', 'اسم الصنف', 'التصنيف', 'الوحدة', 'الرصيد الحالي', 'الحد الأدنى', 'النقص', 'الحالة'],
+                sectionTitle: 'أصناف منخفضة الرصيد',
+                landscape: true,
+                hasPrice: false,
+                renderRow: (item) => {
+                    const qty = item.current_quantity || 0;
+                    const minQty = item.min_order_qty || 0;
+                    const deficit = minQty - qty;
+                    return `<td><span class="print-item-id">${this.escapeHtml(item.item_id || '-')}</span></td>
+                        <td class="bold">${this.escapeHtml(item.item_name || 'غير معروف')}</td>
+                        <td>${this.escapeHtml(item.category || 'غير مصنف')}</td>
+                        <td>${this.escapeHtml(item.unit || 'قطعة')}</td>
+                        <td class="print-num">${this.fmtInt(qty)}</td>
+                        <td class="print-num">${this.fmtInt(minQty)}</td>
+                        <td class="print-num">${deficit > 0 ? '+' + this.fmtInt(deficit) : this.fmtInt(deficit)}</td>
+                        <td><span class="print-badge print-badge-low">منخفض</span></td>`;
+                }
+            },
+            inventory_count: {
+                headers: ['رقم الصنف', 'اسم الصنف', 'الوحدة', 'التصنيف', 'الرصيد الحالي', 'الرصيد الفعلي', 'حالة الجرد'],
+                sectionTitle: 'بيانات الجرد',
+                landscape: true,
+                hasPrice: false,
+                renderRow: (item) => {
+                    const current = item.current_quantity || 0;
+                    return `<td><span class="print-item-id">${this.escapeHtml(item.item_id || '-')}</span></td>
+                        <td class="bold">${this.escapeHtml(item.item_name || 'غير معروف')}</td>
+                        <td>${this.escapeHtml(item.unit || 'قطعة')}</td>
+                        <td>${this.escapeHtml(item.category || 'غير مصنف')}</td>
+                        <td class="print-num">${this.fmtInt(current)}</td>
+                        <td style="text-align:center;">....................</td>
+                        <td style="text-align:center;">-</td>`;
+                }
+            }
+        };
 
-        const hasPrice = items.some(i => (i.unit_price || 0) > 0);
-        const colCount = hasPrice ? 9 : 7;
+        const config = columnConfigs[reportType] || columnConfigs.stock;
+
+        // Calculate total value only for stock reports
+        const totalValue = config.hasPrice
+            ? (items || []).reduce((sum, item) => sum + ((item.current_quantity || 0) * (item.unit_price || 0)), 0)
+            : 0;
+
+        // Build header row
+        const headersHtml = config.headers.map(h => `<th>${h}</th>`).join('');
+
+        // Build data rows
+        const rowsHtml = (items || []).map(item => `<tr>${config.renderRow(item)}</tr>`).join('');
 
         let tableHtml = `
             <div class="print-summary">
@@ -402,50 +483,16 @@ body {
                     <span class="label">عدد السجلات</span>
                     <span class="value">${items.length}</span>
                 </div>
-                <div class="print-summary-item">
-                    <span class="label">إجمالي القيمة</span>
-                    <span class="value">${this.fmt(totalValue)} د.ل</span>
-                </div>
+                ${config.hasPrice ? `<div class="print-summary-item"><span class="label">إجمالي القيمة</span><span class="value">${this.fmt(totalValue)} د.ل</span></div>` : ''}
             </div>
             ${subtitle ? `<div style="font-size:8pt;color:#666;margin-bottom:4pt;">${this.escapeHtml(subtitle)}</div>` : ''}
-            <div class="print-section-title">الأصناف</div>
+            <div class="print-section-title">${config.sectionTitle}</div>
             <table class="print-table">
-                <thead>
-                    <tr>
-                        <th>رقم الصنف</th>
-                        <th>اسم الصنف</th>
-                        <th>التصنيف</th>
-                        <th>الوحدة</th>
-                        <th>الرصيد</th>
-                        <th>الحد الأدنى</th>
-                        ${hasPrice ? '<th>سعر الوحدة</th><th>القيمة</th>' : ''}
-                        <th>الحالة</th>
-                    </tr>
-                </thead>
-                <tbody>`;
+                <thead><tr>${headersHtml}</tr></thead>
+                <tbody>${rowsHtml}</tbody>
+            </table>`;
 
-        items.forEach(item => {
-            const qty = item.current_quantity || 0;
-            const minQty = item.min_order_qty || 0;
-            const price = item.unit_price || 0;
-            const value = qty * price;
-            const isLow = qty <= minQty;
-
-            tableHtml += `<tr>
-                <td><span class="print-item-id">${this.escapeHtml(item.item_id || '-')}</span></td>
-                <td class="bold">${this.escapeHtml(item.item_name || 'غير معروف')}</td>
-                <td>${this.escapeHtml(item.category || 'غير مصنف')}</td>
-                <td>${this.escapeHtml(item.unit || 'قطعة')}</td>
-                <td class="print-num">${this.fmtInt(qty)}</td>
-                <td class="print-num">${this.fmtInt(minQty)}</td>
-                ${hasPrice ? `<td class="print-price">${this.fmt(price)}</td><td class="print-price bold">${this.fmt(value)}</td>` : ''}
-                <td><span class="print-badge ${isLow ? 'print-badge-low' : 'print-badge-available'}">${isLow ? 'منخفض' : 'متوفر'}</span></td>
-            </tr>`;
-        });
-
-        tableHtml += `</tbody></table>`;
-
-        if (hasPrice) {
+        if (config.hasPrice) {
             tableHtml += `
                 <div class="print-total">
                     <span class="print-total-label">إجمالي القيمة الإجمالية:</span>
@@ -457,10 +504,10 @@ body {
 
         const doc = this.buildPrintDocument(tableHtml, {
             title,
-            landscape: colCount > 6
+            landscape: config.landscape
         });
 
-        this.openPrintWindow(doc, colCount > 6);
+        this.openPrintWindow(doc, config.landscape);
     }
 
     // ============================================================
@@ -608,6 +655,163 @@ body {
 
         const doc = this.buildPrintDocument(summaryHtml, { title, landscape: summaryItems.length > 5 });
         this.openPrintWindow(doc, summaryItems.length > 5);
+    }
+
+    // ============================================================
+    // Print: Movements/Transactions Table
+    // ============================================================
+    printMovementsTable(transactions, options = {}) {
+        const title = options.title || 'حركات التوريد والصرف';
+        const dateRange = options.dateRange || '';
+
+        let totalValue = 0;
+        let tableHtml = `
+            <div class="print-summary">
+                <div class="print-summary-item">
+                    <span class="label">عدد الحركات</span>
+                    <span class="value">${transactions.length}</span>
+                </div>
+                ${dateRange ? `<div class="print-summary-item"><span class="label">الفترة</span><span class="value">${this.escapeHtml(dateRange)}</span></div>` : ''}
+            </div>
+            <div class="print-section-title">سجل الحركات</div>
+            <table class="print-table">
+                <thead>
+                    <tr>
+                        <th>رقم الحركة</th>
+                        <th>النوع</th>
+                        <th>التاريخ</th>
+                        <th>الجهة / المورد</th>
+                        <th>المخزن</th>
+                        <th>القيمة</th>
+                    </tr>
+                </thead>
+                <tbody>`;
+
+        transactions.forEach(t => {
+            const isSupply = t.transaction_type === 'In';
+            const typeText = isSupply ? 'توريد' : 'صرف';
+            const dateStr = t.transaction_date ? new Date(t.transaction_date).toLocaleDateString('ar-LY') : '-';
+            const val = t.total_value || 0;
+            totalValue += val;
+
+            tableHtml += `<tr>
+                <td style="font-family:monospace;font-weight:700;">#${t.transaction_id || '-'}</td>
+                <td>${typeText}</td>
+                <td>${dateStr}</td>
+                <td>${this.escapeHtml(t.entity_name || 'غير محدد')}</td>
+                <td>${this.escapeHtml(t.store_name || 'المخزن الرئيسي')}</td>
+                <td class="print-price">${this.fmt(val)} د.ل</td>
+            </tr>`;
+        });
+
+        tableHtml += `</tbody></table>`;
+        tableHtml += `
+            <div class="print-total">
+                <span class="print-total-label">إجمالي القيمة:</span>
+                <span class="print-total-value">${this.fmt(totalValue)} د.ل</span>
+            </div>`;
+        tableHtml += this.buildSignaturesHtml(['المستلم', 'أمين المخزن', 'المدير']);
+
+        const doc = this.buildPrintDocument(tableHtml, { title, landscape: true });
+        this.openPrintWindow(doc, true);
+    }
+
+    // ============================================================
+    // Print: Suppliers/Entities Table
+    // ============================================================
+    printSuppliersTable(entities, options = {}) {
+        const title = options.title || 'دليل الموردين والجهات';
+
+        let tableHtml = `
+            <div class="print-summary">
+                <div class="print-summary-item">
+                    <span class="label">عدد الجهات</span>
+                    <span class="value">${entities.length}</span>
+                </div>
+            </div>
+            <div class="print-section-title">قائمة الموردين والجهات</div>
+            <table class="print-table">
+                <thead>
+                    <tr>
+                        <th>الكود</th>
+                        <th>الاسم</th>
+                        <th>النوع</th>
+                        <th>رقم الهاتف</th>
+                    </tr>
+                </thead>
+                <tbody>`;
+
+        entities.forEach(e => {
+            const typeText = e.entity_type === 'Supplier' ? 'مورد' : 'جهة';
+            tableHtml += `<tr>
+                <td><span class="print-item-id">${this.escapeHtml(e.code || e.entity_id || '-')}</span></td>
+                <td class="bold">${this.escapeHtml(e.entity_name || 'غير معروف')}</td>
+                <td>${typeText}</td>
+                <td>${this.escapeHtml(e.phone || '-')}</td>
+            </tr>`;
+        });
+
+        tableHtml += `</tbody></table>`;
+        tableHtml += this.buildSignaturesHtml(['المستلم', 'أمين المخزن', 'المدير']);
+
+        const doc = this.buildPrintDocument(tableHtml, { title, landscape: false });
+        this.openPrintWindow(doc, false);
+    }
+
+    // ============================================================
+    // Print: Item Card (movement history for one item)
+    // ============================================================
+    printItemCard(itemData, options = {}) {
+        const title = options.title || 'بطاقة حركة صنف';
+        const itemName = options.itemName || 'غير معروف';
+
+        let tableHtml = `
+            <div class="print-summary">
+                <div class="print-summary-item">
+                    <span class="label">اسم الصنف</span>
+                    <span class="value">${this.escapeHtml(itemName)}</span>
+                </div>
+                <div class="print-summary-item">
+                    <span class="label">عدد الحركات</span>
+                    <span class="value">${itemData.length}</span>
+                </div>
+            </div>
+            <div class="print-section-title">سجل حركات الصنف</div>
+            <table class="print-table">
+                <thead>
+                    <tr>
+                        <th>التاريخ</th>
+                        <th>نوع الحركة</th>
+                        <th>رقم الحركة</th>
+                        <th>الجهة</th>
+                        <th>الكمية</th>
+                        <th>الرصيد</th>
+                    </tr>
+                </thead>
+                <tbody>`;
+
+        if (!itemData || itemData.length === 0) {
+            tableHtml += '<tr><td colspan="6" style="text-align:center;padding:20pt;">لا توجد حركات مسجلة لهذا الصنف</td></tr>';
+        } else {
+            itemData.forEach(m => {
+                const dateStr = m.transaction_date ? new Date(m.transaction_date).toLocaleDateString('ar-LY') : '-';
+                const typeText = m.transaction_type === 'In' ? 'توريد' : m.transaction_type === 'Out' ? 'صرف' : 'رصيد افتتاحي';
+                tableHtml += `<tr>
+                    <td>${dateStr}</td>
+                    <td>${typeText}</td>
+                    <td style="font-family:monospace;">#${m.transaction_id || '-'}</td>
+                    <td>${this.escapeHtml(m.entity_name || '-')}</td>
+                    <td class="print-num">${this.fmtInt(m.quantity || 0)}</td>
+                    <td class="print-num">${this.fmtInt(m.running_balance || 0)}</td>
+                </tr>`;
+            });
+        }
+
+        tableHtml += `</tbody></table>`;
+        tableHtml += this.buildSignaturesHtml(['المستلم', 'أمين المخزن', 'المدير']);
+
+        const doc = this.buildPrintDocument(tableHtml, { title, landscape: false });
+        this.openPrintWindow(doc, false);
     }
 
     // ============================================================

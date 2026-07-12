@@ -99,31 +99,133 @@ async function handlePrintReport() {
     const btn = document.getElementById('printReportBtn');
     if (btn) {
         btn.disabled = true;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الطباعة...';
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري...';
     }
     try {
-        // Ensure data is generated before printing
+        // Ensure data is generated
         await generateReport();
 
-        // Use unified PrintReport component
-        if (window.printReport && typeof window.printReport.printInventoryTable === 'function') {
-            window.printReport.printInventoryTable(currentReportData, {
-                title: document.getElementById('reportName').textContent || 'تقرير',
-                subtitle: document.getElementById('reportTableMeta').textContent || ''
-            });
-        } else {
-            console.warn('[Report] PrintReport component not available');
-            showToast('مكوّن الطباعة غير متوفر', 'error');
+        const reportType = document.getElementById('reportType').value;
+        const reportName = document.getElementById('reportName').textContent || 'تقرير';
+        const reportMeta = document.getElementById('reportTableMeta').textContent || '';
+
+        switch (reportType) {
+            case 'stock':
+            case 'items_base':
+            case 'lowstock':
+            case 'inventory_count':
+                window.printReport.printInventoryTable(currentReportData, {
+                    title: reportName,
+                    subtitle: reportMeta,
+                    reportType: reportType
+                });
+                break;
+
+            case 'movements_log': {
+                const dateFrom = document.getElementById('dateFrom').value;
+                const dateTo = document.getElementById('dateTo').value;
+                window.printReport.printMovementsTable(currentReportData, {
+                    title: reportName,
+                    dateRange: `${dateFrom} إلى ${dateTo}`
+                });
+                break;
+            }
+
+            case 'supply_receipt': {
+                const supplyData = buildSupplyReceiptData();
+                window.printReport.printReceipt(supplyData, { type: 'supply' });
+                break;
+            }
+
+            case 'dispense_receipt': {
+                const dispenseData = buildDispenseReceiptData();
+                window.printReport.printReceipt(dispenseData, { type: 'dispense' });
+                break;
+            }
+
+            case 'item_card': {
+                const itemSelect = document.getElementById('itemSelect');
+                const itemId = itemSelect.value;
+                if (!itemId) {
+                    showToast('يرجى اختيار صنف أولاً', 'warning');
+                    return;
+                }
+                const itemName = itemSelect.selectedOptions[0]?.text || '';
+                const itemData = await window.api.getItemTransactions(parseInt(itemId, 10));
+                if (itemData && itemData.success === false) {
+                    showToast(itemData.message || 'فشل في جلب حركات الصنف', 'error');
+                    return;
+                }
+                window.printReport.printItemCard(itemData || [], {
+                    title: reportName,
+                    itemName
+                });
+                break;
+            }
+
+            case 'suppliers':
+                window.printReport.printSuppliersTable(currentReportData, {
+                    title: reportName
+                });
+                break;
+
+            default:
+                window.print();
         }
     } catch (error) {
-        console.error('[Report] Print error:', error);
-        showToast('فشل في إعداد التقرير للطباعة', 'error');
+        console.error('[Print] Error:', error);
+        showToast('فشل في الطباعة: ' + error.message, 'error');
     } finally {
         if (btn) {
             btn.disabled = false;
             btn.innerHTML = '<i class="fas fa-print"></i> طباعة التقرير';
         }
     }
+}
+
+// ========== Receipt data helpers for print routing ==========
+function buildSupplyReceiptData() {
+    const headerRow = document.querySelector('#reportTableBody tr:first-child td');
+    let supplier = 'غير محدد', store = 'المخزن الرئيسي', notes = '';
+
+    if (headerRow) {
+        const text = headerRow.textContent || '';
+        const supplierMatch = text.match(/المورد:\s*([^\n]+)/);
+        const storeMatch = text.match(/المخزن:\s*([^\n]+)/);
+        const notesMatch = text.match(/ملاحظات:\s*([^\n]+)/);
+        if (supplierMatch) supplier = supplierMatch[1].trim();
+        if (storeMatch) store = storeMatch[1].trim();
+        if (notesMatch) notes = notesMatch[1].trim();
+    }
+
+    return {
+        supplier,
+        store,
+        notes,
+        items: currentReportData || []
+    };
+}
+
+function buildDispenseReceiptData() {
+    const headerRow = document.querySelector('#reportTableBody tr:first-child td');
+    let requester = 'غير محدد', store = 'المخزن الرئيسي', reason = '';
+
+    if (headerRow) {
+        const text = headerRow.textContent || '';
+        const requesterMatch = text.match(/الجهة الطالبة:\s*([^\n]+)/);
+        const storeMatch = text.match(/المخزن:\s*([^\n]+)/);
+        const reasonMatch = text.match(/سبب الصرف:\s*([^\n]+)/);
+        if (requesterMatch) requester = requesterMatch[1].trim();
+        if (storeMatch) store = storeMatch[1].trim();
+        if (reasonMatch) reason = reasonMatch[1].trim();
+    }
+
+    return {
+        requester,
+        store,
+        notes: reason,
+        items: currentReportData || []
+    };
 }
 
 // Table sorting is provided by common.js
@@ -705,18 +807,80 @@ function renderSampleMovements() {
 }
 
 async function generateItemCardReport(expectedId) {
+    const itemSelect = document.getElementById('itemSelect');
+    const itemId = itemSelect ? itemSelect.value : '';
+
+    if (!itemId) {
+        if (reportGenerationId !== expectedId) {
+            console.log('[Report] Stale generateItemCardReport ignored');
+            return;
+        }
+        setReportMeta('بطاقة حركة صنف', 'تفاصيل حركات صنف محدد');
+        setTableHeaders([
+            { text: 'التاريخ', sortable: true }, { text: 'نوع الحركة', sortable: true },
+            { text: 'رقم الحركة', sortable: true }, { text: 'الجهة', sortable: true },
+            { text: 'الكمية', sortable: true }, { text: 'الرصيد', sortable: true }
+        ]);
+        document.getElementById('reportTableBody').innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px;">اختر صنفاً من القائمة أعلاه ثم اضغط طباعة التقرير</td></tr>';
+        updateStats(0, '-');
+        currentReportData = [];
+        return;
+    }
+
+    let movements = [];
+    try {
+        movements = await window.api.getItemTransactions(parseInt(itemId, 10));
+        if (movements && movements.success === false) {
+            console.warn('[Report] getItemTransactions error:', movements.message);
+            movements = [];
+        }
+        if (!Array.isArray(movements)) {
+            console.warn('[Report] getItemTransactions did not return array:', movements);
+            movements = [];
+        }
+    } catch (e) {
+        console.error('[Report] Error loading item card report:', e);
+        movements = [];
+    }
+
     if (reportGenerationId !== expectedId) {
         console.log('[Report] Stale generateItemCardReport ignored');
         return;
     }
+
     setReportMeta('بطاقة حركة صنف', 'تفاصيل حركات صنف محدد');
     setTableHeaders([
         { text: 'التاريخ', sortable: true }, { text: 'نوع الحركة', sortable: true },
         { text: 'رقم الحركة', sortable: true }, { text: 'الجهة', sortable: true },
         { text: 'الكمية', sortable: true }, { text: 'الرصيد', sortable: true }
     ]);
-    document.getElementById('reportTableBody').innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px;">اختر صنفاً من القائمة أعلاه ثم اضغط طباعة التقرير</td></tr>';
-    updateStats(0, '-');
+    renderItemCardTable(movements);
+}
+
+function renderItemCardTable(movements) {
+    const tbody = document.getElementById('reportTableBody');
+    currentReportData = movements;
+
+    if (!movements || movements.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px;">لا توجد حركات مسجلة لهذا الصنف</td></tr>';
+        updateStats(0, '-');
+        return;
+    }
+
+    tbody.innerHTML = movements.map(m => {
+        const dateStr = m.transaction_date ? new Date(m.transaction_date).toLocaleDateString('ar-LY') : '-';
+        const typeText = m.transaction_type === 'In' ? 'توريد' : m.transaction_type === 'Out' ? 'صرف' : 'رصيد افتتاحي';
+        const typeClass = m.transaction_type === 'In' ? 'badge-supply' : 'badge-dispense';
+        return `<tr>
+            <td>${dateStr}</td>
+            <td><span class="badge ${typeClass}">${typeText}</span></td>
+            <td style="font-weight: 600; font-family: monospace;">#${m.transaction_id || '-'}</td>
+            <td>${m.entity_name || '-'}</td>
+            <td style="font-weight: 700;">${m.quantity || 0}</td>
+            <td style="font-weight: 700;">${m.running_balance || 0}</td>
+        </tr>`;
+    }).join('');
+    updateStats(movements.length, movements.length + ' حركة');
 }
 
 async function generateSuppliersReport(expectedId) {

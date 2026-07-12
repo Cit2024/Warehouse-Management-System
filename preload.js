@@ -18,6 +18,7 @@ contextBridge.exposeInMainWorld('api', {
     addEntity: (entityData) => ipcRenderer.invoke('add-entity', entityData),
     deleteEntity: (entityId) => ipcRenderer.invoke('delete-entity', entityId),
     getTransactionsHistory: () => ipcRenderer.invoke('get-transactions-history'),
+    getItemTransactions: (itemId) => ipcRenderer.invoke('get-item-transactions', itemId),
     getSupplyReceipt: (transactionId) => ipcRenderer.invoke('get-supply-receipt', transactionId),
     getDispenseReceipt: (transactionId) => ipcRenderer.invoke('get-dispense-receipt', transactionId),
     backupDatabase: () => ipcRenderer.invoke('backup-database'),

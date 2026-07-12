@@ -124,7 +124,7 @@ function renderItemsTable(items, errorMessage = null) {
             <td>
                 <div class="row-actions">
                     <button class="row-action-btn edit" title="تعديل" onclick="openEditModal(${item.item_id})"><i class="fas fa-edit"></i></button>
-                    <button class="row-action-btn delete" title="حذف" onclick="deleteItem(${item.item_id}, '${escapeHtml(item.item_name)}')"><i class="fas fa-trash"></i></button>
+                    <button class="row-action-btn delete" title="حذف" onclick="deleteItem(${item.item_id})"><i class="fas fa-trash"></i></button>
                 </div>
             </td>
         `;
@@ -166,7 +166,7 @@ function filterItems() {
 // ========== Actions ==========
 function openAddModal() {
     const session = checkSession();
-    if (session && session.role === 'viewer') {
+    if (session && session.role === 'Viewer') {
         showToast('لا تملك صلاحية الإضافة', 'error');
         return;
     }
@@ -179,7 +179,7 @@ function openAddModal() {
 
 function openEditModal(itemId) {
     const session = checkSession();
-    if (session && session.role === 'viewer') {
+    if (session && session.role === 'Viewer') {
         showToast('لا تملك صلاحية التعديل', 'error');
         return;
     }
@@ -196,12 +196,18 @@ function openEditModal(itemId) {
     itemModal.open();
 }
 
-async function deleteItem(id, name) {
+// الاسم يُقرأ من allItems بالمعرّف الرقمي بدل تمريره داخل سمة onclick: تهريب
+// HTML لا يحمي هنا — المتصفح يفكّ ترميز السمة قبل تنفيذها كجافاسكربت، فيصل
+// الاسم غير مُهرَّب أصلاً إلى هذه الدالة، ومن هناك إلى showToast غير المُهرَّبة.
+async function deleteItem(id) {
     const session = checkSession();
-    if (session && session.role === 'viewer') {
+    if (session && session.role === 'Viewer') {
         showToast('لا تملك صلاحية الحذف', 'error');
         return;
     }
+
+    const item = allItems.find(i => i.item_id === id);
+    const name = item ? item.item_name : '';
 
     if (confirm(`هل أنت متأكد من حذف الصنف "${name}"؟\nهذا الإجراء لا يمكن التراجع عنه.`)) {
         try {

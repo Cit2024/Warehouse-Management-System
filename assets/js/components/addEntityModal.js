@@ -91,7 +91,7 @@ class AddEntityModal {
 
     open() {
         const session = typeof checkSession === 'function' ? checkSession() : null;
-        if (session && session.role === 'viewer') {
+        if (session && session.role === 'Viewer') {
             showToast('لا تملك صلاحية الإضافة', 'error');
             return;
         }
@@ -126,7 +126,7 @@ class AddEntityModal {
 
     async submit() {
         const session = typeof checkSession === 'function' ? checkSession() : null;
-        if (session && session.role === 'viewer') {
+        if (session && session.role === 'Viewer') {
             showToast('لا تملك صلاحية الإضافة', 'error');
             return;
         }

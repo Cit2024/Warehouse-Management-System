@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self';">
+    <title>المستخدمون - منظومة إدارة المخازن | كلية التقنية الصناعية</title>
+    <link rel="stylesheet" href="node_modules/@fortawesome/fontawesome-free/css/all.min.css">
+    <link rel="stylesheet" href="assets/css/main.css">
+    <link rel="stylesheet" href="assets/css/layout.css">
+    <link rel="stylesheet" href="assets/css/components.css">
+</head>
+<body>
+
+    <!-- ===== MAIN CONTENT ===== -->
+    <main class="content">
+
+        <!-- Page Title -->
+        <div class="header-title-section">
+            <h1>إدارة المستخدمين</h1>
+            <p class="subtitle">إضافة المستخدمين وتحديد أدوارهم وصلاحياتهم</p>
+        </div>
+
+        <div class="page-content">
+            <!-- Toolbar -->
+            <div class="toolbar">
+                <button class="btn btn-primary" onclick="openAddUserModal()">
+                    <span><i class="fas fa-user-plus"></i></span>
+                    <span>إضافة مستخدم جديد</span>
+                </button>
+            </div>
+
+            <!-- Table -->
+            <div class="table-container">
+                <div class="table-toolbar">
+                    <div class="table-title">قائمة المستخدمين</div>
+                    <div class="table-meta" id="usersCount">0 مستخدم</div>
+                </div>
+                <div style="overflow-x: auto;">
+                    <table id="usersTable">
+                        <thead>
+                            <tr>
+                                <th class="sortable" onclick="sortTable('usersTable', 0)">الاسم <span class="sort-icon">↕</span></th>
+                                <th class="sortable" onclick="sortTable('usersTable', 1)">الدور <span class="sort-icon">↕</span></th>
+                                <th class="sortable" onclick="sortTable('usersTable', 2)">الحالة <span class="sort-icon">↕</span></th>
+                                <th>الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTableBody">
+                            <tr><td colspan="4" style="text-align: center; padding: 40px;">جاري التحميل...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Add User Modal -->
+    <div class="modal" id="addUserModal" hidden role="dialog" aria-modal="true" aria-labelledby="addUserTitle">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="addUserTitle">إضافة مستخدم جديد</h3>
+                <button type="button" class="modal-close" onclick="closeAddUserModal()" aria-label="إغلاق">&times;</button>
+            </div>
+            <form id="addUserForm" onsubmit="event.preventDefault(); submitAddUser();">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="newUserName">اسم المستخدم</label>
+                        <input type="text" id="newUserName" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="newUserPassword">كلمة المرور</label>
+                        <input type="password" id="newUserPassword" class="form-control" autocomplete="new-password" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="newUserRole">الدور</label>
+                        <select id="newUserRole" class="form-control" required>
+                            <option value="Admin">مسؤول (Admin)</option>
+                            <option value="Store_Keeper" selected>أمين مخزن (Store_Keeper)</option>
+                            <option value="Viewer">مستعرض (Viewer) — قراءة فقط</option>
+                        </select>
+                    </div>
+                    <p class="error-message" id="addUserError" style="display:none;"></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeAddUserModal()">إلغاء</button>
+                    <button type="submit" class="btn btn-primary" id="addUserSubmitBtn">إضافة</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Reset Password Modal (Admin resetting another user's password) -->
+    <div class="modal" id="resetPasswordModal" hidden role="dialog" aria-modal="true" aria-labelledby="resetPasswordTitle">
+        <div class="modal-content modal-sm modal-center">
+            <div class="modal-body">
+                <div class="modal-icon" aria-hidden="true"><i class="fas fa-key"></i></div>
+                <h3 class="modal-title" id="resetPasswordTitle">إعادة تعيين كلمة المرور</h3>
+                <p class="modal-description" id="resetPasswordUserName"></p>
+                <div class="form-group">
+                    <label for="resetNewPassword">كلمة المرور الجديدة</label>
+                    <input type="password" id="resetNewPassword" class="form-control" autocomplete="new-password">
+                </div>
+            </div>
+            <div class="modal-footer modal-footer-center">
+                <button type="button" class="btn btn-secondary" onclick="closeResetPasswordModal()">إلغاء</button>
+                <button type="button" class="btn btn-primary" id="resetPasswordSubmitBtn" onclick="submitResetPassword()">تعيين كلمة المرور</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="assets/js/common.js"></script>
+    <script src="assets/js/components/sidebar.js"></script>
+    <script src="assets/js/components/header.js"></script>
+    <script src="assets/js/components/layout.js"></script>
+    <script src="assets/js/pages/users.js"></script>
+</body>
+</html>

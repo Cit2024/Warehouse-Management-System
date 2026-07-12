@@ -1,9 +1,9 @@
 const Database = require('better-sqlite3');
 const path = require('path');
 const fs = require('fs');
-const crypto = require('crypto');
 const { app } = require('electron');
 const { migrateRemoveReceiptNumber, migrateAddVoidColumns, checkIntegrity } = require('./migrations');
+const { hashPassword } = require('./auth');
 
 // ============================================================
 // LAZY DATABASE INITIALIZATION
@@ -16,13 +16,6 @@ const { migrateRemoveReceiptNumber, migrateAddVoidColumns, checkIntegrity } = re
 let dbInstance = null;
 let dbPath = null;
 let initialized = false;
-
-// توليد هاش لكلمة المرور باستخدام scrypt
-function hashPassword(password) {
-    const salt = crypto.randomBytes(16).toString('hex');
-    const derived = crypto.scryptSync(password, salt, 64).toString('hex');
-    return `scrypt:${salt}:${derived}`;
-}
 
 function getDbPath() {
     if (!dbPath) {

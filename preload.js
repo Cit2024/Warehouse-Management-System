@@ -2,6 +2,7 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('api', {
     login: (credentials) => ipcRenderer.invoke('login', credentials),
+    logout: () => ipcRenderer.invoke('logout'),
     getDbHealth: () => ipcRenderer.invoke('get-db-health'),
     getItems: () => ipcRenderer.invoke('get-items'),
     addItem: (itemData) => ipcRenderer.invoke('add-item', itemData),
@@ -31,5 +32,11 @@ contextBridge.exposeInMainWorld('api', {
     getLocalBackups: () => ipcRenderer.invoke('get-local-backups'),
     syncWithCloud: () => ipcRenderer.invoke('sync-with-cloud'),
     getMergedBackups: () => ipcRenderer.invoke('get-merged-backups'),
-    restoreFromGit: (commitId) => ipcRenderer.invoke('restore-from-git', commitId)
+    restoreFromGit: (commitId) => ipcRenderer.invoke('restore-from-git', commitId),
+
+    getUsers: () => ipcRenderer.invoke('get-users'),
+    addUser: (newUser) => ipcRenderer.invoke('add-user', newUser),
+    updateUserRole: (payload) => ipcRenderer.invoke('update-user-role', payload),
+    setUserActive: (payload) => ipcRenderer.invoke('set-user-active', payload),
+    changePassword: (payload) => ipcRenderer.invoke('change-password', payload)
 });

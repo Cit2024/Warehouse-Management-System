@@ -1,15 +1,37 @@
 const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const fs = require('fs');
 const path = require('path');
-const crypto = require('crypto');
 const GitManager = require('./gitManager.js');
 const { validateReceiptItems, assertNoNegativeStock, voidTransaction } = require('./database/stock.js');
+const { hashPassword, verifyPassword } = require('./database/auth.js');
+const usersModule = require('./database/users.js');
 const Database = require('better-sqlite3');
 const git = require('isomorphic-git');
 const http = require('isomorphic-git/http/node'); // بروتوكول الاتصال لـ Push/Pull
 let gitManager;
 let db;
 let scheduledBackupInterval = null;
+
+// جلسة المستخدم الحالية داخل العملية الرئيسية — هذه هي مصدر الصلاحية الوحيد.
+// جلسة المتصفح (localStorage.userSession) قابلة للتعديل من المستخدم نفسه عبر
+// أدوات المطوّر، فلا تصلح كمصدر ثقة لفرض الصلاحيات. تُضبط عند نجاح 'login'
+// وتُصفَّر عند 'logout'، وتُصفَّر تلقائياً أيضاً عند إعادة تشغيل التطبيق (شاشة
+// الدخول تُعرض دائماً أولاً — main.js:١٣ — فلا توجد جلسة "عالقة" من تشغيل سابق).
+let currentSession = null;
+
+// تُستدعى في بداية كل معالج IPC يُعدّل البيانات. تُعيد null إن كان الإجراء
+// مسموحاً، أو كائن {success:false, message} جاهزاً للإرجاع مباشرةً إن لم يكن.
+// دور "Viewer" هو الدور الوحيد المحظور من الكتابة؛ لا فرق بين Admin وStore_Keeper
+// اليوم — هذا يطابق النية الأصلية لفحوصات الواجهة (قبل إصلاحها) وليس تصميماً جديداً.
+function checkWriteAccess() {
+  if (!currentSession) {
+    return { success: false, message: 'يجب تسجيل الدخول أولاً.' };
+  }
+  if (currentSession.role === 'Viewer') {
+    return { success: false, message: 'لا تملك صلاحية القيام بهذا الإجراء.' };
+  }
+  return null;
+}
 
 // المزامنة السحابية معطّلة في هذا الإصدار: مسار الرفع كان يستخدم force push
 // عند أي فشل شبكة عابر (وليس فقط عند مستودع فارغ)، مما يعني أن جهازاً واحداً
@@ -118,27 +140,6 @@ function assertDatabaseOpens(dbPath) {
 }
 
 // ==========================================
-// دوال مساعدة لتجزئة كلمات المرور
-// ==========================================
-function hashPassword(password) {
-  const salt = crypto.randomBytes(16).toString('hex');
-  const derived = crypto.scryptSync(password, salt, 64).toString('hex');
-  return `scrypt:${salt}:${derived}`;
-}
-
-function verifyPassword(password, storedHash) {
-  if (!storedHash) return false;
-  // دعم كلمات المرور القديمة المخزنة كنص عادي
-  if (storedHash === password) return true;
-  if (!storedHash.startsWith('scrypt:')) return false;
-  const parts = storedHash.split(':');
-  if (parts.length !== 3) return false;
-  const [, salt, hash] = parts;
-  const derived = crypto.scryptSync(password, salt, 64).toString('hex');
-  return derived === hash;
-}
-
-// ==========================================
 // العمليات الخلفية (Backend) - الاتصال بقاعدة البيانات
 // ==========================================
 
@@ -192,6 +193,8 @@ ipcMain.handle('get-items', async () => {
 
 // 2. إضافة صنف جديد
 ipcMain.handle('add-item', async (event, newItem) => {
+  const denied = checkWriteAccess();
+  if (denied) return denied;
   try {
     const stmt = db.prepare(`
       INSERT INTO items (item_name, unit, category, min_order_qty) 
@@ -214,6 +217,8 @@ ipcMain.handle('add-item', async (event, newItem) => {
 
 // 3. حذف صنف (حذف منطقي كما طلبتم في التصميم المحاسبي: Soft Delete)
 ipcMain.handle('delete-item', async (event, itemId) => {
+  const denied = checkWriteAccess();
+  if (denied) return denied;
   try {
     const stmt = db.prepare('UPDATE items SET is_deleted = 1 WHERE item_id = ?');
     stmt.run(itemId);
@@ -226,6 +231,8 @@ ipcMain.handle('delete-item', async (event, itemId) => {
 
 // 4. تعديل بيانات صنف
 ipcMain.handle('update-item', async (event, itemData) => {
+  const denied = checkWriteAccess();
+  if (denied) return denied;
   try {
     const stmt = db.prepare(`
       UPDATE items 
@@ -346,7 +353,7 @@ ipcMain.handle('login', async (event, credentials) => {
     }
 
     // التوافق مع كلمات المرور القديمة: إعادة التجزئة عند أول تسجيل دخول ناجح
-    if (user.password_hash === credentials.password) {
+    if (!user.password_hash.startsWith('scrypt:')) {
       try {
         const newHash = hashPassword(credentials.password);
         db.prepare('UPDATE users SET password_hash = ? WHERE user_id = ?').run(newHash, user.user_id);
@@ -355,14 +362,110 @@ ipcMain.handle('login', async (event, credentials) => {
       }
     }
 
+    // هذه هي اللحظة الوحيدة التي تُمنح فيها صلاحية الكتابة لهذه العملية —
+    // جلسة المتصفح لا تُستشار إطلاقاً عند فرض الصلاحيات
+    currentSession = { userId: user.user_id, fullName: user.full_name, role: user.role };
+
     return { success: true, user: { user_id: user.user_id, full_name: user.full_name, role: user.role } };
   } catch (error) {
     console.error('خطأ في تسجيل الدخول:', error);
     return { success: false, message: 'حدث خطأ في قاعدة البيانات', error: error.message };
   }
 });
+
+// تسجيل الخروج: تصفير جلسة العملية الرئيسية. بدونها، كان تسجيل الخروج من
+// الواجهة (أو الخروج التلقائي عند الخمول) يمسح جلسة المتصفح فقط، بينما تبقى
+// صلاحية الكتابة الفعلية سارية في العملية الرئيسية حتى إغلاق التطبيق بالكامل.
+ipcMain.handle('logout', async () => {
+  currentSession = null;
+  return { success: true };
+});
+
+// ==========================================
+// إدارة المستخدمين (المنطق الفعلي في database/users.js — دوال خالصة قابلة للاختبار)
+// ==========================================
+// إضافة/تعديل الأدوار وإلغاء تفعيل المستخدمين إجراء إداري بحت — لا يكفي أن لا
+// يكون Viewer، بل يجب أن يكون Admin تحديداً.
+function requireAdmin() {
+  if (!currentSession) {
+    return { success: false, message: 'يجب تسجيل الدخول أولاً.' };
+  }
+  if (currentSession.role !== 'Admin') {
+    return { success: false, message: 'هذا الإجراء متاح للمسؤول (Admin) فقط.' };
+  }
+  return null;
+}
+
+// جلب كل المستخدمين (بلا password_hash إطلاقاً)
+ipcMain.handle('get-users', async () => {
+  const denied = requireAdmin();
+  if (denied) return denied;
+  try {
+    return db.prepare(
+      'SELECT user_id, full_name, role, is_active, created_at FROM users ORDER BY user_id'
+    ).all();
+  } catch (error) {
+    console.error('[get-users] خطأ في جلب المستخدمين:', error);
+    return { success: false, message: 'حدث خطأ أثناء جلب المستخدمين', error: error.message };
+  }
+});
+
+// إضافة مستخدم جديد
+ipcMain.handle('add-user', async (event, newUser) => {
+  const denied = requireAdmin();
+  if (denied) return denied;
+  try {
+    const id = usersModule.addUser(db, hashPassword, newUser || {});
+    return { success: true, message: 'تمت إضافة المستخدم بنجاح', id };
+  } catch (error) {
+    return { success: false, message: error.message };
+  }
+});
+
+// تغيير دور مستخدم
+ipcMain.handle('update-user-role', async (event, payload) => {
+  const denied = requireAdmin();
+  if (denied) return denied;
+  try {
+    usersModule.updateUserRole(db, currentSession, payload || {});
+    return { success: true, message: 'تم تحديث الدور بنجاح' };
+  } catch (error) {
+    return { success: false, message: error.message };
+  }
+});
+
+// تفعيل / إلغاء تفعيل مستخدم (حذف منطقي — لا حذف فعلي، لأن created_by يشير إلى المستخدم في سجل الأذونات)
+ipcMain.handle('set-user-active', async (event, payload) => {
+  const denied = requireAdmin();
+  if (denied) return denied;
+  try {
+    usersModule.setUserActive(db, currentSession, payload || {});
+    return { success: true, message: (payload && payload.isActive) ? 'تم تفعيل المستخدم' : 'تم إلغاء تفعيل المستخدم' };
+  } catch (error) {
+    return { success: false, message: error.message };
+  }
+});
+
+// تغيير كلمة المرور: يستطيع أي مستخدم تغيير كلمة مروره الخاصة (بشرط تقديم
+// كلمة المرور الحالية)، ويستطيع Admin إعادة تعيين كلمة مرور أي مستخدم آخر
+// بلا حاجة لمعرفة كلمة المرور القديمة. هذا هو الطريق الوحيد لإزالة admin/admin
+// الافتراضية — لم يكن هناك أي مسار لتغيير كلمة مرور من داخل التطبيق سابقاً.
+ipcMain.handle('change-password', async (event, payload) => {
+  if (!currentSession) {
+    return { success: false, message: 'يجب تسجيل الدخول أولاً.' };
+  }
+  try {
+    usersModule.changePassword(db, currentSession, verifyPassword, hashPassword, payload || {});
+    return { success: true, message: 'تم تغيير كلمة المرور بنجاح' };
+  } catch (error) {
+    return { success: false, message: error.message };
+  }
+});
+
 // حفظ إذن التوريد بالكامل (رأس المستند وسهوره)
 ipcMain.handle('save-supply-receipt', async (event, receiptData) => {
+  const denied = checkWriteAccess();
+  if (denied) return denied;
   // نستخدم transaction() الخاصة بـ better-sqlite3 لضمان حفظ كل البيانات أو التراجع عنها في حال حدوث خطأ
   const insertReceipt = db.transaction((data) => {
     // 1. التحقق من صحة السطور: كميات موجبة، أسعار غير سالبة، أصناف موجودة.
@@ -462,6 +565,8 @@ ipcMain.handle('get-stock', async () => {
 
 // حفظ إذن الصرف
 ipcMain.handle('save-dispense-receipt', async (event, receiptData) => {
+  const denied = checkWriteAccess();
+  if (denied) return denied;
   const insertReceipt = db.transaction((data) => {
     // 1. التحقق من صحة السطور قبل أي كتابة (كميات موجبة، أصناف موجودة،
     //    ودمج السطور المكرّرة لنفس الصنف — الخادم لا يثق بحراسة الواجهة)
@@ -518,6 +623,8 @@ ipcMain.handle('save-dispense-receipt', async (event, receiptData) => {
 // لا شيء في التطبيق كان يضبطه على 1 — أي أن إذناً أُدخل بخطأ كان دائماً نهائياً،
 // ولا سبيل لتصحيحه إلا باسترجاع نسخة احتياطية كاملة.
 ipcMain.handle('void-transaction', async (event, payload) => {
+  const denied = checkWriteAccess();
+  if (denied) return denied;
   try {
     const run = db.transaction(() => voidTransaction(db, payload || {}));
     const result = run();
@@ -548,6 +655,8 @@ ipcMain.handle('get-all-entities', async () => {
 
 // 2. إضافة جهة جديدة
 ipcMain.handle('add-entity', async (event, newEntity) => {
+  const denied = checkWriteAccess();
+  if (denied) return denied;
   try {
     const stmt = db.prepare(`
       INSERT INTO entities (entity_name, entity_type, phone) 
@@ -564,6 +673,8 @@ ipcMain.handle('add-entity', async (event, newEntity) => {
 
 // 3. حذف جهة (حذف منطقي)
 ipcMain.handle('delete-entity', async (event, entityId) => {
+  const denied = checkWriteAccess();
+  if (denied) return denied;
   try {
     const stmt = db.prepare('UPDATE entities SET is_deleted = 1 WHERE entity_id = ?');
     stmt.run(entityId);
@@ -732,6 +843,9 @@ ipcMain.handle('backup-database', async (event) => {
 // دالة استيراد النسخة الاحتياطية (Restore) المحدثة والآمنة
 // ==========================================
 ipcMain.handle('restore-database', async (event) => {
+  const denied = checkWriteAccess();
+  if (denied) return denied;
+
   const win = BrowserWindow.getFocusedWindow();
 
   try {
@@ -846,6 +960,8 @@ ipcMain.handle('get-settings', async () => {
 });
 
 ipcMain.handle('save-settings', async (event, settingsData) => {
+  const denied = checkWriteAccess();
+  if (denied) return denied;
   try {
     // فحص الاتصال (محاكاة)
     await new Promise(resolve => setTimeout(resolve, 2000));
@@ -881,6 +997,9 @@ ipcMain.handle('get-local-backups', async () => {
 
 // تنفيذ الاسترجاع من Git
 ipcMain.handle('restore-from-git', async (event, commitId) => {
+  const denied = checkWriteAccess();
+  if (denied) return denied;
+
   const targetDbPath = db.getDbPath();
   const rollbackPath = `${targetDbPath}.bak`;
 

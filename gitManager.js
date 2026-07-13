@@ -55,13 +55,31 @@ class GitManager {
                 const values = Object.values(row).map(v => {
                     if (v === null) return 'NULL';
                     if (typeof v === 'string') return `'${v.replace(/'/g, "''")}'`; // حماية الفواصل العليا
-                    return v;
+                    if (typeof v === 'number') return v;
+                    // لا يوجد BLOB في هذا الهيكل؛ نرفض بصوت عالٍ بدل كتابة SQL فاسد بصمت
+                    throw new Error(`نوع قيمة غير مدعوم في التفريغ (${typeof v}) بالجدول ${table.name}`);
                 }).join(', ');
-                
+
                 sqlDump += `INSERT INTO ${table.name} (${columns}) VALUES (${values});\n`;
             }
             sqlDump += "\n";
         }
+
+        // العروض والفهارس بعد الجداول والبيانات.
+        // بدونها لم يكن database_dump.sql نسخة صالحة قائمة بذاتها: كل استعلامات
+        // الأصناف والأرصدة تربط مع view_current_stock، وكان أي استرجاع خارج
+        // التطبيق ينتج قاعدة تفشل فيها كل التقارير.
+        const objects = db.prepare(`
+            SELECT type, name, sql FROM sqlite_master
+            WHERE type IN ('view', 'index', 'trigger')
+              AND name NOT LIKE 'sqlite_%'
+              AND sql IS NOT NULL
+        `).all();
+
+        for (const obj of objects) {
+            sqlDump += `${obj.sql};\n`;
+        }
+        if (objects.length > 0) sqlDump += "\n";
 
         sqlDump += "COMMIT;\nPRAGMA foreign_keys=ON;\n";
         db.close();
@@ -254,10 +272,14 @@ class GitManager {
             // 6. دفع الفرع الحالي إلى الـ remote
             console.log(`📤 جاري دفع الفرع ${currentBranch} إلى المستودع البعيد...`);
         
+            // pushOptions مُعرّفة خارج الـ try: كانت const داخل الـ try، وكتلة
+            // الـ catch تقرأ pushOptions.force — فكان أي فشل في الدفع يرمي
+            // ReferenceError بدل الخطأ الحقيقي، ومحاولة force الاحتياطية لا تعمل أبداً.
+            let pushOptions;
             try {
                 // إذا كان الـ remote موجود ولديه commits، نستخدم دفع عادي
                 // إذا كان الـ remote فارغاً، نستخدم force push
-                const pushOptions = {
+                pushOptions = {
                     fs,
                     http,
                     dir: this.repoDir,
@@ -280,9 +302,9 @@ class GitManager {
             
             } catch (pushError) {
                 console.error('❌ فشل الرفع:', pushError);
-            
+
                 // محاولة أخيرة: دفع مع force
-                if (!pushOptions.force) {
+                if (pushOptions && !pushOptions.force) {
                     try {
                         console.log('🔄 محاولة الدفع مع force...');
                         pushOptions.force = true;
@@ -335,7 +357,13 @@ class GitManager {
         try {
             const commits = await git.log({ fs, dir: this.repoDir, depth: 50 }); // جلب آخر 50 نسخة
             return commits.map(c => ({
-                commitId: c.oid.substring(0, 7), // رمز مختصر
+                // fullCommitId مطلوب: get-merged-backups يستخدمه كمفتاح، وبدونه كانت
+                // كل النسخ المحلية تنهار في مدخل واحد تحت المفتاح undefined.
+                fullCommitId: c.oid,
+                commitId: c.oid.substring(0, 7), // رمز مختصر للعرض
+                // timestamp رقمي للترتيب: date هنا نص محلي (ar-LY) و new Date() عليه
+                // تُنتج Invalid Date، مما جعل ترتيب النسخ لا يفعل شيئاً.
+                timestamp: c.commit.author.timestamp * 1000,
                 date: new Date(c.commit.author.timestamp * 1000).toLocaleString('ar-LY'),
                 message: c.commit.message
             }));

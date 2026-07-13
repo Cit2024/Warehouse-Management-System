@@ -53,30 +53,30 @@ async function loadEntities() {
     try {
         let entities = await window.api.getAllEntities();
         if (entities && entities.success === false) {
-            showToast(entities.message || 'حدث خطأ في جلب الجهات', 'error');
             allEntities = [];
-            renderEntities([]);
+            renderEntities([], entities.message || 'حدث خطأ في جلب الجهات');
+            showToast(entities.message || 'حدث خطأ في جلب الجهات', 'error');
             return;
         }
         allEntities = entities || [];
         renderEntities(allEntities);
     } catch (error) {
-        allEntities = [
-            { entity_id: 1, entity_name: 'شركة المدار للتجهيزات', entity_type: 'Supplier', phone: '051-2345678' },
-            { entity_id: 2, entity_name: 'مكتبة مصراتة الحديثة', entity_type: 'Supplier', phone: '052-3456789' },
-            { entity_id: 3, entity_name: 'قسم الهندسة الكهربائية', entity_type: 'Department', phone: '' },
-            { entity_id: 4, entity_name: 'مكتب الشؤون الإدارية', entity_type: 'Department', phone: '' }
-        ];
-        renderEntities(allEntities);
+        console.error('Error loading entities:', error);
+        allEntities = [];
+        renderEntities([], 'حدث خطأ أثناء جلب الجهات');
+        showToast('حدث خطأ أثناء جلب الجهات', 'error');
     }
 }
 
-function renderEntities(entities) {
+// errorMessage يميّز بين "لا توجد جهات بعد" (نتيجة سليمة) و"تعذّر الجلب" (فشل)
+function renderEntities(entities, errorMessage = null) {
     const tbody = document.getElementById('entitiesTableBody');
-    document.getElementById('entitiesCount').textContent = entities.length + ' جهة مسجلة';
+    document.getElementById('entitiesCount').textContent = (entities ? entities.length : 0) + ' جهة مسجلة';
 
     if (!entities || entities.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px;"><div class="empty-state"><div class="empty-state-icon"><i class="fas fa-users"></i></div><h3>لا توجد جهات مسجلة بعد</h3></div></td></tr>';
+        const icon = errorMessage ? 'fa-triangle-exclamation' : 'fa-users';
+        const title = errorMessage ? 'تعذّر تحميل الجهات' : 'لا توجد جهات مسجلة بعد';
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 40px;"><div class="empty-state"><div class="empty-state-icon"><i class="fas ${icon}"></i></div><h3>${escapeHtml(title)}</h3></div></td></tr>`;
         return;
     }
 
@@ -91,9 +91,9 @@ function renderEntities(entities) {
         const tr = document.createElement('tr');
         tr.innerHTML =
             '<td><span class="item-id">' + ent.entity_id + '</span></td>' +
-            '<td style="font-weight: 600;">' + ent.entity_name + '</td>' +
+            '<td style="font-weight: 600;">' + escapeHtml(ent.entity_name) + '</td>' +
             '<td><span class="badge ' + badgeClass + '">' + typeAr + '</span></td>' +
-            '<td dir="ltr" style="text-align: right;">' + (ent.phone || '<span style="color: var(--text-muted);">-</span>') + '</td>' +
+            '<td dir="ltr" style="text-align: right;">' + (ent.phone ? escapeHtml(ent.phone) : '<span style="color: var(--text-muted);">-</span>') + '</td>' +
             '<td>' +
                 '<div class="row-actions">' +
                     '<button class="row-action-btn delete" title="حذف" onclick="deleteEntity(' + ent.entity_id + ')"><i class="fas fa-trash"></i></button>' +
@@ -130,9 +130,10 @@ async function submitAddEntity() {
 
 async function deleteEntity(id) {
     const session = checkSession();
-    if (session && session.role === 'viewer') { showToast('لا تملك صلاحية الحذف', 'error'); return; }
+    if (session && session.role === 'Viewer') { showToast('لا تملك صلاحية الحذف', 'error'); return; }
 
-    if (confirm('هل أنت متأكد من حذف هذه الجهة؟')) {
+    const confirmed = await confirmModal({ title: 'حذف جهة', message: 'هل أنت متأكد من حذف هذه الجهة؟', confirmLabel: 'حذف', danger: true });
+    if (confirmed) {
         try {
             const result = await window.api.deleteEntity(id);
             if (result.success) { loadEntities(); showToast('تم الحذف بنجاح', 'success'); }

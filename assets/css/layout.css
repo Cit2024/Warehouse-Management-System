@@ -294,6 +294,25 @@ button.menu-item {
     margin-right: 0;
 }
 
+/* زر فتح القائمة الجانبية — يظهر فقط دون 768px، حيث تنزلق القائمة خارج الشاشة */
+.sidebar-toggle {
+    display: none;
+}
+
+/* طبقة معتمة خلف القائمة عند فتحها فوق المحتوى على الشاشات الضيقة؛
+   نقرة عليها تُغلق القائمة */
+.sidebar-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.4);
+    z-index: 90; /* تحت القائمة (100) وفوق المحتوى */
+}
+
+.sidebar-backdrop.visible {
+    display: block;
+}
+
 .header-btn {
     width: 36px;
     height: 36px;
@@ -641,6 +660,11 @@ tbody tr:last-child td {
 
     .top-header {
         padding: 0 var(--space-4);
+        justify-content: space-between;
+    }
+
+    .sidebar-toggle {
+        display: flex;
     }
 
     .page-content {

@@ -9,7 +9,6 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 let allItems = [];
-let inventoryChart = null;
 
 // Table sorting helpers (parseArabNumber / sortTable) are provided by common.js
 
@@ -40,13 +39,14 @@ async function loadDashboardData() {
         updateStats(allItems, countMovementsThisMonth(history));
         renderItemsSummary(allItems);
         renderLowStockAlerts(allItems);
-        renderChart(allItems);
+        renderCategoryValueList(allItems);
         renderRecentMovements(history);
         updateSidebarBadge(allItems.length);
+        renderRoleBadge();
     } catch (error) {
         console.error('Error loading dashboard:', error);
-        // Use sample data for preview
-        loadSampleData();
+        showToast('تعذّر تحميل بيانات لوحة التحكم', 'error');
+        showDashboardLoadError();
     }
 }
 
@@ -60,25 +60,59 @@ function countMovementsThisMonth(history) {
     }).length;
 }
 
-function loadSampleData() {
-    const sampleItems = [
-        { item_id: 'ITM-001', item_name: 'ورق تصوير A4', unit: 'رزمة', category: 'قرطاسية', min_order_qty: 20, current_quantity: 85, unit_price: 24.50 },
-        { item_id: 'ITM-002', item_name: 'حبر طابعة أسود HP', unit: 'قطعة', category: 'أحبار وطباعة', min_order_qty: 10, current_quantity: 8, unit_price: 145.00 },
-        { item_id: 'ITM-003', item_name: 'كابل شبكة CAT6', unit: 'لفة', category: 'شبكات', min_order_qty: 5, current_quantity: 12, unit_price: 390.00 },
-        { item_id: 'ITM-004', item_name: 'قفازات حماية صناعية', unit: 'زوج', category: 'سلامة مهنية', min_order_qty: 30, current_quantity: 120, unit_price: 18.00 },
-        { item_id: 'ITM-005', item_name: 'مفك كهربائي متعدد', unit: 'قطعة', category: 'عدد وأدوات', min_order_qty: 8, current_quantity: 6, unit_price: 72.00 },
-        { item_id: 'ITM-007', item_name: 'مصباح LED مختبر', unit: 'قطعة', category: 'كهرباء', min_order_qty: 20, current_quantity: 19, unit_price: 15.50 },
-        { item_id: 'ITM-008', item_name: 'ملف حفظ بلاستيكي', unit: 'قطعة', category: 'قرطاسية', min_order_qty: 50, current_quantity: 210, unit_price: 3.50 },
-        { item_id: 'ITM-009', item_name: 'ورق تصوير A3', unit: 'رزمة', category: 'قرطاسية', min_order_qty: 10, current_quantity: 45, unit_price: 60.00 },
-        { item_id: 'ITM-010', item_name: 'وصلة كاميرا', unit: 'قطعة', category: 'شبكات', min_order_qty: 8, current_quantity: 5, unit_price: 68.00 }
-    ];
-    allItems = sampleItems;
-    updateStats(sampleItems, 4);
-    renderItemsSummary(sampleItems);
-    renderLowStockAlerts(sampleItems);
-    renderChart(sampleItems);
-    updateSidebarBadge(sampleItems.length);
-    renderSampleMovements();
+// عند فشل تحميل البيانات (لا اتصال، خطأ في القاعدة، ...) نعرض حالة خطأ صريحة
+// بدل بيانات مختلقة — أرقام وهمية على لوحة التحكم يمكن أن تُتخذ قرارات بناءً
+// عليها، وهو ما تحذّر منه PRODUCT.md صراحةً ("Trust Through Verification").
+function showDashboardLoadError() {
+    ['statTotalItems', 'statTotalUnits', 'statInventoryValue', 'statLowStock', 'statMonthlyMovements'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = '—';
+    });
+
+    const errorHtml = (message) => `
+        <div class="empty-state" style="padding: 24px;">
+            <div class="empty-state-icon"><i class="fas fa-triangle-exclamation"></i></div>
+            <p>${message}</p>
+        </div>
+    `;
+
+    const itemsSummary = document.getElementById('itemsSummary');
+    if (itemsSummary) itemsSummary.innerHTML = errorHtml('تعذّر تحميل بيانات الأصناف. حاول تحديث الصفحة.');
+
+    const lowStockList = document.getElementById('lowStockList');
+    if (lowStockList) lowStockList.innerHTML = errorHtml('تعذّر تحميل التنبيهات.');
+
+    const recentMovements = document.getElementById('recentMovements');
+    if (recentMovements) recentMovements.innerHTML = errorHtml('تعذّر تحميل الحركات الأخيرة.');
+
+    const categoryValueList = document.getElementById('categoryValueList');
+    if (categoryValueList) categoryValueList.innerHTML = errorHtml('تعذّر تحميل بيانات التصنيفات.');
+}
+
+// يعرض دور المستخدم الحالي (مسؤول / أمين مخزن / مستعرض) في رأس الصفحة —
+// يساعد المستخدم على تذكّر صلاحياته الحالية دون الحاجة لتذكّرها (Recognition
+// Rather Than Recall). كان هذا العنصر موجوداً في الصفحة وفارغاً دائماً؛
+// أصناف .role-badge.viewer/.admin/.storekeeper معرّفة في layout.css ولم تُستخدم قط.
+const ROLE_BADGE_INFO = {
+    Admin: { text: 'مسؤول', icon: 'fa-user-shield', cssClass: 'admin' },
+    Store_Keeper: { text: 'أمين مخزن', icon: 'fa-user-gear', cssClass: 'storekeeper' },
+    Viewer: { text: 'مستعرض (قراءة فقط)', icon: 'fa-eye', cssClass: 'viewer' }
+};
+
+function renderRoleBadge() {
+    const container = document.getElementById('roleBadgeContainer');
+    if (!container) return;
+
+    const session = checkSession();
+    const info = session && ROLE_BADGE_INFO[session.role];
+    if (!info) { container.innerHTML = ''; return; }
+
+    container.innerHTML = `
+        <span class="role-badge ${info.cssClass}">
+            <i class="fas ${info.icon}" aria-hidden="true"></i>
+            ${escapeHtml(info.text)}
+        </span>
+    `;
 }
 
 function updateStats(items, monthlyMovements = 0) {
@@ -99,74 +133,60 @@ function updateSidebarBadge(count) {
     if (badge) badge.textContent = count;
 }
 
-function renderChart(items) {
-    const ctx = document.getElementById('inventoryChart');
-    if (!ctx) return;
+// أهم التصنيفات من حيث القيمة — قائمة نصية بسيطة بدل رسم بياني تفاعلي.
+// نفس البيانات، بلا حاجة لقراءة محاور أو تلميحات (tooltips) أو خبرة سابقة
+// بالرسوم البيانية؛ تُقرأ بالكامل خلال ثوانٍ. تخدم "الوضوح أولاً" في
+// PRODUCT.md مباشرة، بدل عرض تحليلي لا يقود لأي إجراء.
+function renderCategoryValueList(items) {
+    const container = document.getElementById('categoryValueList');
+    if (!container) return;
 
-    // Group by category
-    const categoryData = {};
+    const totals = {};
     items.forEach(item => {
         const value = (item.current_quantity || 0) * (item.unit_price || 0);
-        categoryData[item.category] = (categoryData[item.category] || 0) + value;
+        const category = item.category || 'غير مصنف';
+        totals[category] = (totals[category] || 0) + value;
     });
 
-    const labels = Object.keys(categoryData);
-    const data = Object.values(categoryData);
+    const rows = Object.entries(totals)
+        .filter(([, value]) => value > 0)
+        .sort((a, b) => b[1] - a[1]);
 
-    if (inventoryChart) {
-        inventoryChart.destroy();
+    if (rows.length === 0) {
+        container.innerHTML = `
+            <div class="empty-state" style="padding: 24px;">
+                <div class="empty-state-icon"><i class="fas fa-chart-simple"></i></div>
+                <p>لا توجد بيانات كافية لعرض التصنيفات بعد</p>
+            </div>
+        `;
+        return;
     }
 
-    inventoryChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'القيمة (د.ل)',
-                data: data,
-                backgroundColor: 'rgba(255, 107, 0, 0.8)',
-                borderColor: 'rgba(255, 107, 0, 1)',
-                borderWidth: 0,
-                borderRadius: 8,
-                borderSkipped: false,
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return context.parsed.y.toLocaleString('ar-LY') + ' د.ل';
-                        }
-                    }
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        callback: function(value) {
-                            return value.toLocaleString('ar-LY');
-                        }
-                    },
-                    grid: {
-                        color: 'rgba(0,0,0,0.05)'
-                    }
-                },
-                x: {
-                    grid: {
-                        display: false
-                    },
-                    ticks: {
-                        font: { size: 11 }
-                    }
-                }
-            }
-        }
-    });
+    const TOP_N = 5;
+    const top = rows.slice(0, TOP_N);
+    const rest = rows.slice(TOP_N);
+    const maxValue = top[0][1];
+    const fmt = (v) => v.toLocaleString('ar-LY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    let html = top.map(([category, value]) => {
+        const pct = maxValue > 0 ? Math.round((value / maxValue) * 100) : 0;
+        return `
+            <div class="category-value-row">
+                <div class="category-value-label">
+                    <span class="category-value-name">${escapeHtml(category)}</span>
+                    <span class="category-value-amount">${fmt(value)} د.ل</span>
+                </div>
+                <div class="category-value-bar"><div class="category-value-fill" style="width: ${pct}%;"></div></div>
+            </div>
+        `;
+    }).join('');
+
+    if (rest.length > 0) {
+        const restTotal = rest.reduce((sum, [, value]) => sum + value, 0);
+        html += `<div class="category-value-more">و${rest.length} تصنيفات أخرى بقيمة ${fmt(restTotal)} د.ل</div>`;
+    }
+
+    container.innerHTML = html;
 }
 
 function renderLowStockAlerts(items) {
@@ -191,44 +211,14 @@ function renderLowStockAlerts(items) {
         const alertItem = document.createElement('div');
         alertItem.className = 'alert-item';
         alertItem.innerHTML = `
-            <div class="alert-item-icon">${(item.item_name || 'غير معروف').charAt(0)}</div>
+            <div class="alert-item-icon">${escapeHtml((item.item_name || 'غير معروف').charAt(0))}</div>
             <div class="alert-item-content">
-                <div class="alert-item-name">${item.item_name || 'غير معروف'}</div>
-                <div class="alert-item-detail">${(item.current_quantity || 0)} ${(item.unit || '')} من حد أدنى ${(item.min_order_qty || 0)}</div>
+                <div class="alert-item-name">${escapeHtml(item.item_name || 'غير معروف')}</div>
+                <div class="alert-item-detail">${(item.current_quantity || 0)} ${escapeHtml(item.unit || '')} من حد أدنى ${(item.min_order_qty || 0)}</div>
             </div>
             <div class="alert-item-status">منخفض</div>
         `;
         fragment.appendChild(alertItem);
-    });
-    container.innerHTML = '';
-    container.appendChild(fragment);
-}
-
-// يُستخدم فقط في مسار البيانات التجريبية (عند فشل الاتصال بقاعدة البيانات) لعرض نموذج توضيحي
-function renderSampleMovements() {
-    const container = document.getElementById('recentMovements');
-    const movements = [
-        { type: 'dispense', id: 'صرف-2026-002', date: '2026-06-12', entity: 'مكتب الشؤون الإدارية', value: '332,50 د.ل' },
-        { type: 'dispense', id: 'صرف-2026-001', date: '2026-06-10', entity: 'قسم الهندسة الكهربائية', value: '504,00 د.ل' },
-        { type: 'supply', id: 'توريد-2026-002', date: '2026-06-07', entity: 'مكتبة مصراتة الحديثة', value: '1.575,00 د.ل' },
-        { type: 'supply', id: 'توريد-2026-001', date: '2026-06-02', entity: 'شركة المدار للتجهيزات', value: '3.740,00 د.ل' }
-    ];
-
-    const fragment = document.createDocumentFragment();
-    movements.forEach(m => {
-        const activityItem = document.createElement('div');
-        activityItem.className = 'activity-item';
-        activityItem.innerHTML = `
-            <div class="activity-icon ${m.type}">
-                <i class="fas fa-arrow-${m.type === 'supply' ? 'down' : 'up'}"></i>
-            </div>
-            <div class="activity-content">
-                <div class="activity-title">${m.id}</div>
-                <div class="activity-meta">${m.date} · ${m.entity}</div>
-            </div>
-            <div class="activity-value">${m.value}</div>
-        `;
-        fragment.appendChild(activityItem);
     });
     container.innerHTML = '';
     container.appendChild(fragment);
@@ -258,7 +248,7 @@ function renderRecentMovements(history) {
         const isDispense = t.transaction_type === 'Out';
         const type = isDispense ? 'dispense' : 'supply';
         const title = '#' + t.transaction_id;
-        const entity = t.entity_name || t.store_name || '-';
+        const entity = escapeHtml(t.entity_name || t.store_name || '-');
         const dateLabel = formatMovementDate(t.transaction_date);
         const value = (t.total_value || 0).toLocaleString('ar-LY', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' د.ل';
 
@@ -335,8 +325,8 @@ function renderItemsSummary(items) {
                     <i class="fas fa-box"></i>
                 </div>
                 <div class="activity-content">
-                    <div class="activity-title">${item.item_name}</div>
-                    <div class="activity-meta">${item.category || 'غير مصنف'} · ${item.current_quantity || 0} ${item.unit}</div>
+                    <div class="activity-title">${escapeHtml(item.item_name)}</div>
+                    <div class="activity-meta">${escapeHtml(item.category || 'غير مصنف')} · ${item.current_quantity || 0} ${escapeHtml(item.unit || '')}</div>
                 </div>
                 <div class="activity-value">
                     <span class="badge ${isLow ? 'badge-low' : 'badge-available'}">${isLow ? 'منخفض' : 'متوفر'}</span>
@@ -375,10 +365,47 @@ function handleDirectPrint() {
     }
 }
 
+// ========== فحص سلامة البيانات ==========
+// يُحذّر المستخدم إذا اكتُشف تلف خلّفته المهاجرة القديمة، قبل أن يبني حركات
+// جديدة فوق أرصدة خاطئة. لا نحذف الأذونات اليتيمة: هي الدليل على ما حدث.
+async function checkDatabaseHealth() {
+    try {
+        const health = await window.api.getDbHealth();
+        if (!health || health.success === false || health.isHealthy) return;
+
+        const problems = [];
+        if (health.orphanHeaders > 0) {
+            problems.push(`${health.orphanHeaders} إذن بدون أصناف (فُقدت سطوره)`);
+        }
+        if (health.negativeStockItems.length > 0) {
+            const names = health.negativeStockItems.map(i => `«${escapeHtml(i.item_name)}»`).join('، ');
+            problems.push(`${health.negativeStockItems.length} صنف برصيد سالب: ${names}`);
+        }
+
+        const banner = document.createElement('div');
+        banner.className = 'db-health-banner';
+        banner.setAttribute('role', 'alert');
+        banner.innerHTML = `
+            <span class="db-health-icon" aria-hidden="true"><i class="fas fa-triangle-exclamation"></i></span>
+            <div>
+                <strong>تحذير: تم اكتشاف تلف في البيانات</strong>
+                <p>${problems.join(' — ')}.</p>
+                <p>يُرجى استرجاع نسخة احتياطية سابقة <strong>قبل</strong> تسجيل أي حركات جديدة، وإلا ستُبنى الحركات الجديدة فوق أرصدة خاطئة.</p>
+            </div>
+        `;
+
+        const content = document.querySelector('main.content');
+        if (content) content.insertAdjacentElement('afterbegin', banner);
+    } catch (error) {
+        console.error('تعذّر فحص سلامة البيانات:', error);
+    }
+}
+
 // ========== Init ==========
 window.addEventListener('DOMContentLoaded', () => {
     const session = checkSession();
     if (session) {
+        checkDatabaseHealth();
         loadDashboardData();
     }
 });

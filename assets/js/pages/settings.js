@@ -8,76 +8,40 @@ document.addEventListener('DOMContentLoaded', () => {
     layout.init();
 });
 
-let isOnline = false;
-
 // Session helpers are provided by common.js
 
-async function checkInternetConnection() {
-    try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
-        await fetch('https://api.github.com', { signal: controller.signal, mode: 'no-cors' });
-        clearTimeout(timeoutId);
-        isOnline = true; updateConnectionStatus(true); return true;
-    } catch (error) { isOnline = false; updateConnectionStatus(false); return false; }
-}
-
-function updateConnectionStatus(online) {
-    const statusText = document.getElementById('statusText');
-    if (online) { statusText.textContent = 'متصل بالإنترنت'; statusText.className = 'status-badge status-online'; }
-    else { statusText.textContent = 'غير متصل (وضع غير متصل)'; statusText.className = 'status-badge status-offline'; }
-}
-
+// المزامنة السحابية معطّلة في هذا الإصدار، فنعرض النسخ المحلية فقط.
+// (الدوال السحابية ما زالت موجودة في main.js خلف CLOUD_SYNC_ENABLED.)
 async function syncAndShowBackups() {
     const btn = document.getElementById('syncAndShowBtn');
-    const select = document.getElementById('cloudBackupsSelect');
     const originalText = btn.innerHTML;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الفحص...';
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري جلب النسخ...';
     btn.disabled = true;
 
     try {
-        let localBackups = await window.api.getLocalBackups();
+        const localBackups = await window.api.getLocalBackups();
+
         if (localBackups && localBackups.success === false) {
             showToast(localBackups.message || 'حدث خطأ في جلب النسخ المحلية', 'error');
             displayBackups([], false);
             return;
         }
 
-        const hasInternet = await checkInternetConnection();
-        if (!hasInternet) {
-            btn.innerHTML = originalText; btn.disabled = false;
-            displayBackups(localBackups, false);
-            showToast('لا يوجد اتصال - عرض النسخ المحلية فقط', 'warning');
-            return;
-        }
+        displayBackups(localBackups, false);
 
-        const settings = await window.api.getSettings();
-        if (!settings || !settings.repoUrl || !settings.accessToken) {
-            btn.innerHTML = originalText; btn.disabled = false;
-            displayBackups(localBackups, false);
-            showToast('لا توجد إعدادات سحابية', 'warning');
-            return;
-        }
-
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري المزامنة...';
-        const syncResult = await window.api.syncWithCloud();
-
-        if (syncResult.success) {
-            let allBackups = await window.api.getMergedBackups();
-            if (allBackups && allBackups.success === false) {
-                showToast(allBackups.message || 'حدث خطأ في جلب النسخ السحابية', 'warning');
-                displayBackups(localBackups || [], false);
-                return;
-            }
-            displayBackups(allBackups, true);
-            showToast('تمت المزامنة بنجاح: ' + allBackups.length + ' نسخة', 'success');
+        if (!localBackups || localBackups.length === 0) {
+            showToast('لا توجد نسخ احتياطية محلية بعد', 'info');
         } else {
-            displayBackups(localBackups, false);
-            showToast('فشلت المزامنة - عرض المحلية فقط', 'warning');
+            showToast(`تم العثور على ${localBackups.length} نسخة احتياطية محلية`, 'success');
         }
     } catch (error) {
-        showToast('حدث خطأ أثناء المزامنة', 'error');
-    } finally { btn.innerHTML = originalText; btn.disabled = false; }
+        console.error('خطأ في جلب النسخ المحلية:', error);
+        showToast('حدث خطأ أثناء جلب النسخ الاحتياطية', 'error');
+        displayBackups([], false);
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
 }
 
 function displayBackups(backups, isOnlineMode) {
@@ -95,17 +59,28 @@ function displayBackups(backups, isOnlineMode) {
         const sText = source === 'cloud' ? 'سحابية' : 'محلية';
         const option = document.createElement('option');
         option.value = b.fullCommitId || b.commitId;
-        option.innerHTML = `${icon} [${sText}] ${b.date} - ${b.message}`;
+        // b.message قد يحتوي اسم ملف اختاره المستخدم عند استيراد نسخة خارجية
+        option.innerHTML = `${icon} [${sText}] ${escapeHtml(b.date)} - ${escapeHtml(b.message)}`;
         fragment.appendChild(option);
     });
     select.appendChild(fragment);
 }
 
+// الاسترجاع يمسح البيانات الحالية، فهو يمر بنفس بوابة كلمة المرور المستخدمة
+// في الاسترجاع من ملف (common.js: handleRestore) — كان سابقاً خلف confirm() فقط.
 async function restoreDatabase() {
     const commitId = document.getElementById('cloudBackupsSelect').value;
     if (!commitId) { showToast('يرجى اختيار نسخة أولاً', 'warning'); return; }
 
-    if (confirm('استرجاع هذه النسخة سيمسح البيانات الحالية ويستبدلها. هل أنت متأكد؟')) {
+    const confirmed = await confirmModal({
+        title: 'استرجاع نسخة احتياطية',
+        message: 'استرجاع هذه النسخة سيمسح البيانات الحالية ويستبدلها بالكامل. هل أنت متأكد من المتابعة؟',
+        confirmLabel: 'استرجاع',
+        danger: true
+    });
+    if (!confirmed) return;
+
+    promptForPassword(async () => {
         const btn = document.getElementById('restoreBtn');
         const originalText = btn.innerHTML;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الاسترجاع...';
@@ -113,47 +88,26 @@ async function restoreDatabase() {
 
         try {
             const result = await window.api.restoreFromGit(commitId);
+            // عند النجاح يُعاد تشغيل التطبيق، فلا يصل التنفيذ إلى هنا عادةً
             if (result && result.success) { showToast('تم الاسترجاع بنجاح', 'success'); }
             else { showToast(result?.message || 'فشل الاسترجاع', 'error'); }
-        } catch (error) { showToast('حدث خطأ أثناء الاسترجاع', 'error'); }
-        finally { btn.innerHTML = originalText; btn.disabled = false; }
-    }
+        } catch (error) {
+            console.error('خطأ أثناء الاسترجاع:', error);
+            showToast('حدث خطأ أثناء الاسترجاع', 'error');
+        } finally {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    });
 }
 
 // Init
 window.addEventListener('DOMContentLoaded', async () => {
-    const session = checkSession();
+    checkSession();
 
-    try {
-        const settings = await window.api.getSettings();
-        if (settings) {
-            document.getElementById('repoUrl').value = settings.repoUrl || '';
-            document.getElementById('accessToken').value = settings.accessToken || '';
-            document.getElementById('backupFrequency').value = settings.backupFrequency || '14';
-            document.getElementById('alertBanner').style.display = 'none';
-        } else { document.getElementById('alertBanner').style.display = 'flex'; }
-    } catch (e) { document.getElementById('alertBanner').style.display = 'flex'; }
-
-    await checkInternetConnection();
+    // لا نحمّل الإعدادات السحابية (ومنها رمز الوصول) إلى الصفحة:
+    // المزامنة معطّلة في هذا الإصدار، وتحميل الرمز في الـ DOM عند فتح الصفحة
+    // كان يضعه في متناول أي سكربت قبل بوابة كلمة المرور أصلاً.
     document.getElementById('syncAndShowBtn').addEventListener('click', syncAndShowBackups);
+    syncAndShowBackups();
 });
-
-// Save settings
-async function saveSettings() {
-    const btn = document.getElementById('saveBtn');
-    const originalText = btn.innerHTML;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...';
-    btn.disabled = true;
-
-    const result = await window.api.saveSettings({
-        repoUrl: document.getElementById('repoUrl').value.trim(),
-        accessToken: document.getElementById('accessToken').value.trim(),
-        backupFrequency: document.getElementById('backupFrequency').value
-    });
-
-    if (result.success) {
-        showToast(result.message, 'success');
-        document.getElementById('alertBanner').style.display = 'none';
-    } else { showToast(result.message, 'error'); }
-    btn.innerHTML = originalText; btn.disabled = false;
-}

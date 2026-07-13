@@ -31,7 +31,9 @@
   --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
   --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
   --shadow-lg: 0 8px 24px rgba(0,0,0,0.10);
-  --shadow-focus: 0 0 0 3px rgba(196,74,0,0.15);
+  /* كانت الشفافية 0.15 تعطي تبايناً ~1.1:1 — غير مرئي عملياً. 0.6 يحقق 3:1+
+     (WCAG 1.4.11)، ويُستخدم في 4 مواضع تركيز حقول الإدخال. */
+  --shadow-focus: 0 0 0 3px rgba(196,74,0,0.6);
 
   --transition-fast: 0.15s ease;
   --transition-base: 0.2s ease;
@@ -122,7 +124,25 @@ body {
 }
 
 /* Focus indicator */
+/* كان الاعتماد على box-shadow بشفافية 15% فقط (تباين ~1.1:1) — غير مرئي عملياً
+   للتنقل بلوحة المفاتيح. outline بلون صلب يحقق تباين 3:1 (WCAG 2.4.11). */
 :focus-visible {
-  outline: none;
-  box-shadow: var(--shadow-focus);
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* PRODUCT.md: "Respects reduced-motion preferences in all animation effects."
+   This was true nowhere in the app (sidebarFadeIn, contentFadeIn, modalFade,
+   toastSlide, spin, skeleton, index.html's slideUp/shake). One global rule
+   here — loaded on every page — covers every current animation and any
+   future one, instead of hunting down each @keyframes individually. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

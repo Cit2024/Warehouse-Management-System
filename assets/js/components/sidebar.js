@@ -5,6 +5,12 @@
 class Sidebar {
     constructor() {
         this.currentPage = this.getCurrentPage();
+        // القراءة هنا تُتيح إخفاء رابط "المستخدمون" عن غير المسؤول (Admin).
+        // فرض الصلاحية الفعلي يجري في main.js (requireAdmin) — هذا مجرد إخفاء
+        // في الواجهة، وليس هو مصدر الحماية.
+        const session = (typeof checkSession === 'function') ? checkSession() : null;
+        const isAdmin = !!(session && session.role === 'Admin');
+
         this.menuItems = [
             {
                 section: 'الرئيسية',
@@ -52,7 +58,9 @@ class Sidebar {
             {
                 section: 'النظام',
                 items: [
-                    { href: 'settings.html', icon: 'fas fa-cog', text: 'الإعدادات' }
+                    { href: 'settings.html', icon: 'fas fa-cog', text: 'الإعدادات' },
+                    ...(isAdmin ? [{ href: 'users.html', icon: 'fas fa-users-gear', text: 'المستخدمون' }] : []),
+                    { action: 'changeOwnPassword', icon: 'fas fa-key', text: 'تغيير كلمة المرور', isButton: true }
                 ]
             }
         ];

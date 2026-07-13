@@ -1,8 +1,10 @@
 const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const fs = require('fs');
 const path = require('path');
-const crypto = require('crypto');
 const GitManager = require('./gitManager.js');
+const { validateReceiptItems, assertNoNegativeStock, voidTransaction } = require('./database/stock.js');
+const { hashPassword, verifyPassword } = require('./database/auth.js');
+const usersModule = require('./database/users.js');
 const Database = require('better-sqlite3');
 const git = require('isomorphic-git');
 const http = require('isomorphic-git/http/node'); // بروتوكول الاتصال لـ Push/Pull
@@ -10,10 +12,42 @@ let gitManager;
 let db;
 let scheduledBackupInterval = null;
 
+// جلسة المستخدم الحالية داخل العملية الرئيسية — هذه هي مصدر الصلاحية الوحيد.
+// جلسة المتصفح (localStorage.userSession) قابلة للتعديل من المستخدم نفسه عبر
+// أدوات المطوّر، فلا تصلح كمصدر ثقة لفرض الصلاحيات. تُضبط عند نجاح 'login'
+// وتُصفَّر عند 'logout'، وتُصفَّر تلقائياً أيضاً عند إعادة تشغيل التطبيق (شاشة
+// الدخول تُعرض دائماً أولاً — main.js:١٣ — فلا توجد جلسة "عالقة" من تشغيل سابق).
+let currentSession = null;
+
+// تُستدعى في بداية كل معالج IPC يُعدّل البيانات. تُعيد null إن كان الإجراء
+// مسموحاً، أو كائن {success:false, message} جاهزاً للإرجاع مباشرةً إن لم يكن.
+// دور "Viewer" هو الدور الوحيد المحظور من الكتابة؛ لا فرق بين Admin وStore_Keeper
+// اليوم — هذا يطابق النية الأصلية لفحوصات الواجهة (قبل إصلاحها) وليس تصميماً جديداً.
+function checkWriteAccess() {
+  if (!currentSession) {
+    return { success: false, message: 'يجب تسجيل الدخول أولاً.' };
+  }
+  if (currentSession.role === 'Viewer') {
+    return { success: false, message: 'لا تملك صلاحية القيام بهذا الإجراء.' };
+  }
+  return null;
+}
+
+// المزامنة السحابية معطّلة في هذا الإصدار: مسار الرفع كان يستخدم force push
+// عند أي فشل شبكة عابر (وليس فقط عند مستودع فارغ)، مما يعني أن جهازاً واحداً
+// قد يمسح تاريخ النسخ السحابية لبقية الأجهزة. الشيفرة باقية في المستودع
+// وتُعاد بتغيير هذا الثابت وحده بعد إصلاح مسار المزامنة.
+const CLOUD_SYNC_ENABLED = false;
+
+// الجداول التي يجب أن تكون موجودة في أي نسخة احتياطية صالحة لهذه المنظومة
+const REQUIRED_TABLES = ['users', 'stores', 'items', 'entities', 'transactions', 'transaction_details'];
+
 const createWindow = () => {
   const win = new BrowserWindow({
     width: 1200, // عرض أكبر ليناسب لوحة التحكم
     height: 800,
+    minWidth: 900, // دون هذا العرض تنهار الجداول وأشرطة الأدوات
+    minHeight: 600,
     icon: path.join(__dirname, './assets/icon.png'),
     webPreferences: {
       // ربط ملف الجسر الآمن
@@ -37,9 +71,11 @@ app.whenReady().then(async () => {
   await gitManager.init();
   await startAutoBackupScheduling();
 
-  setInterval(() => {
-    checkAndPushPendingBackups();
-  }, 3600000);
+  if (CLOUD_SYNC_ENABLED) {
+    setInterval(() => {
+      checkAndPushPendingBackups();
+    }, 3600000);
+  }
   const win = createWindow();
 
   // ==========================================
@@ -68,29 +104,58 @@ app.on('window-all-closed', () => {
 });
 
 // ==========================================
-// دوال مساعدة لتجزئة كلمات المرور
+// دوال مساعدة للاسترجاع
 // ==========================================
-function hashPassword(password) {
-  const salt = crypto.randomBytes(16).toString('hex');
-  const derived = crypto.scryptSync(password, salt, 64).toString('hex');
-  return `scrypt:${salt}:${derived}`;
+
+// ملفات WAL/SHM تظل تشير إلى القاعدة القديمة؛ لو بقيت بعد الاستبدال قد تُظلّل
+// القاعدة المستوردة ببيانات قديمة.
+function cleanupWalFiles(dbPath) {
+  for (const suffix of ['-wal', '-shm']) {
+    const sidecar = `${dbPath}${suffix}`;
+    try {
+      if (fs.existsSync(sidecar)) fs.unlinkSync(sidecar);
+    } catch (error) {
+      console.warn(`تعذّر حذف ${sidecar}:`, error.message);
+    }
+  }
 }
 
-function verifyPassword(password, storedHash) {
-  if (!storedHash) return false;
-  // دعم كلمات المرور القديمة المخزنة كنص عادي
-  if (storedHash === password) return true;
-  if (!storedHash.startsWith('scrypt:')) return false;
-  const parts = storedHash.split(':');
-  if (parts.length !== 3) return false;
-  const [, salt, hash] = parts;
-  const derived = crypto.scryptSync(password, salt, 64).toString('hex');
-  return derived === hash;
+// نتأكد أن القاعدة المستوردة تُفتح وتحتوي على الجداول المطلوبة قبل إعادة التشغيل.
+// بدون هذا الفحص قد يُعاد تشغيل التطبيق على قاعدة تالفة دون أي طريق للعودة.
+function assertDatabaseOpens(dbPath) {
+  const probe = new Database(dbPath, { readonly: true, fileMustExist: true });
+  try {
+    const integrity = probe.pragma('integrity_check', { simple: true });
+    if (integrity !== 'ok') {
+      throw new Error(`قاعدة البيانات المستوردة تالفة (${integrity})`);
+    }
+    const found = probe.prepare(
+      "SELECT name FROM sqlite_master WHERE type = 'table'"
+    ).all().map(row => row.name);
+    const missing = REQUIRED_TABLES.filter(table => !found.includes(table));
+    if (missing.length > 0) {
+      throw new Error(`جداول مفقودة: ${missing.join('، ')}`);
+    }
+  } finally {
+    probe.close();
+  }
 }
 
 // ==========================================
 // العمليات الخلفية (Backend) - الاتصال بقاعدة البيانات
 // ==========================================
+
+// فحص سلامة البيانات — يكشف الأضرار التي خلّفتها المهاجرة القديمة
+// (أذونات فقدت سطورها بسبب CASCADE، أو أصناف برصيد سالب)
+ipcMain.handle('get-db-health', async () => {
+  try {
+    return db.checkIntegrity();
+  } catch (error) {
+    console.error('[get-db-health] خطأ في فحص سلامة البيانات:', error);
+    return { success: false, message: 'تعذّر فحص سلامة البيانات', error: error.message };
+  }
+});
+
 // 1. جلب الأصناف من الجدول (فقط التي لم يتم حذفها منطقياً)
 ipcMain.handle('get-items', async () => {
   try {
@@ -130,6 +195,8 @@ ipcMain.handle('get-items', async () => {
 
 // 2. إضافة صنف جديد
 ipcMain.handle('add-item', async (event, newItem) => {
+  const denied = checkWriteAccess();
+  if (denied) return denied;
   try {
     const stmt = db.prepare(`
       INSERT INTO items (item_name, unit, category, min_order_qty) 
@@ -152,6 +219,8 @@ ipcMain.handle('add-item', async (event, newItem) => {
 
 // 3. حذف صنف (حذف منطقي كما طلبتم في التصميم المحاسبي: Soft Delete)
 ipcMain.handle('delete-item', async (event, itemId) => {
+  const denied = checkWriteAccess();
+  if (denied) return denied;
   try {
     const stmt = db.prepare('UPDATE items SET is_deleted = 1 WHERE item_id = ?');
     stmt.run(itemId);
@@ -164,6 +233,8 @@ ipcMain.handle('delete-item', async (event, itemId) => {
 
 // 4. تعديل بيانات صنف
 ipcMain.handle('update-item', async (event, itemData) => {
+  const denied = checkWriteAccess();
+  if (denied) return denied;
   try {
     const stmt = db.prepare(`
       UPDATE items 
@@ -284,7 +355,7 @@ ipcMain.handle('login', async (event, credentials) => {
     }
 
     // التوافق مع كلمات المرور القديمة: إعادة التجزئة عند أول تسجيل دخول ناجح
-    if (user.password_hash === credentials.password) {
+    if (!user.password_hash.startsWith('scrypt:')) {
       try {
         const newHash = hashPassword(credentials.password);
         db.prepare('UPDATE users SET password_hash = ? WHERE user_id = ?').run(newHash, user.user_id);
@@ -293,23 +364,128 @@ ipcMain.handle('login', async (event, credentials) => {
       }
     }
 
+    // هذه هي اللحظة الوحيدة التي تُمنح فيها صلاحية الكتابة لهذه العملية —
+    // جلسة المتصفح لا تُستشار إطلاقاً عند فرض الصلاحيات
+    currentSession = { userId: user.user_id, fullName: user.full_name, role: user.role };
+
     return { success: true, user: { user_id: user.user_id, full_name: user.full_name, role: user.role } };
   } catch (error) {
     console.error('خطأ في تسجيل الدخول:', error);
     return { success: false, message: 'حدث خطأ في قاعدة البيانات', error: error.message };
   }
 });
+
+// تسجيل الخروج: تصفير جلسة العملية الرئيسية. بدونها، كان تسجيل الخروج من
+// الواجهة (أو الخروج التلقائي عند الخمول) يمسح جلسة المتصفح فقط، بينما تبقى
+// صلاحية الكتابة الفعلية سارية في العملية الرئيسية حتى إغلاق التطبيق بالكامل.
+ipcMain.handle('logout', async () => {
+  currentSession = null;
+  return { success: true };
+});
+
+// ==========================================
+// إدارة المستخدمين (المنطق الفعلي في database/users.js — دوال خالصة قابلة للاختبار)
+// ==========================================
+// إضافة/تعديل الأدوار وإلغاء تفعيل المستخدمين إجراء إداري بحت — لا يكفي أن لا
+// يكون Viewer، بل يجب أن يكون Admin تحديداً.
+function requireAdmin() {
+  if (!currentSession) {
+    return { success: false, message: 'يجب تسجيل الدخول أولاً.' };
+  }
+  if (currentSession.role !== 'Admin') {
+    return { success: false, message: 'هذا الإجراء متاح للمسؤول (Admin) فقط.' };
+  }
+  return null;
+}
+
+// جلب كل المستخدمين (بلا password_hash إطلاقاً)
+ipcMain.handle('get-users', async () => {
+  const denied = requireAdmin();
+  if (denied) return denied;
+  try {
+    return db.prepare(
+      'SELECT user_id, full_name, role, is_active, created_at FROM users ORDER BY user_id'
+    ).all();
+  } catch (error) {
+    console.error('[get-users] خطأ في جلب المستخدمين:', error);
+    return { success: false, message: 'حدث خطأ أثناء جلب المستخدمين', error: error.message };
+  }
+});
+
+// إضافة مستخدم جديد
+ipcMain.handle('add-user', async (event, newUser) => {
+  const denied = requireAdmin();
+  if (denied) return denied;
+  try {
+    const id = usersModule.addUser(db, hashPassword, newUser || {});
+    return { success: true, message: 'تمت إضافة المستخدم بنجاح', id };
+  } catch (error) {
+    return { success: false, message: error.message };
+  }
+});
+
+// تغيير دور مستخدم
+ipcMain.handle('update-user-role', async (event, payload) => {
+  const denied = requireAdmin();
+  if (denied) return denied;
+  try {
+    usersModule.updateUserRole(db, currentSession, payload || {});
+    return { success: true, message: 'تم تحديث الدور بنجاح' };
+  } catch (error) {
+    return { success: false, message: error.message };
+  }
+});
+
+// تفعيل / إلغاء تفعيل مستخدم (حذف منطقي — لا حذف فعلي، لأن created_by يشير إلى المستخدم في سجل الأذونات)
+ipcMain.handle('set-user-active', async (event, payload) => {
+  const denied = requireAdmin();
+  if (denied) return denied;
+  try {
+    usersModule.setUserActive(db, currentSession, payload || {});
+    return { success: true, message: (payload && payload.isActive) ? 'تم تفعيل المستخدم' : 'تم إلغاء تفعيل المستخدم' };
+  } catch (error) {
+    return { success: false, message: error.message };
+  }
+});
+
+// تغيير كلمة المرور: يستطيع أي مستخدم تغيير كلمة مروره الخاصة (بشرط تقديم
+// كلمة المرور الحالية)، ويستطيع Admin إعادة تعيين كلمة مرور أي مستخدم آخر
+// بلا حاجة لمعرفة كلمة المرور القديمة. هذا هو الطريق الوحيد لإزالة admin/admin
+// الافتراضية — لم يكن هناك أي مسار لتغيير كلمة مرور من داخل التطبيق سابقاً.
+ipcMain.handle('change-password', async (event, payload) => {
+  if (!currentSession) {
+    return { success: false, message: 'يجب تسجيل الدخول أولاً.' };
+  }
+  try {
+    usersModule.changePassword(db, currentSession, verifyPassword, hashPassword, payload || {});
+    return { success: true, message: 'تم تغيير كلمة المرور بنجاح' };
+  } catch (error) {
+    return { success: false, message: error.message };
+  }
+});
+
 // حفظ إذن التوريد بالكامل (رأس المستند وسهوره)
 ipcMain.handle('save-supply-receipt', async (event, receiptData) => {
+  const denied = checkWriteAccess();
+  if (denied) return denied;
   // نستخدم transaction() الخاصة بـ better-sqlite3 لضمان حفظ كل البيانات أو التراجع عنها في حال حدوث خطأ
   const insertReceipt = db.transaction((data) => {
-    // 1. حفظ رأس الإذن (Transaction Master)
+    // 1. التحقق من صحة السطور: كميات موجبة، أسعار غير سالبة، أصناف موجودة.
+    //    إذن التوريد لا يمكن أن يجعل الرصيد سالباً، فلا حاجة لفحص الأرصدة هنا.
+    const totals = validateReceiptItems(db, data.items, { requirePrice: true });
+
+    // نحتفظ بسعر كل صنف بعد الدمج (آخر سعر مذكور للصنف في نفس الإذن)
+    const prices = new Map();
+    for (const item of data.items) {
+      prices.set(Number(item.itemId), Number(item.price));
+    }
+
+    // 2. حفظ رأس الإذن (Transaction Master)
     const stmtMaster = db.prepare(`
-      INSERT INTO transactions (transaction_type, transaction_date, store_id, entity_id, created_by, notes) 
+      INSERT INTO transactions (transaction_type, transaction_date, store_id, entity_id, created_by, notes)
       VALUES ('In', ?, ?, ?, ?, ?)
     `);
 
-    // ملاحظة: وضعنا 1 كرقم افتراضي للمستخدم (created_by) حتى يتم برمجة نظام تسجيل الدخول لاحقاً
     const info = stmtMaster.run(
       data.date,
       data.storeId,
@@ -319,14 +495,14 @@ ipcMain.handle('save-supply-receipt', async (event, receiptData) => {
     );
     const newTransactionId = info.lastInsertRowid;
 
-    // 2. حفظ سطور الإذن (Transaction Details)
+    // 3. حفظ سطور الإذن (Transaction Details)
     const stmtDetails = db.prepare(`
-      INSERT INTO transaction_details (transaction_id, item_id, quantity, unit_price) 
+      INSERT INTO transaction_details (transaction_id, item_id, quantity, unit_price)
       VALUES (?, ?, ?, ?)
     `);
 
-    for (const item of data.items) {
-      stmtDetails.run(newTransactionId, item.itemId, item.quantity, item.price);
+    for (const [itemId, quantity] of totals) {
+      stmtDetails.run(newTransactionId, itemId, quantity, prices.get(itemId));
     }
 
     return newTransactionId;
@@ -336,8 +512,8 @@ ipcMain.handle('save-supply-receipt', async (event, receiptData) => {
     const newId = insertReceipt(receiptData);
     return { success: true, message: 'تم حفظ إذن التوريد بنجاح', transaction_id: newId };
   } catch (error) {
-    console.error('خطأ في حفظ الإذن:', error);
-    return { success: false, message: 'حدث خطأ أثناء الحفظ: ' + error.message };
+    console.error('خطأ في حفظ إذن التوريد:', error);
+    return { success: false, message: error.message };
   }
 });
 // ==========================================
@@ -391,14 +567,19 @@ ipcMain.handle('get-stock', async () => {
 
 // حفظ إذن الصرف
 ipcMain.handle('save-dispense-receipt', async (event, receiptData) => {
+  const denied = checkWriteAccess();
+  if (denied) return denied;
   const insertReceipt = db.transaction((data) => {
-    // 1. حفظ رأس الإذن (نوع الحركة: Out)
+    // 1. التحقق من صحة السطور قبل أي كتابة (كميات موجبة، أصناف موجودة،
+    //    ودمج السطور المكرّرة لنفس الصنف — الخادم لا يثق بحراسة الواجهة)
+    const totals = validateReceiptItems(db, data.items);
+
+    // 2. حفظ رأس الإذن (نوع الحركة: Out)
     const stmtMaster = db.prepare(`
-      INSERT INTO transactions (transaction_type, transaction_date, store_id, entity_id, created_by, notes) 
+      INSERT INTO transactions (transaction_type, transaction_date, store_id, entity_id, created_by, notes)
       VALUES ('Out', ?, ?, ?, ?, ?)
     `);
 
-    // نستخدم ID المستخدم 1 مؤقتاً (يمكنك لاحقاً جلبه من الجلسة session)
     const info = stmtMaster.run(
       data.date,
       data.storeId,
@@ -408,27 +589,58 @@ ipcMain.handle('save-dispense-receipt', async (event, receiptData) => {
     );
     const newTransactionId = info.lastInsertRowid;
 
-    // 2. حفظ سطور الإذن
+    // 3. حفظ سطور الإذن
     const stmtDetails = db.prepare(`
-      INSERT INTO transaction_details (transaction_id, item_id, quantity, unit_price) 
+      INSERT INTO transaction_details (transaction_id, item_id, quantity, unit_price)
       VALUES (?, ?, ?, 0) -- السعر 0 لأن هذا إذن صرف وليس فاتورة شراء
     `);
 
-    for (const item of data.items) {
-      stmtDetails.run(newTransactionId, item.itemId, item.quantity);
+    for (const [itemId, quantity] of totals) {
+      stmtDetails.run(newTransactionId, itemId, quantity);
     }
+
+    // 4. لا يجوز أن يترك الصرف رصيداً سالباً.
+    //    الفحص هنا (بعد الكتابة وداخل المعاملة) يرى السطور غير المُثبّتة، فيحسب
+    //    الرصيد الحقيقي بدل لقطة قديمة من الواجهة، ويشمل السطور المكرّرة تلقائياً.
+    //    الحارس الوحيد سابقاً كان في dispense.js مقارنةً برصيد مأخوذ عند فتح
+    //    الصفحة — فنافذتان مفتوحتان كانتا كافيتين لجعل الرصيد سالباً.
+    assertNoNegativeStock(db, totals.keys());
 
     return newTransactionId;
   });
 
   try {
-    const newId = insertReceipt(receiptData);
+    insertReceipt(receiptData);
     return { success: true, message: 'تم حفظ إذن الصرف بنجاح' };
   } catch (error) {
-    console.error('خطأ في حفظ الإذن:', error);
-    return { success: false, message: 'حدث خطأ أثناء الحفظ: ' + error.message };
+    console.error('خطأ في حفظ إذن الصرف:', error);
+    return { success: false, message: error.message };
   }
 });
+
+// ==========================================
+// إلغاء إذن (تصحيح الأخطاء)
+// ==========================================
+// عمود is_deleted كان موجوداً في transactions وكل الاستعلامات ترشّح عليه، لكن
+// لا شيء في التطبيق كان يضبطه على 1 — أي أن إذناً أُدخل بخطأ كان دائماً نهائياً،
+// ولا سبيل لتصحيحه إلا باسترجاع نسخة احتياطية كاملة.
+ipcMain.handle('void-transaction', async (event, payload) => {
+  const denied = checkWriteAccess();
+  if (denied) return denied;
+  try {
+    const run = db.transaction(() => voidTransaction(db, payload || {}));
+    const result = run();
+    return {
+      success: true,
+      message: 'تم إلغاء الإذن بنجاح، وأُعيد احتساب الأرصدة.',
+      transaction_id: result.transactionId
+    };
+  } catch (error) {
+    console.error('[void-transaction] خطأ في إلغاء الإذن:', error);
+    return { success: false, message: error.message };
+  }
+});
+
 // ==========================================
 // دوال إدارة الجهات والموردين (Entities)
 // ==========================================
@@ -445,6 +657,8 @@ ipcMain.handle('get-all-entities', async () => {
 
 // 2. إضافة جهة جديدة
 ipcMain.handle('add-entity', async (event, newEntity) => {
+  const denied = checkWriteAccess();
+  if (denied) return denied;
   try {
     const stmt = db.prepare(`
       INSERT INTO entities (entity_name, entity_type, phone) 
@@ -461,6 +675,8 @@ ipcMain.handle('add-entity', async (event, newEntity) => {
 
 // 3. حذف جهة (حذف منطقي)
 ipcMain.handle('delete-entity', async (event, entityId) => {
+  const denied = checkWriteAccess();
+  if (denied) return denied;
   try {
     const stmt = db.prepare('UPDATE entities SET is_deleted = 1 WHERE entity_id = ?');
     stmt.run(entityId);
@@ -475,11 +691,17 @@ ipcMain.handle('delete-entity', async (event, entityId) => {
 // ==========================================
 
 // جلب سجل الحركات (أذونات التوريد والصرف)
-ipcMain.handle('get-transactions-history', async () => {
+// includeVoided: يعرض الأذونات الملغاة أيضاً — بدونه تصير أعمدة التدقيق
+// (void_reason/voided_at) للكتابة فقط، ويختفي الإلغاء بلا أثر مرئي.
+ipcMain.handle('get-transactions-history', async (event, options = {}) => {
   try {
+    const includeVoided = options && options.includeVoided === true;
+
     const query = `
       SELECT t.transaction_id, t.transaction_type, t.transaction_date,
              e.entity_name, s.store_name,
+             t.is_deleted, t.void_reason, t.voided_at,
+             u.full_name AS voided_by_name,
              COALESCE((
                SELECT SUM(td.quantity * td.unit_price)
                FROM transaction_details td
@@ -488,8 +710,9 @@ ipcMain.handle('get-transactions-history', async () => {
       FROM transactions t
       LEFT JOIN entities e ON t.entity_id = e.entity_id
       LEFT JOIN stores s ON t.store_id = s.store_id
-      WHERE t.is_deleted = 0
-      ORDER BY t.transaction_date DESC
+      LEFT JOIN users u ON t.voided_by = u.user_id
+      ${includeVoided ? '' : 'WHERE t.is_deleted = 0'}
+      ORDER BY t.transaction_date DESC, t.transaction_id DESC
     `;
     return db.prepare(query).all();
   } catch (error) {
@@ -515,7 +738,10 @@ ipcMain.handle('get-item-transactions', async (event, itemId) => {
     let balance = 0;
     return rows.map(r => {
       const qty = r.quantity || 0;
-      balance += r.transaction_type === 'In' ? qty : -qty;
+      // 'Out' فقط يُنقص الرصيد. الصيغة السابقة (`=== 'In' ? qty : -qty`) كانت
+      // تعامل Opening_Balance كصرف، بينما view_current_stock يعدّه توريداً —
+      // فكانت بطاقة الصنف وتقرير المخزون يعرضان رصيدين مختلفين لنفس الصنف.
+      balance += r.transaction_type === 'Out' ? -qty : qty;
       return { ...r, running_balance: balance };
     });
   } catch (error) {
@@ -619,6 +845,9 @@ ipcMain.handle('backup-database', async (event) => {
 // دالة استيراد النسخة الاحتياطية (Restore) المحدثة والآمنة
 // ==========================================
 ipcMain.handle('restore-database', async (event) => {
+  const denied = checkWriteAccess();
+  if (denied) return denied;
+
   const win = BrowserWindow.getFocusedWindow();
 
   try {
@@ -643,11 +872,8 @@ ipcMain.handle('restore-database', async (event) => {
       const tables = testDb.prepare("SELECT name FROM sqlite_master WHERE type='table'").all();
       const tableNames = tables.map(t => t.name);
 
-      // 3. نحدد الجداول الأساسية التي يجب أن تكون موجودة في منظومتنا
-      const requiredTables = ['users', 'stores', 'items', 'entities', 'transactions', 'transaction_details'];
-
-      // 4. نتحقق هل كل الجداول المطلوبة موجودة داخل الملف؟
-      const isValidSchema = requiredTables.every(table => tableNames.includes(table));
+      // 3. نتحقق هل كل الجداول المطلوبة موجودة داخل الملف؟
+      const isValidSchema = REQUIRED_TABLES.every(table => tableNames.includes(table));
 
       // 5. نغلق الاتصال المؤقت فوراً
       testDb.close();
@@ -666,28 +892,51 @@ ipcMain.handle('restore-database', async (event) => {
     // ================================================================
 
     // إذا تجاوزنا الفحص بنجاح، نقوم بعملية الاستيراد الفعلية
-    const dataPath = app.getPath('userData');
-    const targetDbPath = path.join(dataPath, 'warehouse_system.sqlite');
+    const targetDbPath = db.getDbPath();
+    const rollbackPath = `${targetDbPath}.bak`;
 
-    // 6. إغلاق الاتصال الحالي بقاعدة البيانات الحقيقية
-    db.close();
+    // 6. إغلاق الاتصال الحالي عبر closeDb() وليس close():
+    //    close() الخام يغلق المقبض لكنه لا يصفّر dbInstance داخل db.js، فيبقى
+    //    التطبيق ممسكاً بمقبض ميت ويفشل كل طلب لاحق حتى يُقتل البرنامج.
+    db.closeDb();
 
-    // 7. نسخ الملف السليم فوق القديم
-    fs.copyFileSync(sourcePath, targetDbPath);
+    try {
+      // 7. نحتفظ بنسخة تراجع من القاعدة الحالية قبل الكتابة فوقها
+      fs.copyFileSync(targetDbPath, rollbackPath);
+      cleanupWalFiles(targetDbPath);
 
-    // 8. توثيق عملية الاستيراد في Git (قبل إعادة التشغيل)
-    //    يقرأ gitManager الملف الجديد الذي نسخناه للتو ويحفظه كـ commit
+      // 8. نسخ الملف السليم فوق القديم
+      fs.copyFileSync(sourcePath, targetDbPath);
+
+      // 9. التحقق من أن القاعدة المستوردة تُفتح فعلاً قبل إعادة التشغيل
+      assertDatabaseOpens(targetDbPath);
+    } catch (restoreError) {
+      // الاستيراد فشل — نُعيد القاعدة الأصلية ونُبقي التطبيق صالحاً للاستخدام
+      console.error('فشل الاستيراد، جاري التراجع:', restoreError);
+      try {
+        if (fs.existsSync(rollbackPath)) {
+          fs.copyFileSync(rollbackPath, targetDbPath);
+        }
+      } catch (rollbackError) {
+        console.error('فشل التراجع أيضاً:', rollbackError);
+      }
+      db.getDb(); // إعادة فتح الاتصال حتى لا يبقى التطبيق معطلاً
+      return { success: false, message: `❌ فشل الاستيراد وتمت إعادة البيانات السابقة: ${restoreError.message}` };
+    }
+
+    // 10. توثيق عملية الاستيراد في Git (قبل إعادة التشغيل)
     if (gitManager) {
       const backupName = path.basename(sourcePath, path.extname(sourcePath));
       await gitManager.commitLocalBackup(`استيراد نسخة احتياطية خارجية: ${backupName}`);
     }
 
-    // 9. إعادة تشغيل التطبيق تلقائياً
+    // 11. إعادة تشغيل التطبيق تلقائياً
     app.relaunch();
     app.exit();
 
   } catch (error) {
     console.error('خطأ في استيراد القاعدة:', error);
+    db.getDb(); // لا نترك التطبيق بمقبض مغلق مهما حدث
     return { success: false, message: 'حدث خطأ غير متوقع أثناء الاستيراد.' };
   }
 });
@@ -713,6 +962,8 @@ ipcMain.handle('get-settings', async () => {
 });
 
 ipcMain.handle('save-settings', async (event, settingsData) => {
+  const denied = checkWriteAccess();
+  if (denied) return denied;
   try {
     // فحص الاتصال (محاكاة)
     await new Promise(resolve => setTimeout(resolve, 2000));
@@ -748,28 +999,58 @@ ipcMain.handle('get-local-backups', async () => {
 
 // تنفيذ الاسترجاع من Git
 ipcMain.handle('restore-from-git', async (event, commitId) => {
-  try {
-    // 1. إغلاق قاعدة البيانات الحالية لفك الارتباط بالملف
-    db.close();
+  const denied = checkWriteAccess();
+  if (denied) return denied;
 
-    // 2. أمر الـ GitManager بالاسترجاع
+  const targetDbPath = db.getDbPath();
+  const rollbackPath = `${targetDbPath}.bak`;
+
+  try {
+    // 1. نسخة تراجع قبل أي شيء
+    if (fs.existsSync(targetDbPath)) {
+      fs.copyFileSync(targetDbPath, rollbackPath);
+    }
+
+    // 2. إغلاق القاعدة عبر closeDb() لتصفير dbInstance، وليس close() الخام
+    db.closeDb();
+    cleanupWalFiles(targetDbPath);
+
+    // 3. أمر الـ GitManager بالاسترجاع
     const result = await gitManager.restoreFromCommit(commitId);
 
-    if (result.success) {
-      // 3. إعادة تشغيل التطبيق ليقرأ القاعدة الجديدة
-      app.relaunch();
-      app.exit();
-    } else {
+    if (!result.success) {
+      db.getDb(); // نُعيد فتح الاتصال حتى لا يبقى التطبيق معطلاً
       return result;
     }
+
+    // 4. لا نُعيد التشغيل قبل التأكد من أن القاعدة المسترجعة تُفتح فعلاً
+    assertDatabaseOpens(targetDbPath);
+
+    app.relaunch();
+    app.exit();
+
   } catch (error) {
-    console.error('خطأ غير متوقع:', error);
-    return { success: false, message: 'حدث خطأ غير متوقع أثناء استعادة النظام.' };
+    console.error('خطأ غير متوقع أثناء الاسترجاع:', error);
+
+    // التراجع إلى القاعدة السابقة وإبقاء التطبيق صالحاً للاستخدام
+    try {
+      if (fs.existsSync(rollbackPath)) {
+        fs.copyFileSync(rollbackPath, targetDbPath);
+      }
+    } catch (rollbackError) {
+      console.error('فشل التراجع أيضاً:', rollbackError);
+    }
+    db.getDb();
+
+    return { success: false, message: `حدث خطأ أثناء استعادة النظام وتمت إعادة البيانات السابقة: ${error.message}` };
   }
 });
 
 ipcMain.handle('sync-with-cloud', async () => {
   try {
+    if (!CLOUD_SYNC_ENABLED) {
+      return { success: false, message: 'المزامنة السحابية معطّلة في هذا الإصدار. النسخ الاحتياطي المحلي يعمل تلقائياً.' };
+    }
     if (!gitManager) {
       return { success: false, message: 'نظام النسخ الاحتياطي لم يتم تهيئته' };
     }
@@ -989,6 +1270,7 @@ ipcMain.handle('get-merged-backups', async () => {
       allBackups.set(commit.fullCommitId, {
         fullCommitId: commit.fullCommitId,
         commitId: commit.commitId,
+        timestamp: commit.timestamp,
         date: commit.date,
         message: commit.message,
         source: 'local'
@@ -998,7 +1280,7 @@ ipcMain.handle('get-merged-backups', async () => {
     // محاولة جلب النسخ السحابية إذا كان هناك اتصال
     try {
       const configPath = path.join(app.getPath('userData'), 'system_config.json');
-      if (fs.existsSync(configPath)) {
+      if (CLOUD_SYNC_ENABLED && fs.existsSync(configPath)) {
         const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
         if (config.repoUrl && config.accessToken) {
           console.log('🌐 جاري جلب النسخ السحابية...');
@@ -1037,6 +1319,7 @@ ipcMain.handle('get-merged-backups', async () => {
                   allBackups.set(commit.oid, {
                     fullCommitId: commit.oid,
                     commitId: commit.oid.substring(0, 7),
+                    timestamp: commit.commit.author.timestamp * 1000,
                     date: new Date(commit.commit.author.timestamp * 1000).toLocaleString('ar-LY'),
                     message: commit.commit.message,
                     source: 'cloud'
@@ -1054,9 +1337,12 @@ ipcMain.handle('get-merged-backups', async () => {
       console.log('⚠️ لا يمكن جلب النسخ السحابية:', cloudError.message);
     }
 
-    // ترتيب حسب التاريخ (الأحدث أولاً)
+    // ترتيب حسب الطابع الزمني الرقمي (الأحدث أولاً).
+    // كان الترتيب سابقاً على حقل date وهو نص محلي (ar-LY)، فكان new Date() عليه
+    // يُنتج Invalid Date والمقارنة NaN — أي أن الترتيب لم يكن يفعل شيئاً، وكان
+    // المستخدم قد يسترجع نسخة قديمة ظناً أنها الأحدث.
     const merged = Array.from(allBackups.values())
-      .sort((a, b) => new Date(b.date) - new Date(a.date));
+      .sort((a, b) => b.timestamp - a.timestamp);
 
     console.log(`📊 تم دمج ${merged.length} نسخة (${merged.filter(b => b.source === 'local').length} محلية، ${merged.filter(b => b.source === 'cloud').length} سحابية)`);
 
@@ -1068,26 +1354,38 @@ ipcMain.handle('get-merged-backups', async () => {
   }
 });
 
-// 3. التحقق من حالة الاتصال بالإنترنت (اختياري)
-ipcMain.handle('check-internet', async () => {
-  try {
-    const { exec } = require('child_process');
-    const util = require('util');
-    const execPromise = util.promisify(exec);
-
-    // محاولة ping لـ GitHub
-    await execPromise('ping -c 1 github.com', { timeout: 5000 });
-    return { online: true };
-  } catch (error) {
-    return { online: false };
-  }
-});
-
 // ==========================================
 // دوال التخزين التلقائي المجدول
 // ==========================================
 function getBackupIntervalMs(days) {
   return days * 24 * 60 * 60 * 1000;
+}
+
+function getLastBackupPath() {
+  return path.join(app.getPath('userData'), 'last_auto_backup.json');
+}
+
+// قراءة وقت آخر نسخة تلقائية. الملف كان يُقرأ ولا يُكتب أبداً، فكانت النتيجة
+// أن كل إقلاع للتطبيق يُشغّل نسخة كاملة بغض النظر عن الدورية المضبوطة.
+function readLastBackupTime() {
+  try {
+    const lastBackupPath = getLastBackupPath();
+    if (!fs.existsSync(lastBackupPath)) return 0;
+    const saved = JSON.parse(fs.readFileSync(lastBackupPath, 'utf8'));
+    const parsed = new Date(saved.lastBackup).getTime();
+    return Number.isFinite(parsed) ? parsed : 0;
+  } catch (error) {
+    console.error('تعذّر قراءة وقت آخر نسخة احتياطية:', error);
+    return 0;
+  }
+}
+
+function stampLastBackupTime() {
+  try {
+    fs.writeFileSync(getLastBackupPath(), JSON.stringify({ lastBackup: new Date().toISOString() }));
+  } catch (error) {
+    console.error('تعذّر تسجيل وقت آخر نسخة احتياطية:', error);
+  }
 }
 
 async function performAutoBackup() {
@@ -1096,9 +1394,18 @@ async function performAutoBackup() {
     if (!gitManager) {
       return { success: false, message: 'نظام النسخ الاحتياطي لم يتم تهيئته' };
     }
+
+    // commitLocalBackup تُعيد {success:false} عند الفشل — وهو كائن صادق (truthy).
+    // الفحص القديم `if (!commitResult)` لم يكن يلتقط الفشل إطلاقاً.
     const commitResult = await gitManager.commitLocalBackup('نسخة احتياطية تلقائية دورية');
-    if (!commitResult) {
-      return { success: false, message: 'فشل بالقيام ب local commit' };
+    if (!commitResult || commitResult.success === false) {
+      return { success: false, message: `فشل إنشاء النسخة المحلية: ${commitResult && commitResult.message || 'سبب غير معروف'}` };
+    }
+
+    stampLastBackupTime();
+
+    if (!CLOUD_SYNC_ENABLED) {
+      return { success: true, message: 'تم حفظ نسخة احتياطية محلية', pushed: false };
     }
 
     // قراءة الإعدادات
@@ -1296,45 +1603,40 @@ async function startAutoBackupScheduling() {
   }
 
   try {
+    // النسخ المحلي لا يعتمد على إعدادات السحابة: لو غاب system_config.json
+    // كانت الجدولة تتوقف كلياً، أي لا نسخ احتياطي محلي إطلاقاً على تثبيت جديد.
+    let backupFrequencyDays = 14; // الافتراضي: كل أسبوعين
     const configPath = path.join(app.getPath('userData'), 'system_config.json');
-    if (!fs.existsSync(configPath)) {
-      console.log('⚠️ لا توجد إعدادات، لن يتم تشغيل النسخ الاحتياطي التلقائي');
-      return;
+    if (fs.existsSync(configPath)) {
+      try {
+        const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+        backupFrequencyDays = parseInt(config.backupFrequency) || 14;
+      } catch (configError) {
+        console.warn('تعذّرت قراءة دورية النسخ من الإعدادات، سيُعتمد الافتراضي:', configError.message);
+      }
     }
-
-    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    const backupFrequencyDays = parseInt(config.backupFrequency) || 14; // الافتراضي 14 يوم
 
     const intervalMs = getBackupIntervalMs(backupFrequencyDays);
+    console.log(`⏰ جدولة النسخ الاحتياطي التلقائي كل ${backupFrequencyDays} يوم`);
 
-    console.log(`⏰ بدء جدولة النسخ الاحتياطي التلقائي كل ${backupFrequencyDays} يوم (${intervalMs / (1000 * 60 * 60)} ساعة)`);
-    const lastBackupPath = path.join(app.getPath('userData'), 'last_auto_backup.json');
-    let shouldRunNow = false;
-
-    if (fs.existsSync(lastBackupPath)) {
-      const lastBackup = JSON.parse(fs.readFileSync(lastBackupPath, 'utf8'));
-      const lastBackupTime = new Date(lastBackup.lastBackup);
-      const timeSinceLastBackup = Date.now() - lastBackupTime.getTime();
-
-      if (timeSinceLastBackup >= intervalMs) {
-        console.log('⚠️ مضى وقت طويل على آخر نسخة احتياطية، جاري التنفيذ فوراً...');
-        shouldRunNow = true;
+    // نبضة كل ساعة تقارن الوقت المنقضي، بدل setInterval بفترة طويلة:
+    //   1. خيار "كل شهر" = 2,592,000,000 مللي ثانية، وهو يتجاوز حد Node
+    //      (2^31-1 ≈ 24.8 يوم)، فيُقصّه Node إلى 1 مللي ثانية — أي حلقة نسخ
+    //      متواصلة بدل نسخة شهرية.
+    //   2. التطبيق المكتبي نادراً ما يبقى مفتوحاً 14 يوماً متصلة، فالمؤقّت
+    //      الطويل لم يكن ليُطلَق أصلاً.
+    const TICK_MS = 60 * 60 * 1000; // ساعة
+    const runIfDue = async () => {
+      const elapsed = Date.now() - readLastBackupTime();
+      if (elapsed >= intervalMs) {
+        console.log('⏳ حان موعد النسخة الاحتياطية الدورية...');
+        await performAutoBackup();
       }
-    } else {
-      console.log('📝 لا يوجد سجل سابق، جاري عمل أول نسخة احتياطية...');
-      shouldRunNow = true;
-    }
+    };
 
-    // تنفيذ نسخة فورية إذا لزم الأمر
-    if (shouldRunNow) {
-      // تأخير بسيط لضمان اكتمال تهيئة النظام
-      setTimeout(() => performAutoBackup(), 10000);
-    }
-
-    // بدء الجدولة الدورية
-    scheduledBackupInterval = setInterval(() => {
-      performAutoBackup();
-    }, intervalMs);
+    // فحص أولي بعد تأخير بسيط لضمان اكتمال تهيئة النظام
+    setTimeout(runIfDue, 10000);
+    scheduledBackupInterval = setInterval(runIfDue, TICK_MS);
 
     console.log(`✅ تم تفعيل النسخ الاحتياطي التلقائي (كل ${backupFrequencyDays} يوم)`);
 
@@ -1350,6 +1652,8 @@ async function restartAutoBackupScheduling() {
 
 async function checkAndPushPendingBackups() {
   try {
+    if (!CLOUD_SYNC_ENABLED) return;
+
     const configPath = path.join(app.getPath('userData'), 'system_config.json');
     if (!fs.existsSync(configPath)) return;
 
@@ -1366,9 +1670,11 @@ async function checkAndPushPendingBackups() {
       lastPushTime = pushStatus.lastPush || 0;
     }
 
-    // إذا كان هناك commits جديدة ولم يتم رفعها منذ أكثر من ساعة
+    // إذا كان هناك commits جديدة ولم يتم رفعها منذ أكثر من ساعة.
+    // نستخدم timestamp الرقمي: القراءة من حقل date النصي كانت تُنتج NaN،
+    // والمقارنة NaN > x دائماً false — أي أن هذا المسار لم يكن يرفع شيئاً أبداً.
     if (localCommits.length > 0) {
-      const latestCommitTime = new Date(localCommits[0].date).getTime();
+      const latestCommitTime = localCommits[0].timestamp;
       if (latestCommitTime > lastPushTime && (Date.now() - lastPushTime) > 3600000) {
         console.log('📤 محاولة رفع النسخ المعلقة للسحابة...');
         const pushResult = await gitManager.pushToCloud(config.repoUrl, config.accessToken);

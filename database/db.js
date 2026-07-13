@@ -1,8 +1,9 @@
 const Database = require('better-sqlite3');
 const path = require('path');
 const fs = require('fs');
-const crypto = require('crypto');
 const { app } = require('electron');
+const { migrateRemoveReceiptNumber, migrateAddVoidColumns, checkIntegrity } = require('./migrations');
+const { hashPassword } = require('./auth');
 
 // ============================================================
 // LAZY DATABASE INITIALIZATION
@@ -15,13 +16,6 @@ const { app } = require('electron');
 let dbInstance = null;
 let dbPath = null;
 let initialized = false;
-
-// توليد هاش لكلمة المرور باستخدام scrypt
-function hashPassword(password) {
-    const salt = crypto.randomBytes(16).toString('hex');
-    const derived = crypto.scryptSync(password, salt, 64).toString('hex');
-    return `scrypt:${salt}:${derived}`;
-}
 
 function getDbPath() {
     if (!dbPath) {
@@ -81,42 +75,17 @@ function initializeDatabase() {
 
     const db = getDb();
 
-    // Migration: remove receipt_number column from existing databases
-    try {
-        const tableInfo = db.prepare("PRAGMA table_info(transactions)").all();
-        const hasReceiptNumber = tableInfo.some(col => col.name === 'receipt_number');
-        if (hasReceiptNumber) {
-            console.log('[DB] Migrating: removing receipt_number column...');
-            db.exec(`
-                BEGIN TRANSACTION;
-                DROP VIEW IF EXISTS view_current_stock;
-                CREATE TABLE transactions_new (
-                    transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    transaction_type TEXT CHECK(transaction_type IN ('In', 'Out', 'Opening_Balance')) NOT NULL,
-                    transaction_date DATETIME NOT NULL,
-                    store_id INTEGER NOT NULL,
-                    entity_id INTEGER,
-                    created_by INTEGER,
-                    notes TEXT,
-                    is_deleted INTEGER DEFAULT 0,
-                    FOREIGN KEY (store_id) REFERENCES stores(store_id) ON DELETE RESTRICT,
-                    FOREIGN KEY (entity_id) REFERENCES entities(entity_id) ON DELETE RESTRICT,
-                    FOREIGN KEY (created_by) REFERENCES users(user_id) ON DELETE RESTRICT
-                );
-                INSERT INTO transactions_new
-                    (transaction_id, transaction_type, transaction_date, store_id, entity_id, created_by, notes, is_deleted)
-                SELECT
-                    transaction_id, transaction_type, transaction_date, store_id, entity_id, created_by, notes, is_deleted
-                FROM transactions;
-                DROP TABLE transactions;
-                ALTER TABLE transactions_new RENAME TO transactions;
-                COMMIT;
-            `);
-            console.log('[DB] Migration complete.');
-        }
-    } catch (e) {
-        console.error('[DB] Migration warning:', e.message);
+    // A leaked transaction would make every write this session silently roll back
+    // on quit (better-sqlite3 shadows it with a SAVEPOINT rather than failing).
+    // Losing a day of receipts quietly is worse than refusing to start.
+    if (db.inTransaction) {
+        throw new Error('[DB] القاعدة في حالة معاملة مفتوحة غير متوقعة — تم إيقاف التشغيل لحماية البيانات.');
     }
+
+    // Migration: remove receipt_number column from existing databases.
+    // Failures must surface — the previous version swallowed them and continued
+    // on a half-migrated schema.
+    migrateRemoveReceiptNumber(db);
 
     const init = db.transaction(() => {
 
@@ -167,6 +136,9 @@ function initializeDatabase() {
         `);
 
         // 5. Transactions table
+        // أعمدة الإلغاء (void_*) في آخر القائمة كي يتطابق هيكل القواعد الجديدة
+        // مع القواعد القديمة التي تُضاف إليها الأعمدة عبر ALTER TABLE — التفريغ
+        // النصي ينسخ sqlite_master.sql حرفياً، فاختلاف الترتيب يعني نسختين مختلفتين.
         db.exec(`
             CREATE TABLE IF NOT EXISTS transactions (
                 transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -177,11 +149,20 @@ function initializeDatabase() {
                 created_by INTEGER,
                 notes TEXT,
                 is_deleted INTEGER DEFAULT 0,
+                void_reason TEXT,
+                voided_by INTEGER,
+                voided_at DATETIME,
                 FOREIGN KEY (store_id) REFERENCES stores(store_id) ON DELETE RESTRICT,
                 FOREIGN KEY (entity_id) REFERENCES entities(entity_id) ON DELETE RESTRICT,
                 FOREIGN KEY (created_by) REFERENCES users(user_id) ON DELETE RESTRICT
             );
         `);
+
+        // القواعد القائمة: إضافة أعمدة الإلغاء عبر ALTER TABLE ADD COLUMN.
+        // هذه عملية على البيانات الوصفية فقط — لا إعادة بناء للجدول، ولا حذف
+        // ضمني، ولا CASCADE. (لهذا لا نضع مفتاحاً خارجياً على voided_by: إضافته
+        // كانت ستستلزم إعادة بناء الجدول.)
+        migrateAddVoidColumns(db);
 
         // 6. Transaction details table
         db.exec(`
@@ -266,6 +247,7 @@ module.exports = new Proxy({}, {
         if (prop === 'initializeDatabase') return initializeDatabase;
         if (prop === 'hashPassword') return hashPassword;
         if (prop === 'getDbPath') return getDbPath;
+        if (prop === 'checkIntegrity') return () => checkIntegrity(getDb());
 
         const db = getDb();
         const value = db[prop];
@@ -280,3 +262,4 @@ module.exports.reopenDb = reopenDb;
 module.exports.initializeDatabase = initializeDatabase;
 module.exports.hashPassword = hashPassword;
 module.exports.getDbPath = getDbPath;
+module.exports.checkIntegrity = () => checkIntegrity(getDb());

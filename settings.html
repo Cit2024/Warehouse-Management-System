@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self';">
     <title>إعدادات النظام - منظومة إدارة المخازن | كلية التقنية الصناعية</title>
     <link rel="stylesheet" href="node_modules/@fortawesome/fontawesome-free/css/all.min.css">
     <link rel="stylesheet" href="assets/css/main.css">
@@ -23,79 +24,32 @@
         </div>
 
         <div class="page-content">
-            <!-- Alert Banner -->
-            <div class="alert alert-warning" id="alertBanner" style="display: none;">
-                <span><i class="fas fa-exclamation-triangle"></i></span>
-                <span>النظام غير متصل بالمستودع السحابي حالياً. يرجى إعداد الروابط أدناه لتفادي فقدان بيانات المخزن.</span>
-            </div>
-
-            <div id="settingsLockedState" class="locked-state">
-                <div class="locked-icon">🔒</div>
-                <h4 class="locked-title">الإعدادات السحابية محفوظة ومحمية</h4>
-                <p class="locked-text">لا يمكن عرض أو تعديل الروابط ورموز الوصول حمايةً للبيانات.</p>
-                <button class="btn btn-warning" onclick="promptForPassword(showSettings)">
-                    🔓 تعديل الإعدادات (يتطلب كلمة المرور)
-                </button>
-            </div>
-
-            <!-- Cloud Settings Panel -->
-            <div id="cloudSettingsForm" class="panel settings-panel" style="display: none;">
-                <div class="panel-header">
-                    <div>
-                        <div class="panel-title"><i class="fas fa-cloud"></i> إعدادات التخزين السحابي (GitHub Backup)</div>
-                        <div class="panel-subtitle">حفظ نسخ احتياطية في مستودع GitHub</div>
-                    </div>
-                </div>
-                <div class="panel-body">
-                    <form id="cloudSettingsFormEl" class="form-grid" onsubmit="event.preventDefault(); saveSettings();">
-                        <div class="form-group" style="grid-column: span 2;">
-                            <label>رابط المستودع (HTTPS Repo URL)</label>
-                            <input type="url" id="repoUrl" placeholder="https://github.com/username/repo.git" required>
-                        </div>
-                        <div class="form-group">
-                            <label>رمز الوصول الدائم (Personal Access Token)</label>
-                            <input type="password" id="accessToken" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" required>
-                            <div class="help-text">يتم تشفير هذا الرمز وحفظه محلياً ولا يتم مشاركته.</div>
-                        </div>
-                        <div class="form-group">
-                            <label>معدل النسخ التلقائي</label>
-                            <select id="backupFrequency">
-                                <option value="14">كل أسبوعين (موصى به)</option>
-                                <option value="21">كل 3 أسابيع</option>
-                                <option value="30">كل شهر (أقصى حد)</option>
-                            </select>
-                        </div>
-                        <div class="form-actions">
-                            <button type="submit" class="btn btn-primary" id="saveBtn">
-                                <span><i class="fas fa-link"></i></span>
-                                <span>فحص الاتصال وحفظ الإعدادات</span>
-                            </button>
-                        </div>
-                    </form>
-                </div>
+            <!-- النسخ الاحتياطي المحلي يعمل تلقائياً؛ المزامنة السحابية معطّلة في هذا الإصدار -->
+            <div class="alert alert-info" id="localBackupNotice">
+                <span><i class="fas fa-shield-halved"></i></span>
+                <span>
+                    <strong>النسخ الاحتياطي المحلي مُفعّل تلقائياً.</strong>
+                    تُحفظ نسخة من قاعدة البيانات على هذا الجهاز بشكل دوري، ويمكنك استرجاع أي نسخة من القائمة أدناه،
+                    أو تصدير نسخة إلى ملف خارجي. المزامنة السحابية معطّلة مؤقتاً في هذا الإصدار.
+                </span>
             </div>
 
             <!-- Restore Panel -->
             <div class="panel">
                 <div class="panel-header">
                     <div>
-                        <div class="panel-title text-danger"><i class="fas fa-sync-alt"></i> الاسترجاع والعودة بالزمن (Restore)</div>
+                        <div class="panel-title text-danger"><i class="fas fa-sync-alt"></i> الاسترجاع</div>
                         <div class="panel-subtitle">استرجاع نسخة سابقة من البيانات</div>
                     </div>
                 </div>
                 <div class="panel-body">
                     <p class="panel-description text-muted">
-                        يمكنك استرجاع أي نسخة سابقة تم حفظها محلياً أو سحابياً. إذا فقدت بياناتك، يمكنك جلب النسخ من المستودع السحابي.
+                        يمكنك استرجاع أي نسخة سابقة تم حفظها محلياً على هذا الجهاز.
                     </p>
-
-                    <div class="status-bar">
-                        <span><i class="fas fa-globe"></i> حالة الاتصال:</span>
-                        <span id="statusText" class="status-badge status-offline">غير متصل</span>
-                    </div>
 
                     <div class="form-grid" id="restoreControls">
                         <div class="form-group backup-select">
-                            <label>النسخ الاحتياطية المتوفرة</label>
+                            <label for="cloudBackupsSelect">النسخ الاحتياطية المتوفرة</label>
                             <select id="cloudBackupsSelect">
                                 <option value="">-- اضغط على زر عرض النسخ --</option>
                             </select>

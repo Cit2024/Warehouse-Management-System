@@ -115,9 +115,7 @@
     .quick-action-btn,
     .quick-action-icon,
     .quick-action-label,
-    .chart-container,
-    canvas,
-    #inventoryChart {
+    .category-value-list {
         display: none !important;
         visibility: hidden !important;
     }
@@ -153,7 +151,6 @@
     .modal-content,
     .modal-close,
     .toast,
-    .toast-container,
     .row-actions,
     .row-action-btn,
     .loading-spinner,
@@ -210,10 +207,10 @@
     .empty-state,
     .empty-state-icon,
     .content-grid:has(.quick-actions),
-    .content-grid:has(.chart-container),
+    .content-grid:has(.category-value-list),
     .panel:has(.alert-list),
     .panel:has(.activity-list),
-    .panel:has(.chart-container),
+    .panel:has(.category-value-list),
     .panel:has(.quick-actions),
     .no-print {
         display: none !important;

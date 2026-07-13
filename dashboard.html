@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self';">
     <title>لوحة التحكم - منظومة إدارة المخازن | كلية التقنية الصناعية</title>
     <link rel="stylesheet" href="node_modules/@fortawesome/fontawesome-free/css/all.min.css">
     <link rel="stylesheet" href="assets/css/main.css">
     <link rel="stylesheet" href="assets/css/layout.css">
     <link rel="stylesheet" href="assets/css/components.css">
     <link rel="stylesheet" href="assets/css/print.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="assets/js/components/printReport.js"></script>
 </head>
 <body>
@@ -98,17 +98,20 @@
                     </div>
                 </div>
 
-                <!-- Chart Panel -->
+                <!-- Top Categories by Value (plain list, not a chart) -->
                 <div class="panel">
                     <div class="panel-header">
                         <div>
-                            <div class="panel-title">توزيع قيمة المخزون حسب التصنيف</div>
-                            <div class="panel-subtitle">أعلى التصنيفات من حيث القيمة الحالية</div>
+                            <div class="panel-title">أعلى التصنيفات قيمةً</div>
+                            <div class="panel-subtitle">التصنيفات الأكثر قيمة في المخزون حالياً</div>
                         </div>
                     </div>
                     <div class="panel-body">
-                        <div class="chart-container">
-                            <canvas id="inventoryChart"></canvas>
+                        <div class="category-value-list" id="categoryValueList">
+                            <div class="empty-state" style="padding: 24px;">
+                                <div class="empty-state-icon"><i class="fas fa-spinner fa-spin"></i></div>
+                                <p>جاري التحميل...</p>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -123,7 +126,7 @@
                             <div class="panel-title">تنبيهات الحد الأدنى</div>
                             <div class="panel-subtitle">الأصناف التي تتطلب إعادة طلب</div>
                         </div>
-                        <a href="dashboard.html" class="btn btn-sm btn-secondary">كل الأصناف</a>
+                        <a href="items.html" class="btn btn-sm btn-secondary">كل الأصناف</a>
                     </div>
                     <div class="panel-body">
                         <div class="alert-list" id="lowStockList">

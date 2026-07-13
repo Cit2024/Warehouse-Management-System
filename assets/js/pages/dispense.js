@@ -97,7 +97,7 @@ async function loadDropdownData() {
 
     } catch (error) {
         console.error(error);
-        alert("حدث خطأ في جلب البيانات.");
+        showToast("حدث خطأ في جلب البيانات.", 'error');
     }
 }
 
@@ -137,7 +137,7 @@ function renderTable() {
     tbody.innerHTML = receiptRows.map(row => `
         <tr>
             <td><span class="item-id">${row.itemId}</span></td>
-            <td style="font-weight: 600;">${row.itemName}</td>
+            <td style="font-weight: 600;">${escapeHtml(row.itemName)}</td>
             <td style="font-weight: 700; color: var(--danger);">- ${row.quantity}</td>
             <td><button type="button" class="btn btn-sm btn-danger" onclick="removeRow(${row.itemId})">حذف</button></td>
         </tr>

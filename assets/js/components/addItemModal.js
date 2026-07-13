@@ -128,7 +128,7 @@ class AddItemModal {
      */
     open() {
         const session = typeof checkSession === 'function' ? checkSession() : null;
-        if (session && session.role === 'viewer') {
+        if (session && session.role === 'Viewer') {
             showToast('لا تملك صلاحية الإضافة', 'error');
             return;
         }
@@ -168,7 +168,7 @@ class AddItemModal {
      */
     async submit() {
         const session = typeof checkSession === 'function' ? checkSession() : null;
-        if (session && session.role === 'viewer') {
+        if (session && session.role === 'Viewer') {
             showToast('لا تملك صلاحية الإضافة', 'error');
             return;
         }

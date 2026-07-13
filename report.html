@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self';">
     <title>التقارير - منظومة إدارة المخازن | كلية التقنية الصناعية</title>
     <link rel="stylesheet" href="node_modules/@fortawesome/fontawesome-free/css/all.min.css">
     <link rel="stylesheet" href="assets/css/main.css">
@@ -24,7 +25,7 @@
                 <div class="panel-body">
                     <form class="form-grid" style="display: flex; gap: 16px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 0;" onsubmit="event.preventDefault(); generateReport();">
                         <div class="form-group" style="flex: 1; min-width: 200px; margin-bottom: 0;">
-                            <label>نوع التقرير</label>
+                            <label for="reportType">نوع التقرير</label>
                             <select class="filter-select" id="reportType" onchange="onReportTypeChange()" style="width: 100%;">
                                 <option value="stock">تقرير حالة المخزون</option>
                                 <option value="items_base">دليل الأصناف الأساسي</option>
@@ -38,18 +39,28 @@
                             </select>
                         </div>
                         <div class="form-group" id="dateFromGroup" style="min-width: 160px; margin-bottom: 0;">
-                            <label>من تاريخ</label>
+                            <label for="dateFrom">من تاريخ</label>
                             <input type="date" id="dateFrom" class="filter-select" style="min-width: 160px;" max="">
                         </div>
                         <div class="form-group" id="dateToGroup" style="min-width: 160px; margin-bottom: 0;">
-                            <label>إلى تاريخ</label>
+                            <label for="dateTo">إلى تاريخ</label>
                             <input type="date" id="dateTo" class="filter-select" style="min-width: 160px;" max="">
                         </div>
                         <div class="form-group" id="itemSelectGroup" style="flex: 1; min-width: 200px; margin-bottom: 0; display: none;">
-                            <label>الصنف (لبطاقة الحركة)</label>
+                            <label for="itemSelect">الصنف (لبطاقة الحركة)</label>
                             <select class="filter-select" id="itemSelect" onchange="generateReport()" style="width: 100%;">
                                 <option value="">اختر صنفاً</option>
                             </select>
+                        </div>
+                        <div class="form-group" id="receiptSelectGroup" style="flex: 1; min-width: 220px; margin-bottom: 0; display: none;">
+                            <label for="receiptSelect">الإذن</label>
+                            <select class="filter-select" id="receiptSelect" onchange="generateReport()" style="width: 100%;">
+                                <option value="">اختر إذناً</option>
+                            </select>
+                        </div>
+                        <div class="form-group checkbox-group" id="includeVoidedGroup" style="margin-bottom: 0; display: none;">
+                            <input type="checkbox" id="includeVoided" onchange="generateReport()">
+                            <label for="includeVoided">عرض الأذونات الملغاة</label>
                         </div>
                         <button type="button" class="btn btn-secondary" onclick="openColumnsModal()" title="اختيار الأعمدة الظاهرة في التقرير">
                             <i class="fas fa-columns"></i>

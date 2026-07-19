@@ -1,6 +1,6 @@
 /**
- * Dashboard Page Logic
- * Handles data loading, charts, tables, and interactions for dashboard.html
+ * Dashboard Page Logic (redesigned for low-literacy users)
+ * Tells the user what to do instead of showing raw data.
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -9,10 +9,6 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 let allItems = [];
-
-// Table sorting helpers (parseArabNumber / sortTable) are provided by common.js
-
-// Session helpers are provided by common.js
 
 // ========== Dashboard Data ==========
 async function loadDashboardData() {
@@ -24,7 +20,6 @@ async function loadDashboardData() {
         }
         allItems = items || [];
 
-        // سجل الحركات (توريد/صرف) يُستخدم لحساب عدد حركات الشهر ولعرض آخر الحركات
         let history = [];
         try {
             history = await window.api.getTransactionsHistory();
@@ -36,11 +31,10 @@ async function loadDashboardData() {
             console.error('Error loading transactions history:', historyError);
         }
 
-        updateStats(allItems, countMovementsThisMonth(history));
-        renderItemsSummary(allItems);
-        renderLowStockAlerts(allItems);
-        renderCategoryValueList(allItems);
+        renderStatus(allItems);
+        renderAttention(allItems);
         renderRecentMovements(history);
+        renderSummary(allItems, history);
         updateSidebarBadge(allItems.length);
         renderRoleBadge();
     } catch (error) {
@@ -50,49 +44,181 @@ async function loadDashboardData() {
     }
 }
 
-// يحسب عدد الحركات (توريد/صرف) التي تاريخها يقع ضمن الشهر والسنة الحاليين
+// عند فشل تحميل البيانات — نعرض حالة خطأ واضحة بدلاً من أرقام وهمية
+function showDashboardLoadError() {
+    const status = document.getElementById('dashboardStatus');
+    if (status) {
+        status.className = 'dashboard-status dashboard-status--error';
+        status.href = 'javascript:void(0);';
+        status.innerHTML = `
+            <span class="dashboard-status-icon" aria-hidden="true"><i class="fas fa-triangle-exclamation"></i></span>
+            <span class="dashboard-status-text">تعذّر تحميل البيانات — اضغط زر التحديث أعلى الصفحة</span>
+        `;
+    }
+
+    const attention = document.getElementById('attentionList');
+    if (attention) attention.innerHTML = '<p class="dashboard-empty">تعذّر تحميل التنبيهات.</p>';
+
+    const movements = document.getElementById('recentMovementsList');
+    if (movements) movements.innerHTML = '<li class="dashboard-empty">تعذّر تحميل الحركات الأخيرة.</li>';
+
+    document.getElementById('summaryTotalItems').textContent = '—';
+    document.getElementById('summaryInventoryValue').textContent = '—';
+    document.getElementById('summaryMonthlyMovements').textContent = '—';
+}
+
+// ========== Status Banner ==========
+function renderStatus(items) {
+    const status = document.getElementById('dashboardStatus');
+    if (!status) return;
+
+    const lowItems = items.filter(item => (item.current_quantity || 0) <= (item.min_order_qty || 0));
+
+    if (lowItems.length === 0) {
+        status.className = 'dashboard-status dashboard-status--ok';
+        status.href = 'javascript:void(0);';
+        status.setAttribute('aria-disabled', 'true');
+        status.setAttribute('tabindex', '-1');
+        status.innerHTML = `
+            <span class="dashboard-status-icon" aria-hidden="true"><i class="fas fa-check-circle"></i></span>
+            <span class="dashboard-status-text">كل شيء على ما يرام — لا توجد أصناف تحتاج تدخلك اليوم</span>
+        `;
+    } else {
+        status.className = 'dashboard-status dashboard-status--warning';
+        status.href = '#attentionPanel';
+        status.setAttribute('aria-disabled', 'false');
+        status.setAttribute('tabindex', '0');
+        status.innerHTML = `
+            <span class="dashboard-status-icon" aria-hidden="true"><i class="fas fa-exclamation-circle"></i></span>
+            <span class="dashboard-status-text">يوجد ${lowItems.length} ${lowItems.length === 1 ? 'صنف' : 'أصناف'} وصلت للحد الأدنى وتحتاج إعادة طلب</span>
+            <span class="dashboard-status-hint">اضغط هنا لمعرفة الأصناف</span>
+        `;
+    }
+}
+
+// ========== Attention Section ==========
+function renderAttention(items) {
+    const container = document.getElementById('attentionList');
+    if (!container) return;
+
+    const lowItems = items.filter(item => (item.current_quantity || 0) <= (item.min_order_qty || 0));
+
+    if (lowItems.length === 0) {
+        container.innerHTML = `
+            <div class="dashboard-allclear">
+                <span class="dashboard-allclear-icon" aria-hidden="true"><i class="fas fa-check-circle"></i></span>
+                <p>لا توجد أصناف منخفضة — لا تحتاج لأي إجراء الآن</p>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = lowItems.map(item => {
+        const current = item.current_quantity || 0;
+        const min = item.min_order_qty || 0;
+        return `
+            <div class="dashboard-attention-row">
+                <div class="dashboard-attention-info">
+                    <span class="dashboard-attention-name">${escapeHtml(item.item_name || 'غير معروف')}</span>
+                    <span class="dashboard-attention-detail">
+                        متبقي ${current.toLocaleString('ar-LY')} من أصل حد أدنى ${min.toLocaleString('ar-LY')}
+                        <details class="dashboard-inline-hint">
+                            <summary><span aria-hidden="true">(؟)</span><span class="visually-hidden">ما معنى الحد الأدنى؟</span></summary>
+                            <p>الحد الأدنى هو أقل كمية يجب توفرها من الصنف قبل إعادة الطلب.</p>
+                        </details>
+                    </span>
+                </div>
+                <a href="supply.html" class="btn btn-primary btn-sm">
+                    <span><i class="fas fa-arrow-down" aria-hidden="true"></i></span>
+                    <span>توريد</span>
+                </a>
+            </div>
+        `;
+    }).join('');
+}
+
+// ========== Recent Movements ==========
+function renderRecentMovements(history) {
+    const list = document.getElementById('recentMovementsList');
+    if (!list) return;
+
+    const recent = (history || [])
+        .filter(t => t.transaction_date)
+        .sort((a, b) => new Date(b.transaction_date) - new Date(a.transaction_date))
+        .slice(0, 5);
+
+    if (recent.length === 0) {
+        list.innerHTML = '<li class="dashboard-empty">لا توجد حركات مسجلة بعد</li>';
+        return;
+    }
+
+    list.innerHTML = recent.map(t => {
+        const isDispense = t.transaction_type === 'Out';
+        const action = isDispense ? 'تم صرف' : 'تم توريد';
+        const entity = escapeHtml(t.entity_name || t.store_name || 'جهة غير محددة');
+        const value = (t.total_value || 0).toLocaleString('ar-LY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const dateText = formatMovementDate(t.transaction_date);
+        return `
+            <li class="dashboard-movement">
+                <span class="dashboard-movement-date">${dateText}</span>
+                <span class="dashboard-movement-text">
+                    — ${action} بقيمة ${value} د.ل لـ ${entity}
+                </span>
+            </li>
+        `;
+    }).join('');
+}
+
+// تنسيق التاريخ: نسبي إن كان قريباً، وإلا بصيغة عربية واضحة
+function formatMovementDate(dateStr) {
+    const d = new Date(dateStr);
+    if (isNaN(d)) return dateStr;
+
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfYesterday = new Date(startOfToday);
+    startOfYesterday.setDate(startOfYesterday.getDate() - 1);
+    const startOfDayBefore = new Date(startOfToday);
+    startOfDayBefore.setDate(startOfDayBefore.getDate() - 2);
+
+    if (d >= startOfToday) return 'اليوم';
+    if (d >= startOfYesterday) return 'أمس';
+    if (d >= startOfDayBefore) return 'قبل يومين';
+
+    const diffDays = Math.floor((startOfToday - d) / (1000 * 60 * 60 * 24));
+    if (diffDays > 2 && diffDays < 7) {
+        return `قبل ${diffDays} ${diffDays === 1 ? 'يوم' : 'أيام'}`;
+    }
+
+    return d.toLocaleDateString('ar-LY', { year: 'numeric', month: 'long', day: 'numeric' });
+}
+
+// ========== Small Numeric Summary ==========
+function renderSummary(items, history) {
+    const totalItems = items.length;
+    const totalValue = items.reduce((sum, item) => sum + ((item.current_quantity || 0) * (item.unit_price || 0)), 0);
+    const monthlyMovements = countMovementsThisMonth(history);
+
+    document.getElementById('summaryTotalItems').textContent = totalItems.toLocaleString('ar-LY');
+    document.getElementById('summaryInventoryValue').textContent = totalValue.toLocaleString('ar-LY', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' د.ل';
+    document.getElementById('summaryMonthlyMovements').textContent = monthlyMovements.toLocaleString('ar-LY');
+}
+
 function countMovementsThisMonth(history) {
     const now = new Date();
-    return history.filter(t => {
+    return (history || []).filter(t => {
         if (!t.transaction_date) return false;
         const d = new Date(t.transaction_date);
         return !isNaN(d) && d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
     }).length;
 }
 
-// عند فشل تحميل البيانات (لا اتصال، خطأ في القاعدة، ...) نعرض حالة خطأ صريحة
-// بدل بيانات مختلقة — أرقام وهمية على لوحة التحكم يمكن أن تُتخذ قرارات بناءً
-// عليها، وهو ما تحذّر منه PRODUCT.md صراحةً ("Trust Through Verification").
-function showDashboardLoadError() {
-    ['statTotalItems', 'statTotalUnits', 'statInventoryValue', 'statLowStock', 'statMonthlyMovements'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.textContent = '—';
-    });
-
-    const errorHtml = (message) => `
-        <div class="empty-state" style="padding: 24px;">
-            <div class="empty-state-icon"><i class="fas fa-triangle-exclamation"></i></div>
-            <p>${message}</p>
-        </div>
-    `;
-
-    const itemsSummary = document.getElementById('itemsSummary');
-    if (itemsSummary) itemsSummary.innerHTML = errorHtml('تعذّر تحميل بيانات الأصناف. حاول تحديث الصفحة.');
-
-    const lowStockList = document.getElementById('lowStockList');
-    if (lowStockList) lowStockList.innerHTML = errorHtml('تعذّر تحميل التنبيهات.');
-
-    const recentMovements = document.getElementById('recentMovements');
-    if (recentMovements) recentMovements.innerHTML = errorHtml('تعذّر تحميل الحركات الأخيرة.');
-
-    const categoryValueList = document.getElementById('categoryValueList');
-    if (categoryValueList) categoryValueList.innerHTML = errorHtml('تعذّر تحميل بيانات التصنيفات.');
+// ========== Helpers (kept from previous version) ==========
+function updateSidebarBadge(count) {
+    const badge = document.getElementById('sidebarItemCount');
+    if (badge) badge.textContent = count;
 }
 
-// يعرض دور المستخدم الحالي (مسؤول / أمين مخزن / مستعرض) في رأس الصفحة —
-// يساعد المستخدم على تذكّر صلاحياته الحالية دون الحاجة لتذكّرها (Recognition
-// Rather Than Recall). كان هذا العنصر موجوداً في الصفحة وفارغاً دائماً؛
-// أصناف .role-badge.viewer/.admin/.storekeeper معرّفة في layout.css ولم تُستخدم قط.
 const ROLE_BADGE_INFO = {
     Admin: { text: 'مسؤول', icon: 'fa-user-shield', cssClass: 'admin' },
     Store_Keeper: { text: 'أمين مخزن', icon: 'fa-user-gear', cssClass: 'storekeeper' },
@@ -115,259 +241,6 @@ function renderRoleBadge() {
     `;
 }
 
-function updateStats(items, monthlyMovements = 0) {
-    const totalItems = items.length;
-    const totalUnits = items.reduce((sum, item) => sum + (item.current_quantity || 0), 0);
-    const totalValue = items.reduce((sum, item) => sum + ((item.current_quantity || 0) * (item.unit_price || 0)), 0);
-    const lowStock = items.filter(item => (item.current_quantity || 0) <= (item.min_order_qty || 0)).length;
-
-    document.getElementById('statTotalItems').textContent = totalItems;
-    document.getElementById('statTotalUnits').textContent = totalUnits.toLocaleString() + ' وحدة مخزنة';
-    document.getElementById('statInventoryValue').textContent = totalValue.toLocaleString('ar-LY', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' د.ل';
-    document.getElementById('statLowStock').textContent = lowStock;
-    document.getElementById('statMonthlyMovements').textContent = monthlyMovements;
-}
-
-function updateSidebarBadge(count) {
-    const badge = document.getElementById('sidebarItemCount');
-    if (badge) badge.textContent = count;
-}
-
-// أهم التصنيفات من حيث القيمة — قائمة نصية بسيطة بدل رسم بياني تفاعلي.
-// نفس البيانات، بلا حاجة لقراءة محاور أو تلميحات (tooltips) أو خبرة سابقة
-// بالرسوم البيانية؛ تُقرأ بالكامل خلال ثوانٍ. تخدم "الوضوح أولاً" في
-// PRODUCT.md مباشرة، بدل عرض تحليلي لا يقود لأي إجراء.
-function renderCategoryValueList(items) {
-    const container = document.getElementById('categoryValueList');
-    if (!container) return;
-
-    const totals = {};
-    items.forEach(item => {
-        const value = (item.current_quantity || 0) * (item.unit_price || 0);
-        const category = item.category || 'غير مصنف';
-        totals[category] = (totals[category] || 0) + value;
-    });
-
-    const rows = Object.entries(totals)
-        .filter(([, value]) => value > 0)
-        .sort((a, b) => b[1] - a[1]);
-
-    if (rows.length === 0) {
-        container.innerHTML = `
-            <div class="empty-state" style="padding: 24px;">
-                <div class="empty-state-icon"><i class="fas fa-chart-simple"></i></div>
-                <p>لا توجد بيانات كافية لعرض التصنيفات بعد</p>
-            </div>
-        `;
-        return;
-    }
-
-    const TOP_N = 5;
-    const top = rows.slice(0, TOP_N);
-    const rest = rows.slice(TOP_N);
-    const maxValue = top[0][1];
-    const fmt = (v) => v.toLocaleString('ar-LY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-    let html = top.map(([category, value]) => {
-        const pct = maxValue > 0 ? Math.round((value / maxValue) * 100) : 0;
-        return `
-            <div class="category-value-row">
-                <div class="category-value-label">
-                    <span class="category-value-name">${escapeHtml(category)}</span>
-                    <span class="category-value-amount">${fmt(value)} د.ل</span>
-                </div>
-                <div class="category-value-bar"><div class="category-value-fill" style="width: ${pct}%;"></div></div>
-            </div>
-        `;
-    }).join('');
-
-    if (rest.length > 0) {
-        const restTotal = rest.reduce((sum, [, value]) => sum + value, 0);
-        html += `<div class="category-value-more">و${rest.length} تصنيفات أخرى بقيمة ${fmt(restTotal)} د.ل</div>`;
-    }
-
-    container.innerHTML = html;
-}
-
-function renderLowStockAlerts(items) {
-    const container = document.getElementById('lowStockList');
-    const lowItems = items.filter(item => (item.current_quantity || 0) <= (item.min_order_qty || 0));
-
-    if (lowItems.length === 0) {
-        container.innerHTML = '';
-        const emptyState = document.createElement('div');
-        emptyState.className = 'empty-state';
-        emptyState.style.padding = '24px';
-        emptyState.innerHTML = `
-            <div class="empty-state-icon"><i class="fas fa-check-circle"></i></div>
-            <p>لا توجد أصناف منخفضة</p>
-        `;
-        container.appendChild(emptyState);
-        return;
-    }
-
-    const fragment = document.createDocumentFragment();
-    lowItems.forEach(item => {
-        const alertItem = document.createElement('div');
-        alertItem.className = 'alert-item';
-        alertItem.innerHTML = `
-            <div class="alert-item-icon">${escapeHtml((item.item_name || 'غير معروف').charAt(0))}</div>
-            <div class="alert-item-content">
-                <div class="alert-item-name">${escapeHtml(item.item_name || 'غير معروف')}</div>
-                <div class="alert-item-detail">${(item.current_quantity || 0)} ${escapeHtml(item.unit || '')} من حد أدنى ${(item.min_order_qty || 0)}</div>
-            </div>
-            <div class="alert-item-status">منخفض</div>
-        `;
-        fragment.appendChild(alertItem);
-    });
-    container.innerHTML = '';
-    container.appendChild(fragment);
-}
-
-// يعرض آخر الحركات الحقيقية (توريد/صرف) من سجل قاعدة البيانات الفعلي
-function renderRecentMovements(history) {
-    const container = document.getElementById('recentMovements');
-    if (!container) return;
-
-    const recent = (history || []).slice(0, 6);
-
-    if (recent.length === 0) {
-        container.innerHTML = '';
-        const emptyState = document.createElement('div');
-        emptyState.className = 'empty-state';
-        emptyState.innerHTML = `
-            <div class="empty-state-icon"><i class="fas fa-clipboard-list"></i></div>
-            <p>لا توجد حركات مسجلة</p>
-        `;
-        container.appendChild(emptyState);
-        return;
-    }
-
-    const fragment = document.createDocumentFragment();
-    recent.forEach(t => {
-        const isDispense = t.transaction_type === 'Out';
-        const type = isDispense ? 'dispense' : 'supply';
-        const title = '#' + t.transaction_id;
-        const entity = escapeHtml(t.entity_name || t.store_name || '-');
-        const dateLabel = formatMovementDate(t.transaction_date);
-        const value = (t.total_value || 0).toLocaleString('ar-LY', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' د.ل';
-
-        const activityItem = document.createElement('div');
-        activityItem.className = 'activity-item';
-        activityItem.innerHTML = `
-            <div class="activity-icon ${type}">
-                <i class="fas fa-arrow-${type === 'supply' ? 'down' : 'up'}"></i>
-            </div>
-            <div class="activity-content">
-                <div class="activity-title">${title}</div>
-                <div class="activity-meta">${dateLabel} · ${entity}</div>
-            </div>
-            <div class="activity-value">${value}</div>
-        `;
-        fragment.appendChild(activityItem);
-    });
-    container.innerHTML = '';
-    container.appendChild(fragment);
-}
-
-// تنسيق تاريخ الحركة لعرض مختصر وواضح (مثال: 2026-06-12 -> 12-06-2026)
-function formatMovementDate(dateStr) {
-    if (!dateStr) return '-';
-    const d = new Date(dateStr);
-    if (isNaN(d)) return dateStr;
-    return d.toLocaleDateString('ar-LY', { year: 'numeric', month: '2-digit', day: '2-digit' });
-}
-
-// ========== Items Summary ==========
-function renderItemsSummary(items) {
-    const container = document.getElementById('itemsSummary');
-    if (!container) return;
-
-    if (!items || items.length === 0) {
-        container.innerHTML = `
-            <div class="empty-state" style="padding: 32px;">
-                <div class="empty-state-icon"><i class="fas fa-inbox"></i></div>
-                <h3>لا توجد أصناف حالياً</h3>
-                <p>قم بإضافة صنف جديد من صفحة الأصناف والمخزون</p>
-            </div>
-        `;
-        return;
-    }
-
-    const lowItems = items.filter(item => (item.current_quantity || 0) <= (item.min_order_qty || 0));
-    const previewItems = items.slice(0, 5);
-
-    let html = `
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 20px;">
-            <div class="stat-card" style="margin: 0;">
-                <div class="stat-content">
-                    <div class="stat-label">إجمالي الأصناف</div>
-                    <div class="stat-value" style="font-size: 24px;">${items.length}</div>
-                </div>
-            </div>
-            <div class="stat-card" style="margin: 0;">
-                <div class="stat-content">
-                    <div class="stat-label">أصناف منخفضة</div>
-                    <div class="stat-value" style="font-size: 24px; color: var(--danger);">${lowItems.length}</div>
-                </div>
-            </div>
-        </div>
-
-        <h4 style="margin-bottom: 12px; font-size: 15px; color: var(--text-primary);">آخر الأصناف المسجلة</h4>
-        <div class="activity-list">
-    `;
-
-    previewItems.forEach(item => {
-        const isLow = (item.current_quantity || 0) <= (item.min_order_qty || 0);
-        html += `
-            <div class="activity-item">
-                <div class="activity-icon" style="background: var(--primary-light); color: var(--primary);">
-                    <i class="fas fa-box"></i>
-                </div>
-                <div class="activity-content">
-                    <div class="activity-title">${escapeHtml(item.item_name)}</div>
-                    <div class="activity-meta">${escapeHtml(item.category || 'غير مصنف')} · ${item.current_quantity || 0} ${escapeHtml(item.unit || '')}</div>
-                </div>
-                <div class="activity-value">
-                    <span class="badge ${isLow ? 'badge-low' : 'badge-available'}">${isLow ? 'منخفض' : 'متوفر'}</span>
-                </div>
-            </div>
-        `;
-    });
-
-    html += '</div>';
-
-    if (items.length > 5) {
-        html += `
-            <div style="text-align: center; margin-top: 16px;">
-                <a href="items.html" class="btn btn-secondary">
-                    <span>عرض كل الأصناف</span>
-                    <span><i class="fas fa-arrow-left"></i></span>
-                </a>
-            </div>
-        `;
-    }
-
-    container.innerHTML = html;
-}
-
-// ========== Print ==========
-function handleDirectPrint() {
-    // Use unified PrintReport component when available
-    if (window.printReport && typeof window.printReport.printInventoryTable === 'function') {
-        window.printReport.printInventoryTable(allItems, {
-            title: 'تقرير حالة المخزون',
-            subtitle: 'ملخص شامل لجميع الأصناف والرصيد الحالي'
-        });
-    } else {
-        console.warn('[Dashboard] PrintReport component not available, falling back to raw print');
-        window.print();
-    }
-}
-
-// ========== فحص سلامة البيانات ==========
-// يُحذّر المستخدم إذا اكتُشف تلف خلّفته المهاجرة القديمة، قبل أن يبني حركات
-// جديدة فوق أرصدة خاطئة. لا نحذف الأذونات اليتيمة: هي الدليل على ما حدث.
 async function checkDatabaseHealth() {
     try {
         const health = await window.api.getDbHealth();

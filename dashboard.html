@@ -21,163 +21,99 @@
         <div class="header-title-section">
             <div id="roleBadgeContainer"></div>
             <h1>لوحة التحكم</h1>
-            <p class="subtitle">نظرة شاملة على حالة المخزون والحركات</p>
+            <p class="subtitle">ماذا تريد أن تفعل اليوم؟</p>
         </div>
 
         <!-- Page Content -->
-        <div class="page-content">
-            <!-- Stats Cards -->
-            <div class="stats-grid">
-                <a class="stat-card-link" href="#itemsSection">
-                    <div class="stat-card">
-                        <div class="stat-icon orange"><i class="fas fa-th-large"></i></div>
-                        <div class="stat-content">
-                            <div class="stat-label">إجمالي الأصناف</div>
-                            <div class="stat-value" id="statTotalItems">0</div>
-                            <div class="stat-desc" id="statTotalUnits">0 وحدة مخزنة</div>
-                        </div>
-                    </div>
+        <div class="page-content dashboard-content">
+
+            <!-- 1. Big Status Banner -->
+            <a id="dashboardStatus" class="dashboard-status" href="javascript:void(0);" aria-live="polite">
+                <span class="dashboard-status-icon" aria-hidden="true"></span>
+                <span class="dashboard-status-text">جاري التحميل...</span>
+            </a>
+
+            <!-- 2. Three Main Actions -->
+            <nav class="dashboard-actions" aria-label="الإجراءات الرئيسية">
+                <a href="supply.html" class="dashboard-action-btn">
+                    <span class="dashboard-action-icon" aria-hidden="true"><i class="fas fa-arrow-down"></i></span>
+                    <span class="dashboard-action-label">توريد جديد</span>
+                    <span class="dashboard-action-hint">عند استلام بضاعة من مورد</span>
                 </a>
-                <a class="stat-card-link" href="#itemsSection">
-                    <div class="stat-card">
-                        <div class="stat-icon green">ل.د</div>
-                        <div class="stat-content">
-                            <div class="stat-label">قيمة المخزون التقديرية</div>
-                            <div class="stat-value" id="statInventoryValue">0</div>
-                            <div class="stat-desc">حسب آخر سعر مسجل</div>
-                        </div>
-                    </div>
+                <a href="dispense.html" class="dashboard-action-btn">
+                    <span class="dashboard-action-icon" aria-hidden="true"><i class="fas fa-arrow-up"></i></span>
+                    <span class="dashboard-action-label">صرف جديد</span>
+                    <span class="dashboard-action-hint">عند تسليم أصناف لقسم أو موظف</span>
                 </a>
-                <a class="stat-card-link" href="report.html?type=lowstock">
-                    <div class="stat-card">
-                        <div class="stat-icon red"><i class="fas fa-exclamation-circle"></i></div>
-                        <div class="stat-content">
-                            <div class="stat-label">أصناف تحتاج متابعة</div>
-                            <div class="stat-value" id="statLowStock">0</div>
-                            <div class="stat-desc">عند أو تحت الحد الأدنى</div>
-                        </div>
-                    </div>
+                <a href="report.html" class="dashboard-action-btn">
+                    <span class="dashboard-action-icon" aria-hidden="true"><i class="fas fa-file-alt"></i></span>
+                    <span class="dashboard-action-label">طباعة تقرير</span>
+                    <span class="dashboard-action-hint">لإعداد تقارير المخزون والحركات</span>
                 </a>
-                <a class="stat-card-link" href="#movementsPanel">
-                    <div class="stat-card">
-                        <div class="stat-icon blue"><i class="fas fa-exchange-alt"></i></div>
-                        <div class="stat-content">
-                            <div class="stat-label">حركات الشهر الحالي</div>
-                            <div class="stat-value" id="statMonthlyMovements">0</div>
-                            <div class="stat-desc">توريد وصرف</div>
-                        </div>
-                    </div>
-                </a>
-            </div>
+            </nav>
 
-            <!-- Content Grid -->
-            <div class="content-grid">
-                <!-- Quick Actions -->
-                <div class="panel">
-                    <div class="panel-header">
-                        <div>
-                            <div class="panel-title">إجراءات سريعة</div>
-                            <div class="panel-subtitle">الوصول المباشر للعمليات المسموح بها</div>
-                        </div>
-                    </div>
-                    <div class="panel-body">
-                        <div class="quick-actions">
-                            <a href="report.html" class="quick-action-btn">
-                                <div class="quick-action-icon"><i class="fas fa-file-alt"></i></div>
-                                <div class="quick-action-label">إعداد تقرير</div>
-                            </a>
-                            <a href="supply.html" class="quick-action-btn">
-                                <div class="quick-action-icon" style="background: #DBEAFE; color: #3B82F6;"><i class="fas fa-arrow-down"></i></div>
-                                <div class="quick-action-label">توريد جديد</div>
-                            </a>
-                            <a href="dispense.html" class="quick-action-btn">
-                                <div class="quick-action-icon" style="background: #FEE2E2; color: #EF4444;"><i class="fas fa-arrow-up"></i></div>
-                                <div class="quick-action-label">صرف جديد</div>
-                            </a>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Top Categories by Value (plain list, not a chart) -->
-                <div class="panel">
-                    <div class="panel-header">
-                        <div>
-                            <div class="panel-title">أعلى التصنيفات قيمةً</div>
-                            <div class="panel-subtitle">التصنيفات الأكثر قيمة في المخزون حالياً</div>
-                        </div>
-                    </div>
-                    <div class="panel-body">
-                        <div class="category-value-list" id="categoryValueList">
-                            <div class="empty-state" style="padding: 24px;">
-                                <div class="empty-state-icon"><i class="fas fa-spinner fa-spin"></i></div>
-                                <p>جاري التحميل...</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Second Row -->
-            <div class="content-grid">
-                <!-- Low Stock Alerts -->
-                <div class="panel">
-                    <div class="panel-header">
-                        <div>
-                            <div class="panel-title">تنبيهات الحد الأدنى</div>
-                            <div class="panel-subtitle">الأصناف التي تتطلب إعادة طلب</div>
-                        </div>
-                        <a href="items.html" class="btn btn-sm btn-secondary">كل الأصناف</a>
-                    </div>
-                    <div class="panel-body">
-                        <div class="alert-list" id="lowStockList">
-                            <div class="empty-state">
-                                <div class="empty-state-icon"><i class="fas fa-check-circle"></i></div>
-                                <p>لا توجد أصناف منخفضة</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Recent Movements -->
-                <div class="panel" id="movementsPanel">
-                    <div class="panel-header">
-                        <div>
-                            <div class="panel-title">آخر الحركات</div>
-                            <div class="panel-subtitle">أحدث أذونات التوريد والصرف المسجلة</div>
-                        </div>
-                    </div>
-                    <div class="panel-body">
-                        <div class="activity-list" id="recentMovements">
-                            <div class="empty-state">
-                                <div class="empty-state-icon"><i class="fas fa-clipboard-list"></i></div>
-                                <p>لا توجد حركات مسجلة</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Items Summary Section -->
-            <div class="panel" id="itemsSection" style="margin-top: 20px;">
-                <div class="panel-header">
+            <!-- 3. Needs Your Attention -->
+            <section class="dashboard-panel" id="attentionPanel" aria-labelledby="attentionTitle">
+                <div class="dashboard-panel-header">
                     <div>
-                        <div class="panel-title">الأصناف والمخزون</div>
-                        <div class="panel-subtitle">نظرة مختصرة على المخزون</div>
+                        <h2 id="attentionTitle" class="dashboard-panel-title">أصناف تحتاج إعادة طلب</h2>
+                        <p class="dashboard-panel-subtitle">الأصناف التي وصلت للحد الأدنى</p>
                     </div>
-                    <a href="items.html" class="btn btn-primary">
-                        <span><i class="fas fa-external-link-alt"></i></span>
-                        <span>إدارة الأصناف</span>
+                    <a href="supply.html" class="btn btn-primary">
+                        <span><i class="fas fa-arrow-down" aria-hidden="true"></i></span>
+                        <span>توريد جديد</span>
                     </a>
                 </div>
-                <div class="panel-body">
-                    <div id="itemsSummary">
-                        <div class="empty-state" style="padding: 32px;">
-                            <div class="empty-state-icon"><i class="fas fa-spinner fa-spin"></i></div>
-                            <h3>جاري تحميل البيانات...</h3>
-                        </div>
+                <div class="dashboard-panel-body">
+                    <div id="attentionList" aria-live="polite">
+                        <!-- rendered by JS -->
                     </div>
                 </div>
-            </div>
+            </section>
+
+            <!-- 4. Recent Movements -->
+            <section class="dashboard-panel" aria-labelledby="movementsTitle">
+                <div class="dashboard-panel-header">
+                    <div>
+                        <h2 id="movementsTitle" class="dashboard-panel-title">آخر الحركات</h2>
+                        <p class="dashboard-panel-subtitle">آخر 5 حركات مسجلة في النظام</p>
+                    </div>
+                </div>
+                <div class="dashboard-panel-body">
+                    <ul class="dashboard-movements" id="recentMovementsList">
+                        <!-- rendered by JS -->
+                    </ul>
+                </div>
+            </section>
+
+            <!-- 5. Small Numeric Summary -->
+            <section class="dashboard-summary" aria-label="ملخص الأرقام">
+                <div class="dashboard-summary-item">
+                    <span class="dashboard-summary-value" id="summaryTotalItems">0</span>
+                    <span class="dashboard-summary-label">إجمالي الأصناف</span>
+                    <details class="dashboard-hint">
+                        <summary><span aria-hidden="true">(؟)</span><span class="visually-hidden">ما معنى إجمالي الأصناف؟</span></summary>
+                        <p>عدد الأصناف المسجلة في المخزن.</p>
+                    </details>
+                </div>
+                <div class="dashboard-summary-item">
+                    <span class="dashboard-summary-value" id="summaryInventoryValue">0 د.ل</span>
+                    <span class="dashboard-summary-label">قيمة المخزون</span>
+                    <details class="dashboard-hint">
+                        <summary><span aria-hidden="true">(؟)</span><span class="visually-hidden">ما معنى قيمة المخزون؟</span></summary>
+                        <p>الكمية × آخر سعر شراء مسجل لكل صنف.</p>
+                    </details>
+                </div>
+                <div class="dashboard-summary-item">
+                    <span class="dashboard-summary-value" id="summaryMonthlyMovements">0</span>
+                    <span class="dashboard-summary-label">حركات هذا الشهر</span>
+                    <details class="dashboard-hint">
+                        <summary><span aria-hidden="true">(؟)</span><span class="visually-hidden">ما معنى حركات هذا الشهر؟</span></summary>
+                        <p>عدد عمليات التوريد والصرف المسجلة في الشهر الحالي.</p>
+                    </details>
+                </div>
+            </section>
+
         </div>
     </main>
 

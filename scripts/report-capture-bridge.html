@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>Report Capture Bridge</title>
+</head>
+<body>
+    <p>جاري إعداد لقطات التقارير...</p>
+
+    <!-- The real print component used by the app -->
+    <script src="../assets/js/components/printReport.js"></script>
+
+    <script>
+        // Sample data mirrors scripts/screenshot-preload.js so the reports render
+        // populated screenshots without needing a real database.
+        const ITEMS = [
+            { item_id: 'ITM-001', item_name: 'ورق تصوير A4', unit: 'رزمة', category: 'قرطاسية', min_order_qty: 20, current_quantity: 85, unit_price: 24.50 },
+            { item_id: 'ITM-002', item_name: 'حبر طابعة أسود HP', unit: 'قطعة', category: 'أحبار وطباعة', min_order_qty: 10, current_quantity: 8, unit_price: 145.00 },
+            { item_id: 'ITM-003', item_name: 'كابل شبكة CAT6', unit: 'لفة', category: 'شبكات', min_order_qty: 5, current_quantity: 12, unit_price: 390.00 },
+            { item_id: 'ITM-004', item_name: 'قفازات حماية صناعية', unit: 'زوج', category: 'سلامة مهنية', min_order_qty: 30, current_quantity: 120, unit_price: 18.00 },
+            { item_id: 'ITM-005', item_name: 'مفك كهربائي متعدد', unit: 'قطعة', category: 'عدد وأدوات', min_order_qty: 8, current_quantity: 6, unit_price: 72.00 },
+            { item_id: 'ITM-007', item_name: 'مصباح LED مختبر', unit: 'قطعة', category: 'كهرباء', min_order_qty: 20, current_quantity: 19, unit_price: 15.50 },
+            { item_id: 'ITM-008', item_name: 'ملف حفظ بلاستيكي', unit: 'قطعة', category: 'قرطاسية', min_order_qty: 50, current_quantity: 210, unit_price: 3.50 },
+            { item_id: 'ITM-009', item_name: 'ورق تصوير A3', unit: 'رزمة', category: 'قرطاسية', min_order_qty: 10, current_quantity: 45, unit_price: 60.00 },
+            { item_id: 'ITM-010', item_name: 'وصلة كاميرا', unit: 'قطعة', category: 'شبكات', min_order_qty: 8, current_quantity: 5, unit_price: 68.00 }
+        ];
+
+        const SUPPLIERS = [
+            { entity_id: 1, code: 'SUP-001', entity_name: 'شركة الأفق للحاسبات', entity_type: 'Supplier', phone: '0920000000', address: 'مصراتة - المنطقة الصناعية' },
+            { entity_id: 2, code: 'SUP-002', entity_name: 'مكتبة مصراتة الحديثة', entity_type: 'Supplier', phone: '0911111111', address: 'مصراتة - وسط المدينة' }
+        ];
+
+        const REQUESTERS = [
+            { entity_id: 3, code: 'ENT-001', entity_name: 'قسم تقنية المعلومات', entity_type: 'Department', phone: '', address: 'المبنى الإداري' },
+            { entity_id: 4, code: 'ENT-002', entity_name: 'مكتب الشؤون الإدارية', entity_type: 'Department', phone: '', address: 'الإدارة' }
+        ];
+
+        const ENTITIES = [...SUPPLIERS, ...REQUESTERS];
+
+        const STORES = [
+            { store_id: 1, store_name: 'المخزن الرئيسي', location: 'المبنى الإداري' }
+        ];
+
+        const TRANSACTIONS = [
+            { transaction_id: 1, transaction_type: 'In', transaction_date: '2026-07-02', entity_name: 'شركة الأفق للحاسبات', store_name: 'المخزن الرئيسي', total_value: 1575.00 },
+            { transaction_id: 2, transaction_type: 'In', transaction_date: '2026-07-05', entity_name: 'مكتبة مصراتة الحديثة', store_name: 'المخزن الرئيسي', total_value: 3900.00 },
+            { transaction_id: 3, transaction_type: 'Out', transaction_date: '2026-07-08', entity_name: 'قسم تقنية المعلومات', store_name: 'المخزن الرئيسي', total_value: 504.00 },
+            { transaction_id: 4, transaction_type: 'Out', transaction_date: '2026-07-10', entity_name: 'مكتب الشؤون الإدارية', store_name: 'المخزن الرئيسي', total_value: 332.50 },
+            { transaction_id: 5, transaction_type: 'Out', transaction_date: '2026-07-11', entity_name: 'قسم الهندسة الكهربائية', store_name: 'المخزن الرئيسي', total_value: 720.00 }
+        ];
+
+        function itemTransactions(itemId) {
+            const id = String(itemId);
+            if (id === 'ITM-001') {
+                return [
+                    { transaction_id: 1, transaction_type: 'In', transaction_date: '2026-07-02', entity_name: 'شركة الأفق للحاسبات', quantity: 50, running_balance: 50 },
+                    { transaction_id: 3, transaction_type: 'Out', transaction_date: '2026-07-08', entity_name: 'قسم تقنية المعلومات', quantity: 10, running_balance: 40 },
+                    { transaction_id: 4, transaction_type: 'Out', transaction_date: '2026-07-10', entity_name: 'مكتب الشؤون الإدارية', quantity: 5, running_balance: 35 }
+                ];
+            }
+            if (id === 'ITM-002') {
+                return [
+                    { transaction_id: 1, transaction_type: 'In', transaction_date: '2026-07-02', entity_name: 'شركة الأفق للحاسبات', quantity: 10, running_balance: 10 },
+                    { transaction_id: 3, transaction_type: 'Out', transaction_date: '2026-07-08', entity_name: 'قسم تقنية المعلومات', quantity: 2, running_balance: 8 }
+                ];
+            }
+            return [];
+        }
+
+        window.api = {
+            login: async () => ({ success: true, user: { user_id: 1, full_name: 'admin', role: 'Admin' } }),
+            logout: async () => ({ success: true }),
+
+            getItems: async () => ITEMS,
+            addItem: async () => ({ success: true, message: 'تمت الإضافة' }),
+            updateItem: async () => ({ success: true, message: 'تم التحديث' }),
+            deleteItem: async () => ({ success: true, message: 'تم الحذف' }),
+
+            getSuppliers: async () => SUPPLIERS,
+            getRequesters: async () => REQUESTERS,
+            getStores: async () => STORES,
+            getStock: async () => ITEMS,
+
+            getAllEntities: async () => ENTITIES,
+            addEntity: async () => ({ success: true, message: 'تمت الإضافة' }),
+            deleteEntity: async () => ({ success: true, message: 'تم الحذف' }),
+
+            saveSupplyReceipt: async () => ({ success: true, message: 'تم حفظ إذن التوريد' }),
+            saveDispenseReceipt: async () => ({ success: true, message: 'تم حفظ إذن الصرف' }),
+            getSupplyReceipt: async () => ({
+                success: true,
+                receipt: {
+                    transaction_id: 1,
+                    date: '2026-07-02',
+                    supplier: 'شركة الأفق للحاسبات',
+                    store: 'المخزن الرئيسي',
+                    notes: 'توريد مستلزمات مكتبية',
+                    items: [
+                        { item_id: 'ITM-001', item_name: 'ورق تصوير A4', unit: 'رزمة', quantity: 50, price: 24.50 },
+                        { item_id: 'ITM-002', item_name: 'حبر طابعة أسود HP', unit: 'قطعة', quantity: 10, price: 145.00 }
+                    ]
+                }
+            }),
+            getDispenseReceipt: async () => ({
+                success: true,
+                receipt: {
+                    transaction_id: 3,
+                    date: '2026-07-08',
+                    requester: 'قسم تقنية المعلومات',
+                    store: 'المخزن الرئيسي',
+                    reason: 'احتياجات المعمل',
+                    items: [
+                        { item_id: 'ITM-001', item_name: 'ورق تصوير A4', unit: 'رزمة', quantity: 10, price: 0 },
+                        { item_id: 'ITM-002', item_name: 'حبر طابعة أسود HP', unit: 'قطعة', quantity: 2, price: 0 }
+                    ]
+                }
+            }),
+
+            getTransactionsHistory: async () => TRANSACTIONS,
+            getItemTransactions: async (itemId) => itemTransactions(itemId),
+
+            getUsers: async () => [
+                { user_id: 1, full_name: 'admin', role: 'Admin', is_active: 1, created_at: '2026-07-01' },
+                { user_id: 2, full_name: 'أمين المخزن', role: 'Store_Keeper', is_active: 1, created_at: '2026-07-02' },
+                { user_id: 3, full_name: 'مستعرض', role: 'Viewer', is_active: 1, created_at: '2026-07-03' }
+            ],
+            addUser: async () => ({ success: true, message: 'تمت الإضافة' }),
+            updateUserRole: async () => ({ success: true, message: 'تم التحديث' }),
+            setUserActive: async () => ({ success: true, message: 'تم التحديث' }),
+            changePassword: async () => ({ success: true, message: 'تم التغيير' }),
+
+            getDbHealth: async () => ({ isHealthy: true }),
+
+            getSettings: async () => ({ logoPath: '' }),
+            saveSettings: async () => ({ success: true, message: 'تم الحفظ' }),
+
+            getLocalBackups: async () => [
+                { commitId: 'abc1234', date: '2026-07-12 09:00', message: 'نسخة تلقائية' },
+                { commitId: 'def5678', date: '2026-07-11 21:00', message: 'قبل إضافة مستخدمين' }
+            ],
+            restoreFromGit: async () => ({ success: true, message: 'تم الاسترجاع' }),
+            backupDatabase: async () => ({ success: true, message: 'تم النسخ' }),
+            restoreDatabase: async () => ({ success: true, message: 'تم الاسترجاع' }),
+
+            printDirect: async () => ({ success: true }),
+            generateReport: async () => ({ success: true }),
+            syncWithCloud: async () => ({ success: true }),
+            getMergedBackups: async () => []
+        };
+
+        // Override the print popup so the printable HTML is sent to the main
+        // process for rendering and capture instead of opening a real print dialog.
+        let currentFilename = 'report-unknown.png';
+        let pendingCapture = Promise.resolve();
+
+        const originalOpenPrintWindow = PrintReport.prototype.openPrintWindow;
+        PrintReport.prototype.openPrintWindow = function (htmlContent, isLandscape) {
+            originalOpenPrintWindow.call(this, htmlContent, isLandscape);
+            if (this.printWindow) {
+                this.printWindow.close();
+            }
+            pendingCapture = window.electronCapture.renderAndCapture({
+                html: htmlContent,
+                filename: currentFilename,
+                landscape: !!isLandscape
+            });
+        };
+
+        async function runCaptures() {
+            const items = await window.api.getItems();
+            const transactions = await window.api.getTransactionsHistory();
+            const entities = await window.api.getAllEntities();
+            const itemCardData = await window.api.getItemTransactions('ITM-001');
+            const supplyReceipt = await window.api.getSupplyReceipt();
+            const dispenseReceipt = await window.api.getDispenseReceipt();
+
+            const reports = [
+                {
+                    filename: 'report-stock.png',
+                    call: () => window.printReport.printInventoryTable(items, {
+                        title: 'تقرير حالة المخزون',
+                        reportType: 'stock'
+                    })
+                },
+                {
+                    filename: 'report-items-base.png',
+                    call: () => window.printReport.printInventoryTable(items, {
+                        title: 'دليل الأصناف الأساسي',
+                        reportType: 'items_base'
+                    })
+                },
+                {
+                    filename: 'report-lowstock.png',
+                    call: () => window.printReport.printInventoryTable(
+                        items.filter(i => (i.current_quantity || 0) <= (i.min_order_qty || 0)),
+                        { title: 'تقرير الأصناف منخفضة الرصيد', reportType: 'lowstock' }
+                    )
+                },
+                {
+                    filename: 'report-inventory-count.png',
+                    call: () => window.printReport.printInventoryTable(items, {
+                        title: 'تقرير الجرد الفعلي',
+                        reportType: 'inventory_count'
+                    })
+                },
+                {
+                    filename: 'report-movements.png',
+                    call: () => window.printReport.printMovementsTable(transactions, {
+                        title: 'سجل حركات التوريد والصرف',
+                        dateRange: '2026-07-01 إلى 2026-07-31'
+                    })
+                },
+                {
+                    filename: 'report-supply-receipt.png',
+                    call: () => {
+                        const r = supplyReceipt && supplyReceipt.receipt ? supplyReceipt.receipt : {};
+                        window.printReport.printReceipt({
+                            supplier: r.supplier,
+                            store: r.store,
+                            notes: r.notes,
+                            items: (r.items || []).map(i => ({
+                                item_id: i.item_id,
+                                item_name: i.item_name,
+                                unit: i.unit,
+                                quantity: i.quantity,
+                                price: i.price
+                            }))
+                        }, { type: 'supply' });
+                    }
+                },
+                {
+                    filename: 'report-dispense-receipt.png',
+                    call: () => {
+                        const r = dispenseReceipt && dispenseReceipt.receipt ? dispenseReceipt.receipt : {};
+                        window.printReport.printReceipt({
+                            requester: r.requester,
+                            store: r.store,
+                            notes: r.reason || r.notes,
+                            items: (r.items || []).map(i => ({
+                                item_id: i.item_id,
+                                item_name: i.item_name,
+                                unit: i.unit,
+                                quantity: i.quantity,
+                                price: i.price || 0
+                            }))
+                        }, { type: 'dispense' });
+                    }
+                },
+                {
+                    filename: 'report-item-card.png',
+                    call: () => window.printReport.printItemCard(itemCardData || [], {
+                        title: 'بطاقة حركة صنف',
+                        itemName: 'ورق تصوير A4'
+                    })
+                },
+                {
+                    filename: 'report-suppliers.png',
+                    call: () => window.printReport.printSuppliersTable(entities, {
+                        title: 'دليل الموردين والجهات'
+                    })
+                }
+            ];
+
+            for (const report of reports) {
+                currentFilename = report.filename;
+                report.call();
+                await pendingCapture;
+            }
+
+            window.electronCapture.done();
+        }
+
+        runCaptures().catch(error => {
+            console.error('[Report Capture Bridge] Error:', error);
+            window.electronCapture.done();
+        });
+    </script>
+</body>
+</html>

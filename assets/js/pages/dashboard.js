@@ -63,7 +63,9 @@ function showDashboardLoadError() {
     if (movements) movements.innerHTML = '<li class="dashboard-empty">تعذّر تحميل الحركات الأخيرة.</li>';
 
     document.getElementById('summaryTotalItems').textContent = '—';
+    document.getElementById('summaryTotalUnits').textContent = '—';
     document.getElementById('summaryInventoryValue').textContent = '—';
+    document.getElementById('summaryLowStock').textContent = '—';
     document.getElementById('summaryMonthlyMovements').textContent = '—';
 }
 
@@ -196,11 +198,15 @@ function formatMovementDate(dateStr) {
 // ========== Small Numeric Summary ==========
 function renderSummary(items, history) {
     const totalItems = items.length;
+    const totalUnits = items.reduce((sum, item) => sum + (item.current_quantity || 0), 0);
     const totalValue = items.reduce((sum, item) => sum + ((item.current_quantity || 0) * (item.unit_price || 0)), 0);
+    const lowStock = items.filter(item => (item.current_quantity || 0) <= (item.min_order_qty || 0)).length;
     const monthlyMovements = countMovementsThisMonth(history);
 
     document.getElementById('summaryTotalItems').textContent = totalItems.toLocaleString('ar-LY');
+    document.getElementById('summaryTotalUnits').textContent = totalUnits.toLocaleString('ar-LY');
     document.getElementById('summaryInventoryValue').textContent = totalValue.toLocaleString('ar-LY', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' د.ل';
+    document.getElementById('summaryLowStock').textContent = lowStock.toLocaleString('ar-LY');
     document.getElementById('summaryMonthlyMovements').textContent = monthlyMovements.toLocaleString('ar-LY');
 }
 

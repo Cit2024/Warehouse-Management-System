@@ -23,9 +23,10 @@ const PAGES = [
 ];
 
 async function capture(pageFile, outFile) {
+    const isDashboard = pageFile === 'dashboard.html';
     const win = new BrowserWindow({
         width: 1280,
-        height: 800,
+        height: isDashboard ? 1600 : 800,
         show: false,
         webPreferences: {
             preload: PRELOAD,

@@ -165,12 +165,6 @@ function filterItems() {
 
 // ========== Actions ==========
 function openAddModal() {
-    const session = checkSession();
-    if (session && session.role === 'Viewer') {
-        showToast('لا تملك صلاحية الإضافة', 'error');
-        return;
-    }
-
     if (!itemModal) itemModal = new ItemModal({ onSuccess: loadItemsData });
     itemModal.options.mode = 'add';
     itemModal.options.item = null;
@@ -178,12 +172,6 @@ function openAddModal() {
 }
 
 function openEditModal(itemId) {
-    const session = checkSession();
-    if (session && session.role === 'Viewer') {
-        showToast('لا تملك صلاحية التعديل', 'error');
-        return;
-    }
-
     const item = allItems.find(i => i.item_id === itemId);
     if (!item) {
         showToast('الصنف غير موجود', 'error');
@@ -200,12 +188,6 @@ function openEditModal(itemId) {
 // HTML لا يحمي هنا — المتصفح يفكّ ترميز السمة قبل تنفيذها كجافاسكربت، فيصل
 // الاسم غير مُهرَّب أصلاً إلى هذه الدالة، ومن هناك إلى showToast غير المُهرَّبة.
 async function deleteItem(id) {
-    const session = checkSession();
-    if (session && session.role === 'Viewer') {
-        showToast('لا تملك صلاحية الحذف', 'error');
-        return;
-    }
-
     const item = allItems.find(i => i.item_id === id);
     const name = item ? item.item_name : '';
 

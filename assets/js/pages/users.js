@@ -15,8 +15,7 @@ let currentUserId = null;
 
 const ROLE_LABELS = {
     Admin: 'مسؤول',
-    Store_Keeper: 'أمين مخزن',
-    Viewer: 'مستعرض (قراءة فقط)'
+    Store_Keeper: 'أمين مخزن'
 };
 
 document.addEventListener('DOMContentLoaded', () => {

@@ -166,7 +166,7 @@ console.log('\nchangePassword — admin resets another user without their passwo
     db.close();
 }
 
-console.log('\nchangePassword — a non-admin cannot change someone else\'s password:');
+console.log('\nchangePassword — a non-admin cannot change ANY password, including their own:');
 {
     const { db, adminId } = buildDb();
     const skId = addUser(db, hashPassword, { fullName: 'أمين', password: 'oldpass', role: 'Store_Keeper' });
@@ -174,10 +174,30 @@ console.log('\nchangePassword — a non-admin cannot change someone else\'s pass
 
     throws(() => changePassword(db, skSession, verifyPassword, hashPassword,
         { userId: adminId, newPassword: 'hijacked1' }),
-        /لا تملك صلاحية تغيير كلمة مرور مستخدم آخر/, 'a store keeper cannot reset the admin\'s password');
+        /لا تملك صلاحية تغيير كلمة المرور/, 'a store keeper cannot reset the admin\'s password');
 
+    throws(() => changePassword(db, skSession, verifyPassword, hashPassword,
+        { userId: skId, currentPassword: 'oldpass', newPassword: 'selfchange1' }),
+        /لا تملك صلاحية تغيير كلمة المرور/, 'a store keeper cannot change their OWN password either — only an Admin can');
+
+    const row = db.prepare('SELECT password_hash FROM users WHERE user_id = ?').get(skId);
+    assert(verifyPassword('oldpass', row.password_hash), 'the store keeper password is unchanged after the refusal');
+    db.close();
+}
+
+console.log('\nchangePassword — an admin CAN still change their own password (with current password check):');
+{
+    const { db, adminId } = buildDb();
+    const adminSession = { userId: adminId, role: 'Admin' };
+
+    throws(() => changePassword(db, adminSession, verifyPassword, hashPassword,
+        { userId: adminId, currentPassword: 'wrong', newPassword: 'newpass123' }),
+        /كلمة المرور الحالية غير صحيحة/, 'admin self-change with wrong current password is still rejected');
+
+    changePassword(db, adminSession, verifyPassword, hashPassword,
+        { userId: adminId, currentPassword: 'admin', newPassword: 'newpass123' });
     const row = db.prepare('SELECT password_hash FROM users WHERE user_id = ?').get(adminId);
-    assert(verifyPassword('admin', row.password_hash), 'the admin password is unchanged');
+    assert(verifyPassword('newpass123', row.password_hash), 'admin self-change succeeds with the correct current password');
     db.close();
 }
 

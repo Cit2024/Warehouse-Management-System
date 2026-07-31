@@ -60,7 +60,7 @@ class Sidebar {
                 items: [
                     { href: 'settings.html', icon: 'fas fa-cog', text: 'الإعدادات' },
                     ...(isAdmin ? [{ href: 'users.html', icon: 'fas fa-users-gear', text: 'المستخدمون' }] : []),
-                    { action: 'changeOwnPassword', icon: 'fas fa-key', text: 'تغيير كلمة المرور', isButton: true }
+                    ...(isAdmin ? [{ action: 'changeOwnPassword', icon: 'fas fa-key', text: 'تغيير كلمة المرور', isButton: true }] : [])
                 ]
             }
         ];

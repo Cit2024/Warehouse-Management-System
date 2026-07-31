@@ -38,7 +38,7 @@ class Sidebar {
                     { href: 'report.html', icon: 'fas fa-file-alt', text: 'التقارير' }
                 ]
             },
-            {
+            ...(isAdmin ? [{
                 section: 'النسخ الاحتياطي',
                 items: [
                     {
@@ -54,7 +54,7 @@ class Sidebar {
                         isButton: true
                     }
                 ]
-            },
+            }] : []),
             {
                 section: 'النظام',
                 items: [

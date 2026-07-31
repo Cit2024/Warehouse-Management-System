@@ -812,6 +812,9 @@ ipcMain.handle('get-dispense-receipt', async (event, transactionId) => {
 // ==========================================
 
 ipcMain.handle('backup-database', async (event) => {
+  const denied = requireAdmin();
+  if (denied) return denied;
+
   const win = BrowserWindow.getFocusedWindow();
 
   try {
@@ -843,7 +846,7 @@ ipcMain.handle('backup-database', async (event) => {
 // دالة استيراد النسخة الاحتياطية (Restore) المحدثة والآمنة
 // ==========================================
 ipcMain.handle('restore-database', async (event) => {
-  const denied = checkWriteAccess();
+  const denied = requireAdmin();
   if (denied) return denied;
 
   const win = BrowserWindow.getFocusedWindow();
@@ -997,7 +1000,7 @@ ipcMain.handle('get-local-backups', async () => {
 
 // تنفيذ الاسترجاع من Git
 ipcMain.handle('restore-from-git', async (event, commitId) => {
-  const denied = checkWriteAccess();
+  const denied = requireAdmin();
   if (denied) return denied;
 
   const targetDbPath = db.getDbPath();

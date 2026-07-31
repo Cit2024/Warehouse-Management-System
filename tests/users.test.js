@@ -83,6 +83,7 @@ console.log('\nupdateUserRole — self-protection:');
 {
     const { db, adminId } = buildDb();
     const skId = addUser(db, hashPassword, { fullName: 'أمين', password: '1234', role: 'Store_Keeper' });
+    const otherAdminId = addUser(db, hashPassword, { fullName: 'محمد', password: '1234', role: 'Admin' });
     const adminSession = { userId: adminId, role: 'Admin' };
 
     // The only admin tries to demote themselves.
@@ -96,10 +97,10 @@ console.log('\nupdateUserRole — self-protection:');
     assert(db.prepare('SELECT role FROM users WHERE user_id = ?').get(adminId).role === 'Admin',
         'setting your own role to the same Admin role is allowed');
 
-    // An admin CAN promote/demote someone else (to Store_Keeper).
-    updateUserRole(db, adminSession, { userId: skId, role: 'Store_Keeper' });
-    assert(db.prepare('SELECT role FROM users WHERE user_id = ?').get(skId).role === 'Store_Keeper',
-        'an admin can change another user\'s role');
+    // An admin CAN promote/demote someone else (from Admin to Store_Keeper — a real change).
+    updateUserRole(db, adminSession, { userId: otherAdminId, role: 'Store_Keeper' });
+    assert(db.prepare('SELECT role FROM users WHERE user_id = ?').get(otherAdminId).role === 'Store_Keeper',
+        'an admin can change another user\'s role (Admin → Store_Keeper transition verified)');
 
     throws(() => updateUserRole(db, adminSession, { userId: 9999, role: 'Admin' }),
         /لم يتم العثور/, 'an unknown user id is rejected');

@@ -7,7 +7,7 @@
 // {success:false, message}.
 // ============================================================
 
-const VALID_ROLES = ['Admin', 'Store_Keeper', 'Viewer'];
+const VALID_ROLES = ['Admin', 'Store_Keeper'];
 const MIN_PASSWORD_LENGTH = 4;
 
 function addUser(db, hashPassword, { fullName, password, role } = {}) {

@@ -165,4 +165,19 @@ function checkIntegrity(db) {
     };
 }
 
-module.exports = { migrateRemoveReceiptNumber, migrateAddVoidColumns, checkIntegrity };
+/**
+ * إعادة تعيين أي مستخدم بدور 'Viewer' إلى 'Store_Keeper' — دور Viewer أُلغي
+ * (كان يُعرض في الواجهة باسم "مستعرض / قراءة فقط"). UPDATE ... WHERE بلا شرط
+ * زمني، فهو آمن التكرار من تلقاء نفسه: بعد أول تشغيل لا تبقى صفوف Viewer.
+ *
+ * @returns {number} عدد المستخدمين الذين تغيّر دورهم
+ */
+function migrateRemoveViewerRole(db) {
+    const result = db.prepare("UPDATE users SET role = 'Store_Keeper' WHERE role = 'Viewer'").run();
+    if (result.changes > 0) {
+        console.log(`[DB] Migrated ${result.changes} Viewer-role user(s) to Store_Keeper (Viewer role removed).`);
+    }
+    return result.changes;
+}
+
+module.exports = { migrateRemoveReceiptNumber, migrateAddVoidColumns, migrateRemoveViewerRole, checkIntegrity };

@@ -166,6 +166,37 @@ console.log('\ncheckIntegrity — detects damage from the old migration:');
     negative.close();
 }
 
+// --- Remove Viewer role ---------------------------------------------------
+const { migrateRemoveViewerRole } = require('../database/migrations');
+
+console.log('\nmigrateRemoveViewerRole — reassigns Viewer users to Store_Keeper:');
+{
+    const db = new Database(':memory:');
+    db.exec(`
+        CREATE TABLE users (
+            user_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            full_name TEXT NOT NULL,
+            password_hash TEXT NOT NULL,
+            role TEXT CHECK(role IN ('Admin','Store_Keeper','Viewer')) NOT NULL,
+            is_active INTEGER DEFAULT 1
+        );
+        INSERT INTO users (full_name, password_hash, role) VALUES
+            ('admin', 'x', 'Admin'),
+            ('old_viewer', 'x', 'Viewer'),
+            ('keeper', 'x', 'Store_Keeper');
+    `);
+
+    const changed = migrateRemoveViewerRole(db);
+    assert(changed === 1, 'exactly one row (the Viewer) is changed');
+
+    const roles = db.prepare('SELECT full_name, role FROM users ORDER BY user_id').all().map(r => r.role);
+    assert(JSON.stringify(roles) === JSON.stringify(['Admin', 'Store_Keeper', 'Store_Keeper']), 'the Viewer user is now Store_Keeper, others untouched');
+
+    const changedAgain = migrateRemoveViewerRole(db);
+    assert(changedAgain === 0, 'a second run is a no-op (idempotent)');
+    db.close();
+}
+
 console.log('\n---------------------------');
 console.log(`Passed: ${passed}`);
 console.log(`Failed: ${failed}`);

@@ -40,7 +40,7 @@ function buildDb() {
             user_id INTEGER PRIMARY KEY AUTOINCREMENT,
             full_name TEXT NOT NULL,
             password_hash TEXT NOT NULL,
-            role TEXT CHECK(role IN ('Admin','Store_Keeper','Viewer')) NOT NULL,
+            role TEXT CHECK(role IN ('Admin','Store_Keeper')) NOT NULL,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             is_active INTEGER DEFAULT 1
         );
@@ -67,11 +67,11 @@ console.log('addUser:');
     assert(row.password_hash.startsWith('scrypt:'), 'the password is hashed, never stored plaintext');
     assert(verifyPassword('1234', row.password_hash), 'the stored hash verifies against the given password');
 
-    throws(() => addUser(db, hashPassword, { fullName: 'أحمد', password: '5678', role: 'Viewer' }),
+    throws(() => addUser(db, hashPassword, { fullName: 'أحمد', password: '5678', role: 'Store_Keeper' }),
         /يوجد مستخدم بهذا الاسم بالفعل/, 'a duplicate name is rejected');
-    throws(() => addUser(db, hashPassword, { fullName: '', password: '1234', role: 'Viewer' }),
+    throws(() => addUser(db, hashPassword, { fullName: '', password: '1234', role: 'SuperAdmin' }),
         /اسم المستخدم مطلوب/, 'an empty name is rejected');
-    throws(() => addUser(db, hashPassword, { fullName: 'خالد', password: '12', role: 'Viewer' }),
+    throws(() => addUser(db, hashPassword, { fullName: 'خالد', password: '12', role: 'SuperAdmin' }),
         /أحرف على الأقل/, 'a too-short password is rejected');
     throws(() => addUser(db, hashPassword, { fullName: 'خالد', password: '1234', role: 'SuperAdmin' }),
         /الدور المحدد غير صالح/, 'an invalid role is rejected');
@@ -86,7 +86,7 @@ console.log('\nupdateUserRole — self-protection:');
     const adminSession = { userId: adminId, role: 'Admin' };
 
     // The only admin tries to demote themselves.
-    throws(() => updateUserRole(db, adminSession, { userId: adminId, role: 'Viewer' }),
+    throws(() => updateUserRole(db, adminSession, { userId: adminId, role: 'Store_Keeper' }),
         /لا يمكنك تغيير دورك الخاص/, 'an admin cannot demote their own account');
     assert(db.prepare('SELECT role FROM users WHERE user_id = ?').get(adminId).role === 'Admin',
         'the role is unchanged after the refusal');
@@ -96,9 +96,9 @@ console.log('\nupdateUserRole — self-protection:');
     assert(db.prepare('SELECT role FROM users WHERE user_id = ?').get(adminId).role === 'Admin',
         'setting your own role to the same Admin role is allowed');
 
-    // An admin CAN promote/demote someone else.
-    updateUserRole(db, adminSession, { userId: skId, role: 'Viewer' });
-    assert(db.prepare('SELECT role FROM users WHERE user_id = ?').get(skId).role === 'Viewer',
+    // An admin CAN promote/demote someone else (to Store_Keeper).
+    updateUserRole(db, adminSession, { userId: skId, role: 'Store_Keeper' });
+    assert(db.prepare('SELECT role FROM users WHERE user_id = ?').get(skId).role === 'Store_Keeper',
         'an admin can change another user\'s role');
 
     throws(() => updateUserRole(db, adminSession, { userId: 9999, role: 'Admin' }),

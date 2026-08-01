@@ -284,12 +284,17 @@ async function handlePdfExport() {
 
 // 4.1 فتح/إغلاق القائمة الجانبية على الشاشات الضيقة (< 768px)
 // كانت القائمة تختفي بالكامل دون أي وسيلة لإعادة فتحها.
+const sidebarMobileQuery = window.matchMedia('(max-width: 768px)');
+
 function toggleSidebar(forceState) {
     const sidebar = document.getElementById('appSidebar');
     const toggleBtn = document.getElementById('sidebarToggleBtn');
     if (!sidebar) return;
 
+    // على الشاشات العريضة القائمة ثابتة دائماً؛ الفتح هنا كان يُظهر الطبقة
+    // المعتمة فوق الصفحة كاملة دون أي أثر مرئي آخر — نسمح بالإغلاق فقط.
     const shouldOpen = typeof forceState === 'boolean' ? forceState : !sidebar.classList.contains('open');
+    if (shouldOpen && !sidebarMobileQuery.matches) return;
 
     sidebar.classList.toggle('open', shouldOpen);
     if (toggleBtn) toggleBtn.setAttribute('aria-expanded', String(shouldOpen));
@@ -308,6 +313,12 @@ function toggleSidebar(forceState) {
         backdrop.classList.remove('visible');
     }
 }
+
+// عند توسيع النافذة فوق 768px تُغلق القائمة تلقائياً حتى لا تبقى
+// الطبقة المعتمة عالقة فوق المحتوى بعد تغيير حجم النافذة.
+sidebarMobileQuery.addEventListener('change', (mq) => {
+    if (!mq.matches) toggleSidebar(false);
+});
 
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {

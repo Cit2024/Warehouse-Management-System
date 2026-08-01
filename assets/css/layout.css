@@ -294,8 +294,10 @@ button.menu-item {
     margin-right: 0;
 }
 
-/* زر فتح القائمة الجانبية — يظهر فقط دون 768px، حيث تنزلق القائمة خارج الشاشة */
-.sidebar-toggle {
+/* زر فتح القائمة الجانبية — يظهر فقط دون 768px، حيث تنزلق القائمة خارج الشاشة.
+   المحدد المركّب ضروري: .header-btn وحدها تأتي لاحقاً بنفس الخصوصية
+   وكانت تُظهر الزر على الشاشات العريضة */
+.header-btn.sidebar-toggle {
     display: none;
 }
 
@@ -663,7 +665,7 @@ tbody tr:last-child td {
         justify-content: space-between;
     }
 
-    .sidebar-toggle {
+    .header-btn.sidebar-toggle {
         display: flex;
     }
 

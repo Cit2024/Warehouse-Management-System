@@ -63,7 +63,7 @@ CI (`.github/workflows/ci.yml`) uses **bun**, not npm, and only builds installer
 
 `hashPassword`/`verifyPassword` in `database/auth.js` use scrypt (`scrypt:<salt>:<hash>`). Legacy plaintext hashes still validate and are silently re-hashed on the next successful login.
 
-**The main process is the authority.** `currentSession` in `main.js` is set by the `login` handler and cleared by `logout`; `checkWriteAccess()` rejects mutations from the `Viewer` role, `requireAdmin()` guards user management (roles: `Admin`, `Store_Keeper`, `Viewer`). The renderer's `localStorage.userSession` + `checkSession()` in `common.js` only gate navigation; there's a 10-minute idle auto-logout. Sensitive actions (backup, restore) go through `promptForPassword()`, which re-verifies via the `login` IPC.
+**The main process is the authority.** `currentSession` in `main.js` is set by the `login` handler and cleared by `logout`. Two roles only: `Admin` and `Store_Keeper` — the `Viewer` role was removed, and the `migrateRemoveViewerRole` migration converts any legacy Viewer users to `Store_Keeper` on boot. Both roles can write, so `checkWriteAccess()` now only requires a logged-in session; `requireAdmin()` guards user management, manual backup/restore, and password changes (own or others'). The renderer's `localStorage.userSession` + `checkSession()` in `common.js` only gate navigation; there's a 10-minute idle auto-logout. Sensitive actions (backup, restore) go through `promptForPassword()`, which re-verifies via the `login` IPC.
 
 ### Backup & cloud sync (`gitManager.js` + `main.js`)
 

@@ -2,7 +2,7 @@ const Database = require('better-sqlite3');
 const path = require('path');
 const fs = require('fs');
 const { app } = require('electron');
-const { migrateRemoveReceiptNumber, migrateAddVoidColumns, checkIntegrity } = require('./migrations');
+const { migrateRemoveReceiptNumber, migrateAddVoidColumns, migrateRemoveViewerRole, checkIntegrity } = require('./migrations');
 const { hashPassword } = require('./auth');
 
 // ============================================================
@@ -95,11 +95,14 @@ function initializeDatabase() {
                 user_id INTEGER PRIMARY KEY AUTOINCREMENT,
                 full_name TEXT NOT NULL,
                 password_hash TEXT NOT NULL,
-                role TEXT CHECK(role IN ('Admin', 'Store_Keeper', 'Viewer')) NOT NULL,
+                role TEXT CHECK(role IN ('Admin', 'Store_Keeper')) NOT NULL,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 is_active INTEGER DEFAULT 1
             );
         `);
+
+        // Migrate any existing Viewer-role users to Store_Keeper
+        migrateRemoveViewerRole(db);
 
         // 2. Stores table
         db.exec(`

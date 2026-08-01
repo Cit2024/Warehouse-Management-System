@@ -21,14 +21,12 @@ let currentSession = null;
 
 // تُستدعى في بداية كل معالج IPC يُعدّل البيانات. تُعيد null إن كان الإجراء
 // مسموحاً، أو كائن {success:false, message} جاهزاً للإرجاع مباشرةً إن لم يكن.
-// دور "Viewer" هو الدور الوحيد المحظور من الكتابة؛ لا فرق بين Admin وStore_Keeper
-// اليوم — هذا يطابق النية الأصلية لفحوصات الواجهة (قبل إصلاحها) وليس تصميماً جديداً.
+// كلا الدورين المتبقيين (Admin وStore_Keeper) لهما صلاحية كتابة أساسية؛ هذه
+// الدالة الآن تتحقق فقط من وجود جلسة. قيود أضيق (النسخ الاحتياطي، الاسترجاع،
+// تغيير كلمة المرور) تُفرض عبر requireAdmin() في معالجاتها الخاصة.
 function checkWriteAccess() {
   if (!currentSession) {
     return { success: false, message: 'يجب تسجيل الدخول أولاً.' };
-  }
-  if (currentSession.role === 'Viewer') {
-    return { success: false, message: 'لا تملك صلاحية القيام بهذا الإجراء.' };
   }
   return null;
 }
@@ -814,6 +812,9 @@ ipcMain.handle('get-dispense-receipt', async (event, transactionId) => {
 // ==========================================
 
 ipcMain.handle('backup-database', async (event) => {
+  const denied = requireAdmin();
+  if (denied) return denied;
+
   const win = BrowserWindow.getFocusedWindow();
 
   try {
@@ -845,7 +846,7 @@ ipcMain.handle('backup-database', async (event) => {
 // دالة استيراد النسخة الاحتياطية (Restore) المحدثة والآمنة
 // ==========================================
 ipcMain.handle('restore-database', async (event) => {
-  const denied = checkWriteAccess();
+  const denied = requireAdmin();
   if (denied) return denied;
 
   const win = BrowserWindow.getFocusedWindow();
@@ -999,7 +1000,7 @@ ipcMain.handle('get-local-backups', async () => {
 
 // تنفيذ الاسترجاع من Git
 ipcMain.handle('restore-from-git', async (event, commitId) => {
-  const denied = checkWriteAccess();
+  const denied = requireAdmin();
   if (denied) return denied;
 
   const targetDbPath = db.getDbPath();

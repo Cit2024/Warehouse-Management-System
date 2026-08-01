@@ -7,7 +7,7 @@
 // {success:false, message}.
 // ============================================================
 
-const VALID_ROLES = ['Admin', 'Store_Keeper', 'Viewer'];
+const VALID_ROLES = ['Admin', 'Store_Keeper'];
 const MIN_PASSWORD_LENGTH = 4;
 
 function addUser(db, hashPassword, { fullName, password, role } = {}) {
@@ -58,9 +58,10 @@ function setUserActive(db, currentSession, { userId, isActive } = {}) {
 }
 
 /**
- * تغيير كلمة مرور: المستخدم يستطيع تغيير كلمة مروره الخاصة (بشرط تقديم
- * الحالية)، والأدمن يستطيع إعادة تعيين كلمة مرور أي مستخدم آخر بلا حاجة لمعرفة
- * القديمة.
+ * تغيير كلمة مرور: الآن مقصور على Admin فقط — سواء كان يغيّر كلمة مروره
+ * الخاصة أو كلمة مرور مستخدم آخر. أمين المخزن (Store_Keeper) لا يملك أي
+ * مسار لتغيير كلمة مرور، لا لنفسه ولا لغيره؛ يجب أن يطلب من مسؤول القيام
+ * بذلك عبر شاشة إدارة المستخدمين.
  */
 function changePassword(db, currentSession, verifyPassword, hashPassword, { userId, newPassword, currentPassword } = {}) {
     newPassword = String(newPassword || '');
@@ -68,11 +69,11 @@ function changePassword(db, currentSession, verifyPassword, hashPassword, { user
         throw new Error(`كلمة المرور الجديدة يجب أن تكون ${MIN_PASSWORD_LENGTH} أحرف على الأقل.`);
     }
 
-    const isSelf = currentSession.userId === userId;
-    if (!isSelf && currentSession.role !== 'Admin') {
-        throw new Error('لا تملك صلاحية تغيير كلمة مرور مستخدم آخر.');
+    if (currentSession.role !== 'Admin') {
+        throw new Error('لا تملك صلاحية تغيير كلمة المرور. اطلب من المسؤول القيام بذلك.');
     }
 
+    const isSelf = currentSession.userId === userId;
     const user = db.prepare('SELECT user_id, password_hash FROM users WHERE user_id = ?').get(userId);
     if (!user) throw new Error('لم يتم العثور على المستخدم.');
 

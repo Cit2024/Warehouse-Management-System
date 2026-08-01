@@ -227,8 +227,7 @@ function updateSidebarBadge(count) {
 
 const ROLE_BADGE_INFO = {
     Admin: { text: 'مسؤول', icon: 'fa-user-shield', cssClass: 'admin' },
-    Store_Keeper: { text: 'أمين مخزن', icon: 'fa-user-gear', cssClass: 'storekeeper' },
-    Viewer: { text: 'مستعرض (قراءة فقط)', icon: 'fa-eye', cssClass: 'viewer' }
+    Store_Keeper: { text: 'أمين مخزن', icon: 'fa-user-gear', cssClass: 'storekeeper' }
 };
 
 function renderRoleBadge() {

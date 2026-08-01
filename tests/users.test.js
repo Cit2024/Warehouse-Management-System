@@ -40,7 +40,7 @@ function buildDb() {
             user_id INTEGER PRIMARY KEY AUTOINCREMENT,
             full_name TEXT NOT NULL,
             password_hash TEXT NOT NULL,
-            role TEXT CHECK(role IN ('Admin','Store_Keeper','Viewer')) NOT NULL,
+            role TEXT CHECK(role IN ('Admin','Store_Keeper')) NOT NULL,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             is_active INTEGER DEFAULT 1
         );
@@ -67,11 +67,11 @@ console.log('addUser:');
     assert(row.password_hash.startsWith('scrypt:'), 'the password is hashed, never stored plaintext');
     assert(verifyPassword('1234', row.password_hash), 'the stored hash verifies against the given password');
 
-    throws(() => addUser(db, hashPassword, { fullName: 'أحمد', password: '5678', role: 'Viewer' }),
+    throws(() => addUser(db, hashPassword, { fullName: 'أحمد', password: '5678', role: 'Store_Keeper' }),
         /يوجد مستخدم بهذا الاسم بالفعل/, 'a duplicate name is rejected');
-    throws(() => addUser(db, hashPassword, { fullName: '', password: '1234', role: 'Viewer' }),
+    throws(() => addUser(db, hashPassword, { fullName: '', password: '1234', role: 'SuperAdmin' }),
         /اسم المستخدم مطلوب/, 'an empty name is rejected');
-    throws(() => addUser(db, hashPassword, { fullName: 'خالد', password: '12', role: 'Viewer' }),
+    throws(() => addUser(db, hashPassword, { fullName: 'خالد', password: '12', role: 'SuperAdmin' }),
         /أحرف على الأقل/, 'a too-short password is rejected');
     throws(() => addUser(db, hashPassword, { fullName: 'خالد', password: '1234', role: 'SuperAdmin' }),
         /الدور المحدد غير صالح/, 'an invalid role is rejected');
@@ -83,10 +83,11 @@ console.log('\nupdateUserRole — self-protection:');
 {
     const { db, adminId } = buildDb();
     const skId = addUser(db, hashPassword, { fullName: 'أمين', password: '1234', role: 'Store_Keeper' });
+    const otherAdminId = addUser(db, hashPassword, { fullName: 'محمد', password: '1234', role: 'Admin' });
     const adminSession = { userId: adminId, role: 'Admin' };
 
     // The only admin tries to demote themselves.
-    throws(() => updateUserRole(db, adminSession, { userId: adminId, role: 'Viewer' }),
+    throws(() => updateUserRole(db, adminSession, { userId: adminId, role: 'Store_Keeper' }),
         /لا يمكنك تغيير دورك الخاص/, 'an admin cannot demote their own account');
     assert(db.prepare('SELECT role FROM users WHERE user_id = ?').get(adminId).role === 'Admin',
         'the role is unchanged after the refusal');
@@ -96,10 +97,10 @@ console.log('\nupdateUserRole — self-protection:');
     assert(db.prepare('SELECT role FROM users WHERE user_id = ?').get(adminId).role === 'Admin',
         'setting your own role to the same Admin role is allowed');
 
-    // An admin CAN promote/demote someone else.
-    updateUserRole(db, adminSession, { userId: skId, role: 'Viewer' });
-    assert(db.prepare('SELECT role FROM users WHERE user_id = ?').get(skId).role === 'Viewer',
-        'an admin can change another user\'s role');
+    // An admin CAN promote/demote someone else (from Admin to Store_Keeper — a real change).
+    updateUserRole(db, adminSession, { userId: otherAdminId, role: 'Store_Keeper' });
+    assert(db.prepare('SELECT role FROM users WHERE user_id = ?').get(otherAdminId).role === 'Store_Keeper',
+        'an admin can change another user\'s role (Admin → Store_Keeper transition verified)');
 
     throws(() => updateUserRole(db, adminSession, { userId: 9999, role: 'Admin' }),
         /لم يتم العثور/, 'an unknown user id is rejected');
@@ -165,7 +166,7 @@ console.log('\nchangePassword — admin resets another user without their passwo
     db.close();
 }
 
-console.log('\nchangePassword — a non-admin cannot change someone else\'s password:');
+console.log('\nchangePassword — a non-admin cannot change ANY password, including their own:');
 {
     const { db, adminId } = buildDb();
     const skId = addUser(db, hashPassword, { fullName: 'أمين', password: 'oldpass', role: 'Store_Keeper' });
@@ -173,10 +174,30 @@ console.log('\nchangePassword — a non-admin cannot change someone else\'s pass
 
     throws(() => changePassword(db, skSession, verifyPassword, hashPassword,
         { userId: adminId, newPassword: 'hijacked1' }),
-        /لا تملك صلاحية تغيير كلمة مرور مستخدم آخر/, 'a store keeper cannot reset the admin\'s password');
+        /لا تملك صلاحية تغيير كلمة المرور/, 'a store keeper cannot reset the admin\'s password');
 
+    throws(() => changePassword(db, skSession, verifyPassword, hashPassword,
+        { userId: skId, currentPassword: 'oldpass', newPassword: 'selfchange1' }),
+        /لا تملك صلاحية تغيير كلمة المرور/, 'a store keeper cannot change their OWN password either — only an Admin can');
+
+    const row = db.prepare('SELECT password_hash FROM users WHERE user_id = ?').get(skId);
+    assert(verifyPassword('oldpass', row.password_hash), 'the store keeper password is unchanged after the refusal');
+    db.close();
+}
+
+console.log('\nchangePassword — an admin CAN still change their own password (with current password check):');
+{
+    const { db, adminId } = buildDb();
+    const adminSession = { userId: adminId, role: 'Admin' };
+
+    throws(() => changePassword(db, adminSession, verifyPassword, hashPassword,
+        { userId: adminId, currentPassword: 'wrong', newPassword: 'newpass123' }),
+        /كلمة المرور الحالية غير صحيحة/, 'admin self-change with wrong current password is still rejected');
+
+    changePassword(db, adminSession, verifyPassword, hashPassword,
+        { userId: adminId, currentPassword: 'admin', newPassword: 'newpass123' });
     const row = db.prepare('SELECT password_hash FROM users WHERE user_id = ?').get(adminId);
-    assert(verifyPassword('admin', row.password_hash), 'the admin password is unchanged');
+    assert(verifyPassword('newpass123', row.password_hash), 'admin self-change succeeds with the correct current password');
     db.close();
 }
 

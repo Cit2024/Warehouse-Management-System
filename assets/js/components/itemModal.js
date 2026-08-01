@@ -131,12 +131,6 @@ class ItemModal {
      * Open the modal and reset the form
      */
     open() {
-        const session = typeof checkSession === 'function' ? checkSession() : null;
-        if (session && session.role === 'Viewer') {
-            showToast('لا تملك صلاحية الإضافة', 'error');
-            return;
-        }
-
         if (!this.modal) this.modal = document.getElementById(this.modalId);
         if (!this.modal) return;
 
@@ -178,12 +172,6 @@ class ItemModal {
      * Submit the form (add or edit)
      */
     async submit() {
-        const session = typeof checkSession === 'function' ? checkSession() : null;
-        if (session && session.role === 'Viewer') {
-            showToast('لا تملك صلاحية التعديل', 'error');
-            return;
-        }
-
         const saveBtn = this.modal.querySelector('[data-action="submit"]');
         const originalText = saveBtn ? saveBtn.innerHTML : '';
 

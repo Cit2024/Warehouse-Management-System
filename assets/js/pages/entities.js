@@ -129,9 +129,6 @@ async function submitAddEntity() {
 }
 
 async function deleteEntity(id) {
-    const session = checkSession();
-    if (session && session.role === 'Viewer') { showToast('لا تملك صلاحية الحذف', 'error'); return; }
-
     const confirmed = await confirmModal({ title: 'حذف جهة', message: 'هل أنت متأكد من حذف هذه الجهة؟', confirmLabel: 'حذف', danger: true });
     if (confirmed) {
         try {

@@ -103,11 +103,24 @@ async function restoreDatabase() {
 
 // Init
 window.addEventListener('DOMContentLoaded', async () => {
-    checkSession();
+    const session = checkSession();
+    if (session && session.role !== 'Admin') {
+        const panel = document.querySelector('.panel');
+        if (panel) panel.innerHTML = `
+            <div class="empty-state" style="padding: 60px;">
+                <div class="empty-state-icon"><i class="fas fa-lock"></i></div>
+                <h3>الاسترجاع متاح للمسؤول فقط</h3>
+                <p>النسخ الاحتياطي التلقائي يعمل بشكل مستقل، ولا يتطلب أي إجراء منك.</p>
+            </div>
+        `;
+    }
 
     // لا نحمّل الإعدادات السحابية (ومنها رمز الوصول) إلى الصفحة:
     // المزامنة معطّلة في هذا الإصدار، وتحميل الرمز في الـ DOM عند فتح الصفحة
     // كان يضعه في متناول أي سكربت قبل بوابة كلمة المرور أصلاً.
-    document.getElementById('syncAndShowBtn').addEventListener('click', syncAndShowBackups);
-    syncAndShowBackups();
+    const syncBtn = document.getElementById('syncAndShowBtn');
+    if (syncBtn) {
+        syncBtn.addEventListener('click', syncAndShowBackups);
+        syncAndShowBackups();
+    }
 });

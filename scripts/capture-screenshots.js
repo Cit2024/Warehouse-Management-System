@@ -14,6 +14,7 @@ const PAGES = [
     { file: 'index.html', out: 'login.png' },
     { file: 'dashboard.html', out: 'dashboard.png' },
     { file: 'items.html', out: 'items.png' },
+    { file: 'suppliers.html', out: 'suppliers.png' },
     { file: 'entities.html', out: 'entities.png' },
     { file: 'supply.html', out: 'supply.png' },
     { file: 'dispense.html', out: 'dispense.png' },

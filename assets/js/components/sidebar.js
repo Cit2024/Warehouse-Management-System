@@ -29,7 +29,8 @@ class Sidebar {
                 section: 'البيانات الأساسية',
                 items: [
                     { href: 'items.html', icon: 'fas fa-boxes', text: 'الأصناف والمخزون' },
-                    { href: 'entities.html', icon: 'fas fa-building', text: 'الموردون والجهات' }
+                    { href: 'suppliers.html', icon: 'fas fa-truck', text: 'الموردون' },
+                    { href: 'entities.html', icon: 'fas fa-sitemap', text: 'الجهات والأقسام' }
                 ]
             },
             {

@@ -1,6 +1,7 @@
 /**
- * Entities Page Logic
- * Handles loading, rendering, filtering, adding, and deleting entities.
+ * Entities Page Logic — الجهات الداخلية فقط (الأقسام والموظفون، بهيكلها
+ * الشجري). الموردون لهم صفحة مستقلة (suppliers.html). المصدر واحد: جدول
+ * entities مرشّحاً على entity_type.
  */
 
 let printLayout;
@@ -12,16 +13,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     printLayout = new PrintLayout({
         layout: 'report',
-        title: 'تقرير الموردين والجهات',
+        title: 'تقرير الجهات والأقسام',
         showDates: true,
         summaryItems: [
-            { id: 'printReportName', label: 'اسم التقرير', defaultValue: 'تقرير الموردين والجهات' },
+            { id: 'printReportName', label: 'اسم التقرير', defaultValue: 'تقرير الجهات والأقسام' },
             { id: 'printRecordCount', label: 'عدد الجهات', defaultValue: '0' },
             { id: 'printDateValue', label: 'تاريخ الطباعة', defaultValue: '-' }
         ]
     });
 
-    addEntityModal = new AddEntityModal({ onSuccess: loadEntities });
+    addEntityModal = new AddEntityModal({
+        onSuccess: loadEntities,
+        allowedTypes: ['Department', 'Employee']
+    });
 });
 
 let allEntities = [];
@@ -33,7 +37,7 @@ function printEntities() {
 
     printLayout.setDates(now);
     printLayout.setSummary({
-        printReportName: 'تقرير الموردين والجهات',
+        printReportName: 'تقرير الجهات والأقسام',
         printRecordCount: allEntities.length,
         printDateValue: gregorianDate
     });
@@ -58,7 +62,7 @@ async function loadEntities() {
             showToast(entities.message || 'حدث خطأ في جلب الجهات', 'error');
             return;
         }
-        allEntities = entities || [];
+        allEntities = (entities || []).filter(e => e.entity_type !== 'Supplier');
         renderEntities(allEntities);
     } catch (error) {
         console.error('Error loading entities:', error);

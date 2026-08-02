@@ -10,6 +10,11 @@ class AddEntityModal {
     constructor(options = {}) {
         this.options = {
             onSuccess: () => {},
+            // أنواع الجهات المسموح إنشاؤها من هذه الصفحة — صفحة الموردين تمرر
+            // ['Supplier'] وصفحة الجهات ['Department','Employee']. نوع واحد فقط
+            // يخفي حقل التصنيف بالكامل.
+            allowedTypes: ['Supplier', 'Department', 'Employee'],
+            title: 'إضافة جهة جديدة',
             ...options
         };
         this.modalId = 'addModal';
@@ -18,14 +23,24 @@ class AddEntityModal {
         this.attachEvents();
     }
 
+    typeLabel(type) {
+        if (type === 'Supplier') return 'مورد (شركة/تاجر)';
+        if (type === 'Department') return 'قسم (داخل الكلية)';
+        return 'موظف / عضو هيئة تدريس';
+    }
+
     render() {
         if (document.getElementById(this.modalId)) return;
+
+        const types = this.options.allowedTypes;
+        const typeOptions = types.map(t => `<option value="${t}">${this.typeLabel(t)}</option>`).join('');
+        const singleType = types.length === 1;
 
         document.body.insertAdjacentHTML('beforeend', `
             <div class="modal" id="${this.modalId}" role="dialog" aria-modal="true" aria-labelledby="addModalTitle" hidden>
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h3 class="modal-title" id="addModalTitle">إضافة جهة جديدة</h3>
+                        <h3 class="modal-title" id="addModalTitle">${this.options.title}</h3>
                         <button class="modal-close" aria-label="إغلاق" data-action="close"><i class="fas fa-times"></i></button>
                     </div>
                     <div class="modal-body">
@@ -35,12 +50,10 @@ class AddEntityModal {
                                 <input type="text" id="entityName" placeholder="أدخل اسم الجهة..." required>
                                 <div class="error-message" id="entityNameError">يرجى إدخال اسم الجهة</div>
                             </div>
-                            <div class="form-group">
+                            <div class="form-group" id="entityTypeGroup" ${singleType ? 'hidden' : ''}>
                                 <label for="entityType">نوع الجهة *</label>
                                 <select id="entityType" required>
-                                    <option value="Supplier">مورد (شركة/تاجر)</option>
-                                    <option value="Department">قسم (داخل الكلية)</option>
-                                    <option value="Employee">موظف / عضو هيئة تدريس</option>
+                                    ${typeOptions}
                                 </select>
                             </div>
                             <div class="form-group" id="entityParentGroup" hidden>

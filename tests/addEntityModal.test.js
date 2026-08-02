@@ -123,6 +123,28 @@ elements['entityType'].value = 'Department';
 modal.updateParentVisibility();
 assert(elements['entityParentGroup'].hidden === false, 'Department shows the parent group');
 
+// --- allowedTypes option ----------------------------------------------------
+// Default modal renders all three type options; restricted modal renders only
+// its allowed types and hides the type group entirely when there is one type.
+assert(bodyHtml.includes('value="Supplier"') && bodyHtml.includes('value="Department"') && bodyHtml.includes('value="Employee"'),
+    'default modal offers all three entity types');
+
+{
+    // Fresh render environment for the restricted (suppliers-page) modal.
+    const savedElements = elements;
+    const savedBody = bodyHtml;
+    elements = {};
+    bodyHtml = '';
+    new AddEntityModal({ allowedTypes: ['Supplier'], title: 'إضافة مورد جديد' });
+    assert(bodyHtml.includes('value="Supplier"'), 'supplier-only modal offers Supplier');
+    assert(!bodyHtml.includes('value="Department"') && !bodyHtml.includes('value="Employee"'),
+        'supplier-only modal offers no internal-entity types');
+    assert(bodyHtml.includes('إضافة مورد جديد'), 'custom title is rendered');
+    assert(/id="entityTypeGroup"\s+hidden/.test(bodyHtml), 'single-type modal hides the type select group');
+    elements = savedElements;
+    bodyHtml = savedBody;
+}
+
 // loadParentOptions fills Departments only, with depth indentation.
 // (open() fires its own unawaited load and the mock's innerHTML reset can't
 // clear the children array — assert on option contents, not counts.)

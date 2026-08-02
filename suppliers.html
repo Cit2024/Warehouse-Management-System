@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self';">
-    <title>الجهات والأقسام - منظومة إدارة المخازن | كلية التقنية الصناعية</title>
+    <title>الموردون - منظومة إدارة المخازن | كلية التقنية الصناعية</title>
     <link rel="stylesheet" href="node_modules/@fortawesome/fontawesome-free/css/all.min.css">
     <link rel="stylesheet" href="assets/css/main.css">
     <link rel="stylesheet" href="assets/css/layout.css">
@@ -18,8 +18,8 @@
 
         <!-- Page Title -->
         <div class="header-title-section">
-            <h1>إدارة الجهات والأقسام</h1>
-            <p class="subtitle">الهيكل الإداري للجهات الطالبة — الدوائر والأقسام والموظفون (الموردون في صفحة مستقلة)</p>
+            <h1>إدارة الموردين</h1>
+            <p class="subtitle">الشركات والتجار الذين تُورَّد منهم الأصناف</p>
         </div>
 
         <div class="page-content">
@@ -27,15 +27,14 @@
             <div class="toolbar">
                 <button class="btn btn-primary" onclick="openModal()">
                     <span><i class="fas fa-plus"></i></span>
-                    <span>إضافة جهة جديدة</span>
+                    <span>إضافة مورد جديد</span>
                 </button>
                 <div class="toolbar-search">
                     <span class="toolbar-search-icon"><i class="fas fa-search"></i></span>
-                    <input type="text" id="entitySearch" placeholder="بحث بالاسم أو رقم الهاتف..." oninput="filterEntities()">
+                    <input type="text" id="supplierSearch" placeholder="بحث بالاسم أو رقم الهاتف..." oninput="filterSuppliers()">
                 </div>
                 <div style="display: flex; gap: 10px;">
-                    <!-- FIXED: Use printEntities() instead of handleDirectPrint() -->
-                    <button class="btn btn-secondary" onclick="printEntities()">
+                    <button class="btn btn-secondary" onclick="printSuppliers()">
                         <span><i class="fas fa-print"></i></span>
                         <span>طباعة</span>
                     </button>
@@ -45,22 +44,21 @@
             <!-- Table -->
             <div class="table-container">
                 <div class="table-toolbar">
-                    <div class="table-title">قائمة الجهات والأقسام</div>
-                    <div class="table-meta" id="entitiesCount">0 جهة مسجلة</div>
+                    <div class="table-title">قائمة الموردين</div>
+                    <div class="table-meta" id="suppliersCount">0 مورد مسجل</div>
                 </div>
                 <div style="overflow-x: auto;">
-                    <table id="entitiesTable">
+                    <table id="suppliersTable">
                         <thead>
                             <tr>
-                                <th class="sortable" onclick="sortTable('entitiesTable', 0)">رقم الجهة <span class="sort-icon">↕</span></th>
-                                <th class="sortable" onclick="sortTable('entitiesTable', 1)">اسم الجهة <span class="sort-icon">↕</span></th>
-                                <th class="sortable" onclick="sortTable('entitiesTable', 2)">التصنيف <span class="sort-icon">↕</span></th>
-                                <th class="sortable" onclick="sortTable('entitiesTable', 3)">رقم الهاتف <span class="sort-icon">↕</span></th>
+                                <th class="sortable" onclick="sortTable('suppliersTable', 0)">رقم المورد <span class="sort-icon">↕</span></th>
+                                <th class="sortable" onclick="sortTable('suppliersTable', 1)">اسم المورد <span class="sort-icon">↕</span></th>
+                                <th class="sortable" onclick="sortTable('suppliersTable', 2)">رقم الهاتف <span class="sort-icon">↕</span></th>
                                 <th>الإجراءات</th>
                             </tr>
                         </thead>
-                        <tbody id="entitiesTableBody">
-                            <tr><td colspan="5" style="text-align: center; padding: 40px;">جاري التحميل...</td></tr>
+                        <tbody id="suppliersTableBody">
+                            <tr><td colspan="4" style="text-align: center; padding: 40px;">جاري التحميل...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -78,10 +76,10 @@
     <script src="assets/js/components/addEntityModal.js"></script>
     <script src="assets/js/components/printSignatures.js"></script>
     <script src="assets/js/components/layout.js"></script>
-    <script src="assets/js/pages/entities.js"></script>
+    <script src="assets/js/pages/suppliers.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            PrintSignatures.render('#printSignaturesContainer', ['المستلم', 'أمين المخزن', 'المدير']);
+            PrintSignatures.render('#printSignaturesContainer', ['أمين المخزن', 'المدير']);
         });
     </script>
 </body>

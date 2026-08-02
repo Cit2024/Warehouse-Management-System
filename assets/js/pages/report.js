@@ -27,6 +27,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 let allItems = [];
 let allTransactions = [];
 let currentReportData = [];
+// آخر إذن صرف معروض — مصدر بيانات الطباعة بدل قشط النص من DOM
+let currentDispenseReceipt = null;
 let printLayout;
 let reportGenerationId = 0;
 
@@ -268,21 +270,37 @@ function buildSupplyReceiptData() {
 }
 
 function buildDispenseReceiptData() {
+    // المصدر الأساسي: كائن الإذن المخزّن عند العرض — القشط من DOM يبقى
+    // مساراً احتياطياً فقط.
+    if (currentDispenseReceipt) {
+        const r = currentDispenseReceipt;
+        return {
+            requester: r.requester_path || r.requester || 'غير محدد',
+            recipient: r.recipient || '',
+            store: r.store || 'المخزن الرئيسي',
+            notes: r.reason || '',
+            items: currentReportData || []
+        };
+    }
+
     const headerRow = document.querySelector('#reportTableBody tr:first-child td');
-    let requester = 'غير محدد', store = 'المخزن الرئيسي', reason = '';
+    let requester = 'غير محدد', store = 'المخزن الرئيسي', reason = '', recipient = '';
 
     if (headerRow) {
         const text = headerRow.textContent || '';
         const requesterMatch = text.match(/الجهة الطالبة:\s*([^\n]+)/);
+        const recipientMatch = text.match(/اسم المستلم:\s*([^\n]+)/);
         const storeMatch = text.match(/المخزن:\s*([^\n]+)/);
         const reasonMatch = text.match(/سبب الصرف:\s*([^\n]+)/);
         if (requesterMatch) requester = requesterMatch[1].trim();
+        if (recipientMatch) recipient = recipientMatch[1].trim();
         if (storeMatch) store = storeMatch[1].trim();
         if (reasonMatch) reason = reasonMatch[1].trim();
     }
 
     return {
         requester,
+        recipient,
         store,
         notes: reason,
         items: currentReportData || []
@@ -294,6 +312,7 @@ function buildDispenseReceiptData() {
 // ========== Generate Report ==========
 async function generateReport() {
     const currentId = ++reportGenerationId;
+    currentDispenseReceipt = null;
     const type = document.getElementById('reportType').value;
     const dateFrom = document.getElementById('dateFrom').value;
     const dateTo = document.getElementById('dateTo').value;
@@ -732,6 +751,7 @@ function renderDispenseReceipt(receipt) {
     const tbody = document.getElementById('reportTableBody');
     const items = receipt.items || [];
     currentReportData = items;
+    currentDispenseReceipt = receipt;
     const rows = items.map(item => `
         <tr>
             <td><span class="item-id">${item.item_id}</span></td>
@@ -748,9 +768,10 @@ function renderDispenseReceipt(receipt) {
             <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; font-size: 13px;">
                 <div><strong>رقم الحركة:</strong> إذن-صرف-#${receipt.transaction_id}</div>
                 <div><strong>التاريخ:</strong> ${dateStr}</div>
-                <div><strong>الجهة الطالبة:</strong> ${escapeHtml(receipt.requester || 'غير محدد')}</div>
+                <div><strong>الجهة الطالبة:</strong> ${escapeHtml(receipt.requester_path || receipt.requester || 'غير محدد')}</div>
                 <div><strong>المخزن:</strong> ${escapeHtml(receipt.store || 'غير محدد')}</div>
-                <div style="grid-column: span 2;"><strong>سبب الصرف:</strong> ${escapeHtml(receipt.reason || '-')}</div>
+                <div><strong>اسم المستلم:</strong> ${escapeHtml(receipt.recipient || '-')}</div>
+                <div><strong>سبب الصرف:</strong> ${escapeHtml(receipt.reason || '-')}</div>
             </div>
         </td></tr>
         ${rows}
@@ -759,7 +780,7 @@ function renderDispenseReceipt(receipt) {
                 <span>عدد الأصناف المصروفة</span>
                 <span class="total-value">${items.length} صنف</span>
             </div>
-            ${PrintSignatures.html(['المستلم (الجهة الطالبة)', 'أمين المخزن', 'مدير الإدارة / الاعتماد'])}
+            ${PrintSignatures.html([{ role: 'المستلم (الجهة الطالبة)', name: receipt.recipient || '' }, 'أمين المخزن', 'مدير الإدارة / الاعتماد'])}
         </td></tr>
     `;
     updateStats(items.length, items.length + ' صنف');

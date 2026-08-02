@@ -23,6 +23,7 @@ global.document = {
         }
     },
     getElementById: (id) => elements[id] || null,
+    createElement: (tag) => createMockElement('dynamic-' + tag),
     querySelectorAll: (selector) => {
         if (selector === '.error-message') return [];
         if (selector === '[data-action]') {
@@ -40,7 +41,14 @@ global.document = {
     removeEventListener: () => {}
 };
 
-global.window = { api: { addEntity: async () => ({ success: true }) } };
+global.window = { api: {
+    addEntity: async () => ({ success: true }),
+    getAllEntities: async () => ([
+        { entity_id: 1, entity_name: 'الإدارة العامة', entity_type: 'Department', depth: 0 },
+        { entity_id: 2, entity_name: 'قسم المشتريات', entity_type: 'Department', depth: 1 },
+        { entity_id: 3, entity_name: 'شركة الأفق', entity_type: 'Supplier', depth: 0 }
+    ])
+} };
 global.showToast = (msg) => { console.log('toast:', msg); };
 global.checkSession = () => ({ role: 'admin' });
 
@@ -56,6 +64,8 @@ function createMockElement(id) {
         addEventListener: () => {},
         focus: () => {},
         reset: () => {},
+        children: [],
+        appendChild: function(child) { this.children.push(child); },
         querySelectorAll: (selector) => {
             if (selector === '[data-action]') {
                 return [
@@ -100,9 +110,34 @@ assert(elements['addModal'].classList.classes.includes('active'), 'open() adds a
 modal.close();
 assert(elements['addModal'].hidden === true, 'close() hides the modal');
 
-console.log('\n---------------------------');
-console.log(`Passed: ${passed}`);
-console.log(`Failed: ${failed}`);
-console.log('---------------------------\n');
+// --- Parent (hierarchy) select ---------------------------------------------
+assert(elements['entityParent'] !== undefined, 'Parent select is rendered');
+assert(elements['entityParentGroup'] !== undefined, 'Parent form-group is rendered');
 
-process.exit(failed > 0 ? 1 : 0);
+// updateParentVisibility toggles via the hidden property (mock has no style)
+elements['entityType'].value = 'Supplier';
+modal.updateParentVisibility();
+assert(elements['entityParentGroup'].hidden === true, 'Supplier hides the parent group');
+
+elements['entityType'].value = 'Department';
+modal.updateParentVisibility();
+assert(elements['entityParentGroup'].hidden === false, 'Department shows the parent group');
+
+// loadParentOptions fills Departments only, with depth indentation.
+// (open() fires its own unawaited load and the mock's innerHTML reset can't
+// clear the children array — assert on option contents, not counts.)
+(async () => {
+    await modal.loadParentOptions();
+    const labels = elements['entityParent'].children.map(o => o.textContent);
+    assert(labels.length > 0, 'parent options are populated');
+    assert(!labels.some(l => l.includes('شركة الأفق')), 'a Supplier never becomes a parent option');
+    assert(labels.includes('الإدارة العامة'), 'root department present with no indent prefix');
+    assert(labels.includes('— قسم المشتريات'), 'child department present, indented by depth');
+
+    console.log('\n---------------------------');
+    console.log(`Passed: ${passed}`);
+    console.log(`Failed: ${failed}`);
+    console.log('---------------------------\n');
+
+    process.exit(failed > 0 ? 1 : 0);
+})();

@@ -121,6 +121,37 @@ function migrateAddVoidColumns(db) {
 }
 
 /**
+ * إضافة عمود الجهة الأم للجهات — يتيح تمثيل الهيكل الإداري المتداخل
+ * (دائرة ← قسم ← شعبة) بأي عمق. ALTER بيانات وصفية فقط، لا إعادة بناء.
+ * لا نضع قيد FOREIGN KEY هنا عمداً — كما في voided_by — والسلامة المرجعية
+ * تُفرض في معالج add-entity في العملية الرئيسية.
+ *
+ * @returns {boolean} هل أُضيف العمود فعلاً
+ */
+function migrateAddEntityParentColumn(db) {
+    const existing = db.prepare('PRAGMA table_info(entities)').all().map((col) => col.name);
+    if (existing.includes('parent_id')) return false;
+    db.exec('ALTER TABLE entities ADD COLUMN parent_id INTEGER');
+    console.log('[DB] Added entities.parent_id (entity hierarchy).');
+    return true;
+}
+
+/**
+ * إضافة عمود اسم المستلم على أذونات الصرف — الاسم الشخصي لمن استلم الأصناف
+ * يُسجَّل ويُطبع على الإذن وتقرير PDF. NULL للأذونات القديمة، وتتعامل
+ * الطباعة معه بإبقاء سطر الاسم المنقّط فارغاً.
+ *
+ * @returns {boolean} هل أُضيف العمود فعلاً
+ */
+function migrateAddRecipientNameColumn(db) {
+    const existing = db.prepare('PRAGMA table_info(transactions)').all().map((col) => col.name);
+    if (existing.includes('recipient_name')) return false;
+    db.exec('ALTER TABLE transactions ADD COLUMN recipient_name TEXT');
+    console.log('[DB] Added transactions.recipient_name (dispense recipient).');
+    return true;
+}
+
+/**
  * فحص سلامة البيانات — يكشف الأضرار التي خلّفتها المهاجرة القديمة.
  *
  * orphanHeaders: أذونات بلا أي أصناف. التطبيق لا يمكنه إنتاج هذا إطلاقاً —
@@ -180,4 +211,4 @@ function migrateRemoveViewerRole(db) {
     return result.changes;
 }
 
-module.exports = { migrateRemoveReceiptNumber, migrateAddVoidColumns, migrateRemoveViewerRole, checkIntegrity };
+module.exports = { migrateRemoveReceiptNumber, migrateAddVoidColumns, migrateRemoveViewerRole, migrateAddEntityParentColumn, migrateAddRecipientNameColumn, checkIntegrity };

@@ -12,18 +12,23 @@
 class PrintSignatures {
     /**
      * Generate the signature block HTML for a list of roles.
-     * @param {string[]} roles - Role labels to display above each signature line.
+     * @param {Array<string|{role: string, name?: string}>} roles - Role labels,
+     *   or {role, name} objects — a name renders on the dotted line itself.
      * @returns {string} HTML string.
      */
     static html(roles = ['المستلم', 'أمين المخزن', 'المدير']) {
-        const boxes = roles.map(role => `
+        const boxes = roles.map(entry => {
+            const role = typeof entry === 'string' ? entry : entry.role;
+            const name = typeof entry === 'string' ? '' : (entry.name || '');
+            return `
             <div class="print-sig-box">
                 <div class="print-sig-border"></div>
                 <span class="print-sig-role">${this.escapeHtml(role)}</span>
-                <span class="print-sig-name">الاسم : <span class="print-sig-dots"></span></span>
+                <span class="print-sig-name">الاسم : <span class="print-sig-dots">${this.escapeHtml(name)}</span></span>
                 <span class="print-sig-signature">التوقيع : <span class="print-sig-dots"></span></span>
             </div>
-        `).join('');
+        `;
+        }).join('');
 
         return `<div class="print-signatures print-only">${boxes}</div>`.trim();
     }

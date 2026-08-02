@@ -43,6 +43,12 @@ class AddEntityModal {
                                     <option value="Employee">موظف / عضو هيئة تدريس</option>
                                 </select>
                             </div>
+                            <div class="form-group" id="entityParentGroup" hidden>
+                                <label for="entityParent">الجهة الأم (اختياري)</label>
+                                <select id="entityParent">
+                                    <option value="">— بدون (جهة رئيسية) —</option>
+                                </select>
+                            </div>
                             <div class="form-group">
                                 <label for="entityPhone">رقم الهاتف (اختياري)</label>
                                 <input type="text" id="entityPhone" placeholder="09X-XXXXXXX">
@@ -84,6 +90,14 @@ class AddEntityModal {
             if (e.target === this.modal) this.close();
         });
 
+        // المورد لا يتبع جهة أم — نخفي حقل الأب لهذا النوع.
+        // نستخدم الخاصية hidden وليس style.display: عناصر اختبار DOM الوهمية
+        // لا تملك style.
+        const typeSelect = document.getElementById('entityType');
+        if (typeSelect) {
+            typeSelect.addEventListener('change', () => this.updateParentVisibility());
+        }
+
         this.handleKeydown = (e) => {
             if (e.key === 'Escape') this.close();
         };
@@ -106,7 +120,36 @@ class AddEntityModal {
         const nameInput = document.getElementById('entityName');
         if (nameInput) nameInput.focus();
 
+        this.updateParentVisibility();
+        this.loadParentOptions();
+
         document.addEventListener('keydown', this.handleKeydown);
+    }
+
+    updateParentVisibility() {
+        const typeSelect = document.getElementById('entityType');
+        const group = document.getElementById('entityParentGroup');
+        if (typeSelect && group) group.hidden = (typeSelect.value === 'Supplier');
+    }
+
+    // تعبئة قائمة الجهات الأم — الأقسام فقط، بإزاحة حسب العمق.
+    async loadParentOptions() {
+        const select = document.getElementById('entityParent');
+        if (!select || typeof window.api?.getAllEntities !== 'function') return;
+        try {
+            const entities = await window.api.getAllEntities();
+            if (!Array.isArray(entities)) return;
+            select.innerHTML = '<option value="">— بدون (جهة رئيسية) —</option>';
+            entities.filter(e => e.entity_type === 'Department').forEach(e => {
+                const opt = document.createElement('option');
+                opt.value = e.entity_id;
+                const depth = e.depth || 0;
+                opt.textContent = (depth ? '—'.repeat(depth) + ' ' : '') + e.entity_name;
+                select.appendChild(opt);
+            });
+        } catch (error) {
+            console.error('AddEntityModal loadParentOptions error:', error);
+        }
     }
 
     close() {
@@ -144,7 +187,10 @@ class AddEntityModal {
             const err = document.getElementById('entityNameError');
             if (err) err.classList.remove('visible');
 
-            const result = await window.api.addEntity({ name, type, phone });
+            const parentRaw = document.getElementById('entityParent')?.value;
+            const parentId = (type !== 'Supplier' && parentRaw) ? parseInt(parentRaw, 10) : null;
+
+            const result = await window.api.addEntity({ name, type, phone, parentId });
 
             if (result && result.success) {
                 this.close();

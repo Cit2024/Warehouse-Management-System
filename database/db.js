@@ -2,7 +2,7 @@ const Database = require('better-sqlite3');
 const path = require('path');
 const fs = require('fs');
 const { app } = require('electron');
-const { migrateRemoveReceiptNumber, migrateAddVoidColumns, migrateRemoveViewerRole, checkIntegrity } = require('./migrations');
+const { migrateRemoveReceiptNumber, migrateAddVoidColumns, migrateRemoveViewerRole, migrateAddEntityParentColumn, migrateAddRecipientNameColumn, checkIntegrity } = require('./migrations');
 const { hashPassword } = require('./auth');
 
 // ============================================================
@@ -128,20 +128,24 @@ function initializeDatabase() {
         `);
 
         // 4. Entities table
+        // parent_id آخر القائمة — نفس قاعدة ترتيب أعمدة ALTER في جدول transactions.
         db.exec(`
             CREATE TABLE IF NOT EXISTS entities (
                 entity_id INTEGER PRIMARY KEY AUTOINCREMENT,
                 entity_name TEXT NOT NULL,
                 entity_type TEXT CHECK(entity_type IN ('Supplier', 'Department', 'Employee')) NOT NULL,
                 phone TEXT,
-                is_deleted INTEGER DEFAULT 0
+                is_deleted INTEGER DEFAULT 0,
+                parent_id INTEGER
             );
         `);
+        migrateAddEntityParentColumn(db);
 
         // 5. Transactions table
-        // أعمدة الإلغاء (void_*) في آخر القائمة كي يتطابق هيكل القواعد الجديدة
-        // مع القواعد القديمة التي تُضاف إليها الأعمدة عبر ALTER TABLE — التفريغ
-        // النصي ينسخ sqlite_master.sql حرفياً، فاختلاف الترتيب يعني نسختين مختلفتين.
+        // الأعمدة المضافة عبر ALTER (void_* ثم recipient_name) في ذيل القائمة
+        // وبترتيب إضافتها التاريخي — SQLite يُدرج عمود ALTER بعد آخر عمود وقبل
+        // قيود FOREIGN KEY في sqlite_master.sql، والتفريغ النصي ينسخه حرفياً،
+        // فاختلاف الترتيب يعني نسختين مختلفتين.
         db.exec(`
             CREATE TABLE IF NOT EXISTS transactions (
                 transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -155,6 +159,7 @@ function initializeDatabase() {
                 void_reason TEXT,
                 voided_by INTEGER,
                 voided_at DATETIME,
+                recipient_name TEXT,
                 FOREIGN KEY (store_id) REFERENCES stores(store_id) ON DELETE RESTRICT,
                 FOREIGN KEY (entity_id) REFERENCES entities(entity_id) ON DELETE RESTRICT,
                 FOREIGN KEY (created_by) REFERENCES users(user_id) ON DELETE RESTRICT
@@ -166,6 +171,8 @@ function initializeDatabase() {
         // ضمني، ولا CASCADE. (لهذا لا نضع مفتاحاً خارجياً على voided_by: إضافته
         // كانت ستستلزم إعادة بناء الجدول.)
         migrateAddVoidColumns(db);
+        // بعد أعمدة الإلغاء حصراً — كي يطابق ترتيب ALTER ترتيب CREATE أعلاه.
+        migrateAddRecipientNameColumn(db);
 
         // 6. Transaction details table
         db.exec(`

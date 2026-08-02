@@ -197,6 +197,71 @@ console.log('\nmigrateRemoveViewerRole — reassigns Viewer users to Store_Keepe
     db.close();
 }
 
+// --- Entity parent + recipient name columns --------------------------------
+const { migrateAddVoidColumns, migrateAddEntityParentColumn, migrateAddRecipientNameColumn } = require('../database/migrations');
+
+console.log('\nmigrateAddEntityParentColumn — adds parent_id last:');
+{
+    const db = new Database(':memory:');
+    db.exec(`
+        CREATE TABLE entities (
+            entity_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            entity_name TEXT NOT NULL,
+            entity_type TEXT CHECK(entity_type IN ('Supplier','Department','Employee')) NOT NULL,
+            phone TEXT,
+            is_deleted INTEGER DEFAULT 0
+        );
+        INSERT INTO entities (entity_name, entity_type) VALUES ('قسم تقنية المعلومات', 'Department');
+    `);
+
+    const ran = migrateAddEntityParentColumn(db);
+    assert(ran === true, 'migration reports that it ran');
+
+    const cols = db.prepare('PRAGMA table_info(entities)').all().map((c) => c.name);
+    assert(cols[cols.length - 1] === 'parent_id', 'parent_id lands LAST (dump column-order invariant)');
+
+    const row = db.prepare('SELECT parent_id FROM entities WHERE entity_id = 1').get();
+    assert(row.parent_id === null, 'existing rows read back NULL parent_id');
+
+    assert(migrateAddEntityParentColumn(db) === false, 'second run is a no-op (idempotent)');
+    db.close();
+}
+
+console.log('\nmigrateAddRecipientNameColumn — after void columns, in ALTER order:');
+{
+    // Legacy fixture: pre-void transactions table — run the void migration
+    // first, then recipient, and assert the historical ALTER order.
+    const db = new Database(':memory:');
+    db.exec(`
+        CREATE TABLE transactions (
+            transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            transaction_type TEXT CHECK(transaction_type IN ('In','Out','Opening_Balance')) NOT NULL,
+            transaction_date DATETIME NOT NULL,
+            store_id INTEGER NOT NULL,
+            entity_id INTEGER,
+            created_by INTEGER,
+            notes TEXT,
+            is_deleted INTEGER DEFAULT 0
+        );
+        INSERT INTO transactions (transaction_type, transaction_date, store_id) VALUES ('Out', '2026-01-01', 1);
+    `);
+
+    migrateAddVoidColumns(db);
+    const ran = migrateAddRecipientNameColumn(db);
+    assert(ran === true, 'migration reports that it ran');
+
+    const cols = db.prepare('PRAGMA table_info(transactions)').all().map((c) => c.name);
+    const tail = cols.slice(-4);
+    assert(JSON.stringify(tail) === JSON.stringify(['void_reason', 'voided_by', 'voided_at', 'recipient_name']),
+        'column tail is void_reason, voided_by, voided_at, recipient_name — matching CREATE order in db.js');
+
+    const row = db.prepare('SELECT recipient_name FROM transactions WHERE transaction_id = 1').get();
+    assert(row.recipient_name === null, 'existing (pre-migration) receipts read back NULL recipient');
+
+    assert(migrateAddRecipientNameColumn(db) === false, 'second run is a no-op (idempotent)');
+    db.close();
+}
+
 console.log('\n---------------------------');
 console.log(`Passed: ${passed}`);
 console.log(`Failed: ${failed}`);

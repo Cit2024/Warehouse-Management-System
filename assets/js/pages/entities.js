@@ -88,10 +88,16 @@ function renderEntities(entities, errorMessage = null) {
         else if (ent.entity_type === 'Department') { typeAr = 'قسم'; badgeClass = 'badge-dept'; }
         else { typeAr = 'موظف'; badgeClass = 'badge-emp'; }
 
+        // إزاحة شجرية حسب العمق + المسار الكامل كتلميح للجهات الفرعية.
+        // ملاحظة: الفرز والبحث في الواجهة يبعثران ترتيب الشجرة — مقبول،
+        // فبادئة الإزاحة تبقى ظاهرة والبيانات صحيحة.
+        const indent = ent.depth ? '—'.repeat(ent.depth) + ' ' : '';
+        const pathTitle = ent.depth ? ' title="' + escapeHtml(ent.path || '') + '"' : '';
+
         const tr = document.createElement('tr');
         tr.innerHTML =
             '<td><span class="item-id">' + ent.entity_id + '</span></td>' +
-            '<td style="font-weight: 600;">' + escapeHtml(ent.entity_name) + '</td>' +
+            '<td style="font-weight: 600;"' + pathTitle + '><span style="color: var(--text-muted);">' + indent + '</span>' + escapeHtml(ent.entity_name) + '</td>' +
             '<td><span class="badge ' + badgeClass + '">' + typeAr + '</span></td>' +
             '<td dir="ltr" style="text-align: right;">' + (ent.phone ? escapeHtml(ent.phone) : '<span style="color: var(--text-muted);">-</span>') + '</td>' +
             '<td>' +

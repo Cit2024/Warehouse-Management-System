@@ -139,6 +139,32 @@ test('printReceipt builds dispense receipt document', () => {
     assert(doc.includes('قسم تجريبي'), 'Requester missing');
 });
 
+test('printReceipt dispense shows recipient name in meta and on signature line', () => {
+    printCalls = [];
+    writtenDocs = [];
+    const data = {
+        requester: 'الإدارة العامة ← قسم المشتريات',
+        recipient: 'أحمد علي المنصوري',
+        store: 'المخزن الرئيسي',
+        items: [
+            { item_id: 'ITM-003', item_name: 'كابل', unit: 'قطعة', quantity: 2 }
+        ]
+    };
+    global.printReport.printReceipt(data, { type: 'dispense' });
+    const doc = writtenDocs[0];
+    assert(doc.includes('اسم المستلم'), 'Recipient meta label missing');
+    assert(doc.includes('أحمد علي المنصوري'), 'Recipient name missing');
+    assert(doc.includes('الإدارة العامة ← قسم المشتريات'), 'Requester hierarchy path missing');
+});
+
+test('buildSignaturesHtml accepts {role, name} entries and fills the line', () => {
+    const html = global.printReport.buildSignaturesHtml([{ role: 'المستلم', name: 'أحمد علي' }, 'أمين المخزن']);
+    assert(html.includes('المستلم'), 'Role label missing');
+    assert(html.includes('أحمد علي'), 'Name not rendered on the line');
+    assert(html.includes('أمين المخزن'), 'String-role entry broken by mixed array');
+    assert(html.includes('الاسم :'), 'Name label missing');
+});
+
 test('printDashboardSummary builds summary document', () => {
     printCalls = [];
     writtenDocs = [];

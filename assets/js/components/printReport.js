@@ -532,6 +532,7 @@ body {
                         <span class="print-meta-value">${this.escapeHtml(data.store || '-')}</span>
                     </div>
                 </div>
+                ${type === 'dispense' && data.recipient ? `<div class="print-meta-row"><div class="print-meta-item"><span class="print-meta-label">اسم المستلم:</span><span class="print-meta-value">${this.escapeHtml(data.recipient)}</span></div></div>` : ''}
                 ${data.notes ? `<div class="print-meta-row"><div class="print-meta-item"><span class="print-meta-label">ملاحظات:</span><span class="print-meta-value">${this.escapeHtml(data.notes)}</span></div></div>` : ''}
             </div>`;
         }
@@ -582,7 +583,7 @@ body {
 
         const sigRoles = type === 'supply'
             ? ['المورد', 'أمين المخزن', 'مدير الإدارة / الاعتماد']
-            : ['المستلم', 'أمين المخزن', 'مدير الإدارة / الاعتماد'];
+            : [{ role: 'المستلم', name: data.recipient || '' }, 'أمين المخزن', 'مدير الإدارة / الاعتماد'];
         tableHtml += this.buildSignaturesHtml(sigRoles);
 
         const doc = this.buildPrintDocument(tableHtml, { title, landscape: false });
@@ -817,24 +818,30 @@ body {
     // ============================================================
     // Signatures HTML Builder
     // ============================================================
+    // يقبل كل عنصر نصاً (دور فقط، سطر اسم فارغ للكتابة اليدوية) أو كائناً
+    // {role, name} فيُطبع الاسم على السطر المنقّط نفسه — لا تغيير في CSS.
     buildSignaturesHtml(roles) {
         if (!roles || roles.length === 0) {
             roles = ['المستلم', 'أمين المخزن', 'المدير'];
         }
 
-        const boxes = roles.map(role => `
+        const boxes = roles.map(entry => {
+            const role = typeof entry === 'string' ? entry : entry.role;
+            const name = typeof entry === 'string' ? '' : (entry.name || '');
+            return `
             <div class="print-sig-box">
                 <span class="print-sig-role">${this.escapeHtml(role)}</span>
                 <span class="print-sig-name">
                     <span class="label">الاسم :</span>
-                    <span class="line"></span>
+                    <span class="line">${this.escapeHtml(name)}</span>
                 </span>
                 <span class="print-sig-signature">
                     <span class="label">التوقيع :</span>
                     <span class="line"></span>
                 </span>
             </div>
-        `).join('');
+        `;
+        }).join('');
 
         return `<div class="print-signatures">${boxes}</div>`;
     }

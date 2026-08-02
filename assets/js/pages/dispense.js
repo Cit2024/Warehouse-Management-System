@@ -27,6 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 let availableStock = [];
+let availableRequesters = [];
 let receiptRows = [];
 
 window.addEventListener('DOMContentLoaded', async () => {
@@ -68,14 +69,16 @@ async function loadDropdownData() {
         });
         storeSelect.value = previousStore;
 
-        // تعبئة الجهات الطالبة
+        // تعبئة الجهات الطالبة — بترتيب شجري مع إزاحة حسب العمق
+        availableRequesters = requesters;
         const requesterSelect = document.getElementById('requesterSelect');
         const previousRequester = requesterSelect.value;
         requesterSelect.innerHTML = '<option value="">-- اختر الجهة --</option>';
         requesters.forEach(req => {
             const option = document.createElement('option');
             option.value = req.entity_id;
-            option.textContent = req.entity_name + ' (' + (req.entity_type === 'Department' ? 'قسم' : 'موظف') + ')';
+            const depth = req.depth || 0;
+            option.textContent = (depth ? '—'.repeat(depth) + ' ' : '') + req.entity_name + ' (' + (req.entity_type === 'Department' ? 'قسم' : 'موظف') + ')';
             requesterSelect.appendChild(option);
         });
         requesterSelect.value = previousRequester;
@@ -147,6 +150,7 @@ function renderTable() {
 function resetForm() {
     document.getElementById('receiptDate').valueAsDate = new Date();
     document.getElementById('requesterSelect').value = '';
+    document.getElementById('recipientName').value = '';
     document.getElementById('storeSelect').value = '';
     document.getElementById('receiptNotes').value = '';
     document.getElementById('itemSelect').value = '';
@@ -164,11 +168,12 @@ async function saveReceipt() {
 
     const receiptDate = document.getElementById('receiptDate').value;
     const requesterId = document.getElementById('requesterSelect').value;
+    const recipientName = document.getElementById('recipientName').value.trim();
     const storeId = document.getElementById('storeSelect').value;
     const notes = document.getElementById('receiptNotes').value.trim();
 
-    if (!receiptDate || !requesterId || !storeId) {
-        showToast('الرجاء تعبئة كافة البيانات الأساسية', 'warning');
+    if (!receiptDate || !requesterId || !storeId || !recipientName) {
+        showToast('الرجاء تعبئة كافة البيانات الأساسية بما فيها اسم المستلم', 'warning');
         saveBtn.disabled = false;
         saveBtn.innerHTML = originalText;
         return;
@@ -185,7 +190,7 @@ async function saveReceipt() {
         const result = await window.api.saveDispenseReceipt({
             date: receiptDate + ' 00:00:00',
             requesterId: parseInt(requesterId), storeId: parseInt(storeId),
-            notes, createdBy: session ? session.userId : 1,
+            notes, recipientName, createdBy: session ? session.userId : 1,
             items: receiptRows
         });
         if (result.success) {
@@ -209,12 +214,16 @@ function executePrint(choice) {
         const storeSelect = document.getElementById('storeSelect');
         const notesInput = document.getElementById('receiptNotes');
 
-        const requesterName = requesterSelect.options[requesterSelect.selectedIndex]?.text || '-';
+        // المسار الإداري الكامل من الصفوف المجلوبة بدل نص الخيار (الذي يحمل
+        // بادئة إزاحة ولاحقة نوع لا مكان لهما على الإذن المطبوع)
+        const selectedReq = availableRequesters.find(r => r.entity_id === parseInt(requesterSelect.value, 10));
+        const requesterName = selectedReq ? selectedReq.path : (requesterSelect.options[requesterSelect.selectedIndex]?.text || '-');
         const storeName = storeSelect.options[storeSelect.selectedIndex]?.text || '-';
         const notes = notesInput.value.trim();
 
         const receiptData = {
             requester: requesterName,
+            recipient: document.getElementById('recipientName').value.trim(),
             store: storeName,
             notes: notes,
             items: receiptRows.map(row => {

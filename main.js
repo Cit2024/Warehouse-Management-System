@@ -518,10 +518,34 @@ ipcMain.handle('save-supply-receipt', async (event, receiptData) => {
 // دوال أذونات الصرف (Dispense Receipts)
 // ==========================================
 
-// جلب الجهات الطالبة (الأقسام والموظفين فقط)
+// جلب الجهات الطالبة (الأقسام والموظفين فقط) مع الهيكل الإداري:
+// CTE تنازلي يبني depth (للإزاحة في القوائم) و path ("الإدارة ← القسم")
+// و sort_key (ترتيب شجري ثابت). فلتر النوع في SELECT الخارجي حصراً كي لا
+// يقطع مرور الشجرة عبر الدوائر الوسيطة.
 ipcMain.handle('get-requesters', async () => {
   try {
-    return db.prepare("SELECT * FROM entities WHERE entity_type IN ('Department', 'Employee') AND is_deleted = 0").all();
+    return db.prepare(`
+      WITH RECURSIVE entity_tree AS (
+          SELECT entity_id, entity_name, entity_type, parent_id,
+                 0 AS depth,
+                 entity_name AS path,
+                 printf('%010d', entity_id) AS sort_key
+          FROM entities
+          WHERE is_deleted = 0 AND parent_id IS NULL
+          UNION ALL
+          SELECT e.entity_id, e.entity_name, e.entity_type, e.parent_id,
+                 t.depth + 1,
+                 t.path || ' ← ' || e.entity_name,
+                 t.sort_key || '/' || printf('%010d', e.entity_id)
+          FROM entities e
+          JOIN entity_tree t ON e.parent_id = t.entity_id
+          WHERE e.is_deleted = 0 AND t.depth < 20
+      )
+      SELECT entity_id, entity_name, entity_type, depth, path
+      FROM entity_tree
+      WHERE entity_type IN ('Department', 'Employee')
+      ORDER BY sort_key
+    `).all();
   } catch (error) {
     console.error('[get-requesters] خطأ في جلب الجهات الطالبة:', error);
     return { success: false, message: 'حدث خطأ أثناء جلب الجهات الطالبة', error: error.message };
@@ -572,10 +596,10 @@ ipcMain.handle('save-dispense-receipt', async (event, receiptData) => {
     //    ودمج السطور المكرّرة لنفس الصنف — الخادم لا يثق بحراسة الواجهة)
     const totals = validateReceiptItems(db, data.items);
 
-    // 2. حفظ رأس الإذن (نوع الحركة: Out)
+    // 2. حفظ رأس الإذن (نوع الحركة: Out) — مع اسم المستلم الشخصي
     const stmtMaster = db.prepare(`
-      INSERT INTO transactions (transaction_type, transaction_date, store_id, entity_id, created_by, notes)
-      VALUES ('Out', ?, ?, ?, ?, ?)
+      INSERT INTO transactions (transaction_type, transaction_date, store_id, entity_id, created_by, notes, recipient_name)
+      VALUES ('Out', ?, ?, ?, ?, ?, ?)
     `);
 
     const info = stmtMaster.run(
@@ -583,7 +607,8 @@ ipcMain.handle('save-dispense-receipt', async (event, receiptData) => {
       data.storeId,
       data.requesterId,
       data.createdBy || 1,
-      data.notes
+      data.notes,
+      data.recipientName
     );
     const newTransactionId = info.lastInsertRowid;
 
@@ -608,7 +633,12 @@ ipcMain.handle('save-dispense-receipt', async (event, receiptData) => {
   });
 
   try {
-    insertReceipt(receiptData);
+    // اسم المستلم إلزامي — تحقق العملية الرئيسية، وحراسة الواجهة تجميلية فقط
+    const recipientName = typeof receiptData.recipientName === 'string' ? receiptData.recipientName.trim() : '';
+    if (!recipientName) {
+      return { success: false, message: 'اسم المستلم مطلوب لإذن الصرف' };
+    }
+    insertReceipt({ ...receiptData, recipientName });
     return { success: true, message: 'تم حفظ إذن الصرف بنجاح' };
   } catch (error) {
     console.error('خطأ في حفظ إذن الصرف:', error);
@@ -643,27 +673,62 @@ ipcMain.handle('void-transaction', async (event, payload) => {
 // دوال إدارة الجهات والموردين (Entities)
 // ==========================================
 
-// 1. جلب كل الجهات (التي لم تحذف)
+// 1. جلب كل الجهات (التي لم تحذف) بترتيب شجري مع depth و path —
+// نفس CTE جلب الجهات الطالبة لكن بلا فلتر نوع.
 ipcMain.handle('get-all-entities', async () => {
   try {
-    return db.prepare('SELECT * FROM entities WHERE is_deleted = 0 ORDER BY entity_id DESC').all();
+    return db.prepare(`
+      WITH RECURSIVE entity_tree AS (
+          SELECT entity_id, entity_name, entity_type, phone, parent_id,
+                 0 AS depth,
+                 entity_name AS path,
+                 printf('%010d', entity_id) AS sort_key
+          FROM entities
+          WHERE is_deleted = 0 AND parent_id IS NULL
+          UNION ALL
+          SELECT e.entity_id, e.entity_name, e.entity_type, e.phone, e.parent_id,
+                 t.depth + 1,
+                 t.path || ' ← ' || e.entity_name,
+                 t.sort_key || '/' || printf('%010d', e.entity_id)
+          FROM entities e
+          JOIN entity_tree t ON e.parent_id = t.entity_id
+          WHERE e.is_deleted = 0 AND t.depth < 20
+      )
+      SELECT entity_id, entity_name, entity_type, phone, parent_id, depth, path
+      FROM entity_tree
+      ORDER BY sort_key
+    `).all();
   } catch (error) {
     console.error('[get-all-entities] خطأ في جلب الجهات:', error);
     return { success: false, message: 'حدث خطأ أثناء جلب الجهات', error: error.message };
   }
 });
 
-// 2. إضافة جهة جديدة
+// 2. إضافة جهة جديدة — السلامة المرجعية للجهة الأم تُفرض هنا (لا FOREIGN KEY
+// على parent_id في المخطط، كما في voided_by). لا مسار تعديل للجهات، فالأب
+// يُحدد عند الإنشاء فقط ولا يتغير — الدورات مستحيلة بنيوياً.
 ipcMain.handle('add-entity', async (event, newEntity) => {
   const denied = checkWriteAccess();
   if (denied) return denied;
   try {
+    const parentId = Number.isInteger(newEntity.parentId) ? newEntity.parentId : null;
+    if (parentId !== null) {
+      if (newEntity.type === 'Supplier') {
+        return { success: false, message: 'المورد لا يتبع جهة أم' };
+      }
+      const parent = db.prepare('SELECT entity_type FROM entities WHERE entity_id = ? AND is_deleted = 0').get(parentId);
+      if (!parent) return { success: false, message: 'الجهة الأم المحددة غير موجودة' };
+      if (parent.entity_type !== 'Department') {
+        return { success: false, message: 'الجهة الأم يجب أن تكون قسماً أو دائرة' };
+      }
+    }
+
     const stmt = db.prepare(`
-      INSERT INTO entities (entity_name, entity_type, phone) 
-      VALUES (?, ?, ?)
+      INSERT INTO entities (entity_name, entity_type, phone, parent_id)
+      VALUES (?, ?, ?, ?)
     `);
 
-    const info = stmt.run(newEntity.name, newEntity.type, newEntity.phone);
+    const info = stmt.run(newEntity.name, newEntity.type, newEntity.phone, parentId);
     return { success: true, message: 'تمت إضافة الجهة بنجاح', id: info.lastInsertRowid };
   } catch (error) {
     console.error('[add-entity] خطأ في إضافة الجهة:', error);
@@ -671,11 +736,17 @@ ipcMain.handle('add-entity', async (event, newEntity) => {
   }
 });
 
-// 3. حذف جهة (حذف منطقي)
+// 3. حذف جهة (حذف منطقي) — يُمنع حذف جهة لها جهات فرعية حية؛ هذا الحارس
+// هو ما يُبقي جذر الـ CTE (parent_id IS NULL) سليماً: لا يمكن أن تشير جهة
+// حية إلى أب محذوف.
 ipcMain.handle('delete-entity', async (event, entityId) => {
   const denied = checkWriteAccess();
   if (denied) return denied;
   try {
+    const children = db.prepare('SELECT COUNT(*) AS c FROM entities WHERE parent_id = ? AND is_deleted = 0').get(entityId).c;
+    if (children > 0) {
+      return { success: false, message: 'لا يمكن حذف هذه الجهة لأنها تضم جهات فرعية — احذف الجهات الفرعية أولاً' };
+    }
     const stmt = db.prepare('UPDATE entities SET is_deleted = 1 WHERE entity_id = ?');
     stmt.run(entityId);
     return { success: true, message: 'تم حذف الجهة بنجاح' };
@@ -783,6 +854,7 @@ ipcMain.handle('get-dispense-receipt', async (event, transactionId) => {
   try {
     const header = db.prepare(`
       SELECT t.transaction_id, t.transaction_date AS date, t.notes AS reason,
+             t.entity_id AS requester_id, t.recipient_name AS recipient,
              e.entity_name AS requester, s.store_name AS store
       FROM transactions t
       LEFT JOIN entities e ON t.entity_id = e.entity_id
@@ -792,6 +864,23 @@ ipcMain.handle('get-dispense-receipt', async (event, transactionId) => {
 
     if (!header) {
       return { success: false, message: 'لم يتم العثور على إذن الصرف' };
+    }
+
+    // المسار الإداري الكامل للجهة الطالبة ("الإدارة ← القسم") — صعوداً نحو
+    // الجذر، وبلا فلتر is_deleted عمداً: الأذونات التاريخية تحتفظ بمسارها
+    // حتى لو حُذفت جهة وسيطة لاحقاً.
+    if (header.requester_id) {
+      const row = db.prepare(`
+        WITH RECURSIVE up(entity_id, parent_id, path, depth) AS (
+            SELECT entity_id, parent_id, entity_name, 0 FROM entities WHERE entity_id = ?
+            UNION ALL
+            SELECT e.entity_id, e.parent_id, e.entity_name || ' ← ' || up.path, up.depth + 1
+            FROM entities e JOIN up ON up.parent_id = e.entity_id
+            WHERE up.depth < 20
+        )
+        SELECT path FROM up ORDER BY depth DESC LIMIT 1
+      `).get(header.requester_id);
+      header.requester_path = row ? row.path : header.requester;
     }
 
     const items = db.prepare(`

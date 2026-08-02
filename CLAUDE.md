@@ -56,7 +56,7 @@ CI (`.github/workflows/ci.yml`) uses **bun**, not npm, and only builds installer
 - **Soft delete everywhere** (`is_deleted = 1`); every read filters on `is_deleted = 0`. Hard deletes would break the accounting ledger.
 - Receipts are written inside a `db.transaction(...)` (header into `transactions`, lines into `transaction_details`) so a partial receipt can never land. `validateReceiptItems`/`assertNoNegativeStock` (`stock.js`) enforce non-negative stock in the main process — renderer checks are cosmetic.
 - **Voiding**: `void-transaction` IPC → `voidTransaction` in `stock.js` — soft delete with reason/actor/timestamp, then re-asserts stock and rolls back if voiding an `In` receipt would push any balance negative (`tests/void.test.js`).
-- **Schema gotcha**: the void columns (`void_reason`, `voided_by`, `voided_at`) must stay **last** in the `transactions` CREATE — the backup SQL dump copies `sqlite_master.sql` verbatim, and ALTER-added columns land at the end, so reordering breaks restore of old dumps.
+- **Schema gotcha**: ALTER-added columns must stay at the **tail** of each CREATE TABLE **in historical ALTER order** — the backup SQL dump copies `sqlite_master.sql` verbatim, and SQLite inserts an ALTER column after the last column definition (before table-level `FOREIGN KEY` constraints), so reordering breaks restore of old dumps. Current tails: `transactions` → `void_reason, voided_by, voided_at, recipient_name`; `entities` → `parent_id`. A new column = a named ALTER migration in `migrations.js` + the same column appended at that CREATE's tail.
 - `get-db-health` IPC → `checkIntegrity` (`migrations.js`), surfaced on the dashboard.
 
 ### Auth, session & roles

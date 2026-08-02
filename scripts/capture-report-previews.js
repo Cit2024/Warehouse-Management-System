@@ -11,6 +11,10 @@ const { app, BrowserWindow, ipcMain } = require('electron');
 const fs = require('fs');
 const path = require('path');
 
+// Under xvfb the GPU process can die and capturePage() then misses composited
+// layers. Software rendering is reliable for offscreen captures.
+app.disableHardwareAcceleration();
+
 const ROOT = path.resolve(__dirname, '..');
 const PRELOAD = path.join(__dirname, 'report-capture-preload.js');
 const BRIDGE = path.join(__dirname, 'report-capture-bridge.html');
@@ -38,6 +42,9 @@ async function captureHtmlToPng(htmlContent, filename, isLandscape) {
 
     await win.loadFile(TEMP_HTML);
     await new Promise(resolve => setTimeout(resolve, 600));
+
+    // Force a layout flush so every layer is painted before capture.
+    await win.webContents.executeJavaScript('document.body.getBoundingClientRect().width');
 
     const image = await win.webContents.capturePage();
     const outPath = path.join(OUTDIR, filename);

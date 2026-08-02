@@ -23,9 +23,12 @@ const SUPPLIERS = [
     { entity_id: 2, code: 'SUP-002', entity_name: 'مكتبة مصراتة الحديثة', entity_type: 'Supplier', phone: '0911111111', address: 'مصراتة - وسط المدينة' }
 ];
 
+// الجهات الداخلية مرتّبة هرمياً (depth/path كما تُرجعها CTE في main.js).
 const REQUESTERS = [
-    { entity_id: 3, code: 'ENT-001', entity_name: 'قسم تقنية المعلومات', entity_type: 'Department', phone: '', address: 'المبنى الإداري' },
-    { entity_id: 4, code: 'ENT-002', entity_name: 'مكتب الشؤون الإدارية', entity_type: 'Department', phone: '', address: 'الإدارة' }
+    { entity_id: 3, code: 'ENT-001', entity_name: 'الإدارة العامة', entity_type: 'Department', phone: '', address: 'المبنى الإداري', parent_id: null, depth: 0, path: 'الإدارة العامة' },
+    { entity_id: 4, code: 'ENT-002', entity_name: 'قسم تقنية المعلومات', entity_type: 'Department', phone: '', address: 'المبنى الإداري', parent_id: 3, depth: 1, path: 'الإدارة العامة ← قسم تقنية المعلومات' },
+    { entity_id: 5, code: 'ENT-003', entity_name: 'شعبة الصيانة والدعم', entity_type: 'Department', phone: '', address: 'المبنى الإداري', parent_id: 4, depth: 2, path: 'الإدارة العامة ← قسم تقنية المعلومات ← شعبة الصيانة والدعم' },
+    { entity_id: 6, code: 'ENT-004', entity_name: 'مكتب الشؤون الإدارية', entity_type: 'Department', phone: '', address: 'الإدارة', parent_id: 3, depth: 1, path: 'الإدارة العامة ← مكتب الشؤون الإدارية' }
 ];
 
 const ENTITIES = [...SUPPLIERS, ...REQUESTERS];
@@ -44,8 +47,7 @@ const TRANSACTIONS = [
 
 const USERS = [
     { user_id: 1, full_name: 'admin', role: 'Admin', is_active: 1, created_at: '2026-07-01' },
-    { user_id: 2, full_name: 'أمين المخزن', role: 'Store_Keeper', is_active: 1, created_at: '2026-07-02' },
-    { user_id: 3, full_name: 'مستعرض', role: 'Viewer', is_active: 1, created_at: '2026-07-03' }
+    { user_id: 2, full_name: 'أمين المخزن', role: 'Store_Keeper', is_active: 1, created_at: '2026-07-02' }
 ];
 
 const BACKUPS = [
@@ -53,13 +55,17 @@ const BACKUPS = [
     { commitId: 'def5678', date: '2026-07-11 21:00', message: 'قبل إضافة مستخدمين' }
 ];
 
-// Fake session so every page (except login) thinks we are logged in as Admin.
+// Fake session so every page (except login) thinks we are logged in.
+// Default role is Admin; capture-screenshots.js can override it per page via
+// --screenshot-role=Store_Keeper to show the reduced sidebar.
+const roleArg = process.argv.find(a => a.startsWith('--screenshot-role='));
+const sessionRole = roleArg ? roleArg.split('=')[1] : 'Admin';
 try {
     localStorage.setItem('userSession', JSON.stringify({
-        userId: 1,
-        username: 'admin',
-        fullName: 'admin',
-        role: 'Admin'
+        userId: sessionRole === 'Admin' ? 1 : 2,
+        username: sessionRole === 'Admin' ? 'admin' : 'storekeeper',
+        fullName: sessionRole === 'Admin' ? 'admin' : 'أمين المخزن',
+        role: sessionRole
     }));
 } catch (e) {
     // localStorage may not be available in some contexts; ignore.
@@ -124,6 +130,8 @@ contextBridge.exposeInMainWorld('api', {
             transaction_id: 3,
             date: '2026-07-08',
             requester: 'قسم تقنية المعلومات',
+            requester_path: 'الإدارة العامة ← قسم تقنية المعلومات',
+            recipient: 'محمد عبد السلام',
             store: 'المخزن الرئيسي',
             reason: 'احتياجات المعمل',
             items: [

@@ -21,7 +21,7 @@
     },
     "win": {
       "icon": "assets/ادارة_المخازن.ico",
-      "target": "nsis"
+      "target": ["nsis", "msi"]
     },
     "linux": {
       "icon": "assets/ادارة_المخازن.png",

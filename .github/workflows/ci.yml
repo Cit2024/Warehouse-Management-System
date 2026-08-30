@@ -80,6 +80,10 @@ jobs:
         run: |
           mkdir -p release-assets
           cp release/*${{ matrix.ext }} "release-assets/${{ matrix.asset_name }}"
+          # Windows job also produces an MSI installer
+          if [ "${{ matrix.os }}" == "windows-latest" ]; then
+            cp release/*.msi "release-assets/windows-installer.msi"
+          fi
 
       # ——— 9. Publish to continuous release (main branch only) ———
       - name: Upload to continuous release
